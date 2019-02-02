@@ -17,7 +17,6 @@ int main()
     t = (struct test *)malloc(sizeof(struct test));
     t->b = (struct ref *)malloc(sizeof(struct ref));
 
-    free(t->b);
     free(t);
 
     return 0;

@@ -21,13 +21,8 @@ entry:
   %b = getelementptr inbounds %struct.test, %struct.test* %2, i32 0, i32 1
   store %struct.ref* %1, %struct.ref** %b, align 8
   %3 = load %struct.test*, %struct.test** %t, align 8
-  %b2 = getelementptr inbounds %struct.test, %struct.test* %3, i32 0, i32 1
-  %4 = load %struct.ref*, %struct.ref** %b2, align 8
-  %5 = bitcast %struct.ref* %4 to i8*
-  call void @free(i8* %5)
-  %6 = load %struct.test*, %struct.test** %t, align 8
-  %7 = bitcast %struct.test* %6 to i8*
-  call void @free(i8* %7)
+  %4 = bitcast %struct.test* %3 to i8*
+  call void @free(i8* %4)
   ret i32 0
 }
 
@@ -46,4 +41,4 @@ attributes #3 = { allocsize(0) }
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 7, !"PIC Level", i32 2}
-!2 = !{!"clang version 8.0.0 (trunk 339409) (llvm/trunk 339408)"}
+!2 = !{!"clang version 8.0.0 (trunk 340517)"}
