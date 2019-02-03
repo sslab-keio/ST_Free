@@ -32,7 +32,6 @@ namespace{
         /*** moduler ***/
         bool runOnFunction(Function &F) override {
             for (BasicBlock &B: F) {
-                // outs() << B << "\n";
                 for (Instruction &I : B) {
                     if (auto* CI = dyn_cast<CallInst>(&I)) {
                         if (Function* called_function = CI->getCalledFunction()){
@@ -40,24 +39,16 @@ namespace{
                                 for(auto args = CI->arg_begin(); args != CI->arg_end();args++){
                                     if(Instruction * val = dyn_cast<Instruction>(* args)){
                                         if(PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())){
-                                            Value *gep_inst = find_GEP();
-                                            if(gep_inst != NULL){
+                                            LoadInst *load_inst = find_load(val);
+                                            if(load_inst != NULL){
+                                                outs() <<  *(load_inst->getPointerOperand()) << "\n";
+                                                Type * tgt_type = get_type(load_inst->getPointerOperand());
+                                                if(tgt_type != NULL && tgt_type->isStructTy()){
+                                                    outs() << "Found Struct\n";
+                                                    check_struct(cast<StructType>(tgt_type));
                                                 // TODO
+                                                }
                                             }
-                                            // while(1){
-                                            //     bool found = false;
-                                            //     for(Use &U : val->operand()){
-                                            //         outs() << *U << "\n";
-                                            //         if(isa<GetElementPtrInst>(U)){
-                                            //             found = true;
-                                            //             break;
-                                            //         }
-                                            //     }
-                                            //     if(found){
-                                            //         outs() << "found!\n";
-                                            //         break;
-                                            //     }
-                                            // }
                                         }
                                     }
                                 }
@@ -68,8 +59,39 @@ namespace{
             }
            return false;
         }
-        Value * find_GEP(){
+
+        LoadInst * find_load(Instruction * val){
+            if(isa<LoadInst>(val)){
+                return cast<LoadInst>(val);
+            }
+            for(Use &U : val->operands()){
+                if(Instruction * inst = dyn_cast<Instruction>(U)){
+                    if(isa<LoadInst>(inst)){
+                        return cast<LoadInst>(inst);
+                    }
+                }
+            }
             return NULL;
+        }
+        /*** Retrieve Pointer Dereferance Type ***/
+        Type * get_type(Value * val){
+            Type * val_type;
+
+            if(val_type == NULL){
+                return NULL;
+            }
+
+            val_type = val->getType();
+            while(val_type->isPointerTy()){
+                val_type = cast<PointerType>(val_type)->getElementType();
+            }
+            return val_type;
+        }
+
+        void check_struct(StructType *st_type){
+            for(auto ele = st_type->element_begin(); ele != st_type->element_end(); ele++){
+                outs() << **ele << "\n";
+            }
         }
     }; // end of struct
 }  // end of anonymous namespace
