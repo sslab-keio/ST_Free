@@ -3,6 +3,7 @@
 
 struct test{
     int x;
+    char name[10];
     struct ref * b;
 };
 

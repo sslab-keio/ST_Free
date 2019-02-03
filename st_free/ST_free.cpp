@@ -46,7 +46,6 @@ namespace{
                                                 if(tgt_type != NULL && tgt_type->isStructTy()){
                                                     outs() << "Found Struct\n";
                                                     check_struct(cast<StructType>(tgt_type));
-                                                // TODO
                                                 }
                                             }
                                         }
@@ -83,7 +82,7 @@ namespace{
 
             val_type = val->getType();
             while(val_type->isPointerTy()){
-                val_type = cast<PointerType>(val_type)->getElementType();
+                val_type = (cast<PointerType>(val_type))->getElementType();
             }
             return val_type;
         }
@@ -91,6 +90,9 @@ namespace{
         void check_struct(StructType *st_type){
             for(auto ele = st_type->element_begin(); ele != st_type->element_end(); ele++){
                 outs() << **ele << "\n";
+                if((*ele)->isPointerTy()){
+                    outs() << "is Pointer\n";
+                }
             }
         }
     }; // end of struct
