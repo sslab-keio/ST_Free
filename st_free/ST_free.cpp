@@ -29,7 +29,7 @@ namespace{
         st_free() : FunctionPass(ID){
         }
 
-        /*** moduler ***/
+        /*** Main Moduler ***/
         bool runOnFunction(Function &F) override {
             for (BasicBlock &B: F) {
                 for (Instruction &I : B) {
@@ -45,7 +45,7 @@ namespace{
                                                 Type * tgt_type = get_type(load_inst->getPointerOperand());
                                                 if(tgt_type != NULL && tgt_type->isStructTy()){
                                                     outs() << "Found Struct\n";
-                                                    check_struct(cast<StructType>(tgt_type));
+                                                    check_struct_ele_ptr(cast<StructType>(tgt_type));
                                                 }
                                             }
                                         }
@@ -59,6 +59,7 @@ namespace{
            return false;
         }
 
+        /*** Iterate Use until Load Instruction ***/
         LoadInst * find_load(Instruction * val){
             if(isa<LoadInst>(val)){
                 return cast<LoadInst>(val);
@@ -72,6 +73,7 @@ namespace{
             }
             return NULL;
         }
+
         /*** Retrieve Pointer Dereferance Type ***/
         Type * get_type(Value * val){
             Type * val_type;
@@ -87,13 +89,17 @@ namespace{
             return val_type;
         }
 
-        void check_struct(StructType *st_type){
+        /*** Check Struct Element for pointer type ***/
+        bool check_struct_ele_ptr(StructType *st_type){
+            bool has_pointer_ele = false;
             for(auto ele = st_type->element_begin(); ele != st_type->element_end(); ele++){
                 outs() << **ele << "\n";
                 if((*ele)->isPointerTy()){
+                    has_pointer_ele = true;
                     outs() << "is Pointer\n";
                 }
             }
+            return has_pointer_ele;
         }
     }; // end of struct
 }  // end of anonymous namespace

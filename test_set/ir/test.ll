@@ -1,9 +1,9 @@
-; ModuleID = 'test.c'
-source_filename = "test.c"
+; ModuleID = 'src/test.c'
+source_filename = "src/test.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-%struct.test = type { i32, %struct.ref* }
+%struct.test = type { i32, [10 x i8], %struct.ref* }
 %struct.ref = type { i32 }
 
 ; Function Attrs: noinline nounwind optnone ssp uwtable
@@ -12,13 +12,13 @@ entry:
   %retval = alloca i32, align 4
   %t = alloca %struct.test*, align 8
   store i32 0, i32* %retval, align 4
-  %call = call i8* @malloc(i64 16) #3
+  %call = call i8* @malloc(i64 24) #3
   %0 = bitcast i8* %call to %struct.test*
   store %struct.test* %0, %struct.test** %t, align 8
   %call1 = call i8* @malloc(i64 4) #3
   %1 = bitcast i8* %call1 to %struct.ref*
   %2 = load %struct.test*, %struct.test** %t, align 8
-  %b = getelementptr inbounds %struct.test, %struct.test* %2, i32 0, i32 1
+  %b = getelementptr inbounds %struct.test, %struct.test* %2, i32 0, i32 2
   store %struct.ref* %1, %struct.ref** %b, align 8
   %3 = load %struct.test*, %struct.test** %t, align 8
   %4 = bitcast %struct.test* %3 to i8*
@@ -41,4 +41,4 @@ attributes #3 = { allocsize(0) }
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 7, !"PIC Level", i32 2}
-!2 = !{!"clang version 8.0.0 (trunk 340517)"}
+!2 = !{!"clang version 8.0.0 (trunk 340813) (llvm/trunk 340812)"}
