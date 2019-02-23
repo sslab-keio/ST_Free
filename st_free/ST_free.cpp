@@ -45,7 +45,12 @@ namespace{
                                                 Type * tgt_type = get_type(load_inst->getPointerOperand());
                                                 if(tgt_type != NULL && tgt_type->isStructTy()){
                                                     outs() << "Found Struct\n";
-                                                    check_struct_ele_ptr(cast<StructType>(tgt_type));
+                                                    if(check_struct_ele_ptr(cast<StructType>(tgt_type))){
+                                                        outs() << "Has pointer element\n";
+                                                        if(isHeapValue(load_inst->getPointerOperand())){
+                                                            outs() << "Is Heap\n";
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -100,6 +105,10 @@ namespace{
                 }
             }
             return has_pointer_ele;
+        }
+
+        bool isHeapValue(Value *v){
+            return true;
         }
     }; // end of struct
 }  // end of anonymous namespace

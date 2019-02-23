@@ -1,5 +1,5 @@
-; ModuleID = 'src/test.c'
-source_filename = "src/test.c"
+; ModuleID = 'src/test_2.c'
+source_filename = "src/test_2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
@@ -21,13 +21,23 @@ entry:
   %b = getelementptr inbounds %struct.test, %struct.test* %2, i32 0, i32 2
   store %struct.ref* %1, %struct.ref** %b, align 8
   %3 = load %struct.test*, %struct.test** %t, align 8
-  %4 = bitcast %struct.test* %3 to i8*
-  call void @free(i8* %4)
+  call void @free_struct(%struct.test* %3)
   ret i32 0
 }
 
 ; Function Attrs: allocsize(0)
 declare i8* @malloc(i64) #1
+
+; Function Attrs: noinline nounwind optnone ssp uwtable
+define void @free_struct(%struct.test* %t) #0 {
+entry:
+  %t.addr = alloca %struct.test*, align 8
+  store %struct.test* %t, %struct.test** %t.addr, align 8
+  %0 = load %struct.test*, %struct.test** %t.addr, align 8
+  %1 = bitcast %struct.test* %0 to i8*
+  call void @free(i8* %1)
+  ret void
+}
 
 declare void @free(i8*) #2
 
