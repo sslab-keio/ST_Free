@@ -22,6 +22,9 @@
 using namespace llvm;
 using namespace std;
 
+vector<string> alloc_funcs = {"malloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
+vector<string> free_funcs = {"free", "kfree"};
+
 namespace{
     struct st_free : public FunctionPass {
         static char ID;
@@ -35,20 +38,25 @@ namespace{
                 for (Instruction &I : B) {
                     if (auto* CI = dyn_cast<CallInst>(&I)) {
                         if (Function* called_function = CI->getCalledFunction()){
+                            if (string(called_function->getName()) == "malloc"){
+                                generateWarning(CI, "Found Malloc");
+                                if(isStructEleAlloc(CI)){
+                                    generateWarning(CI, "Found Struct element malloc");
+                                }
+                            }
                             if (string(called_function->getName()) == "free"){
                                 for(auto args = CI->arg_begin(); args != CI->arg_end();args++){
                                     if(Instruction * val = dyn_cast<Instruction>(* args)){
                                         if(PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())){
                                             LoadInst *load_inst = find_load(val);
                                             if(load_inst != NULL){
-                                                outs() <<  *(load_inst->getPointerOperand()) << "\n";
                                                 Type * tgt_type = get_type(load_inst->getPointerOperand());
                                                 if(tgt_type != NULL && tgt_type->isStructTy()){
-                                                    outs() << "Found Struct\n";
+                                                    generateWarning(load_inst, "Found Struct");
                                                     if(check_struct_ele_ptr(cast<StructType>(tgt_type))){
-                                                        outs() << "Has pointer element\n";
+                                                        generateWarning(load_inst, "Has pointer element");
                                                         if(isHeapValue(load_inst->getPointerOperand())){
-                                                            outs() << "Is Heap\n";
+                                                            generateWarning(load_inst, "Is heap");
                                                         }
                                                     }
                                                 }
@@ -79,6 +87,32 @@ namespace{
             return NULL;
         }
 
+        bool isStructEleAlloc(Instruction * val){
+            for (User *Bit_usr: val->users()){
+                if(BitCastInst * bit_inst = dyn_cast<BitCastInst>(Bit_usr)){
+                    for(User * Store_usr: bit_inst->users()){
+                        if(StoreInst * str_inst = dyn_cast<StoreInst>(Store_usr)){
+                            return true;
+                        }
+                    }
+                    // do something
+                }
+            }
+            return false;
+        }
+
+        bool isStructElement(Instruction * val){
+            LoadInst * l_inst = find_load(val);
+            for(Use &U : l_inst->operands()){
+                if(Instruction * inst = dyn_cast<Instruction>(U)){
+                    if(isa<GetElementPtrInst>(inst)){
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         /*** Retrieve Pointer Dereferance Type ***/
         Type * get_type(Value * val){
             Type * val_type;
@@ -98,10 +132,9 @@ namespace{
         bool check_struct_ele_ptr(StructType *st_type){
             bool has_pointer_ele = false;
             for(auto ele = st_type->element_begin(); ele != st_type->element_end(); ele++){
-                outs() << **ele << "\n";
                 if((*ele)->isPointerTy()){
                     has_pointer_ele = true;
-                    outs() << "is Pointer\n";
+                    // outs() << "is Pointer\n";
                 }
             }
             return has_pointer_ele;
@@ -109,6 +142,17 @@ namespace{
 
         bool isHeapValue(Value *v){
             return true;
+        }
+
+        void generateWarning(Instruction * Inst, string warn){
+            if(const DebugLoc &Loc = Inst->getDebugLoc()){
+                unsigned line = Loc.getLine();
+                unsigned col = Loc.getCol();
+                outs() << "\033[1;31m[ST_free]\033[0m ";
+                // outs() << string(Loc->getDirectory()) << "/" << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
+                outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
+                outs() << warn << "\n";
+            }
         }
     }; // end of struct
 }  // end of anonymous namespace
