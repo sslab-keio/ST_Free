@@ -92,10 +92,13 @@ namespace{
                 if(BitCastInst * bit_inst = dyn_cast<BitCastInst>(Bit_usr)){
                     for(User * Store_usr: bit_inst->users()){
                         if(StoreInst * str_inst = dyn_cast<StoreInst>(Store_usr)){
-                            return true;
+                            for(Use &U : str_inst->operands()){
+                                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
+                                    return true;
+                                }
+                            }
                         }
                     }
-                    // do something
                 }
             }
             return false;
@@ -134,7 +137,6 @@ namespace{
             for(auto ele = st_type->element_begin(); ele != st_type->element_end(); ele++){
                 if((*ele)->isPointerTy()){
                     has_pointer_ele = true;
-                    // outs() << "is Pointer\n";
                 }
             }
             return has_pointer_ele;
