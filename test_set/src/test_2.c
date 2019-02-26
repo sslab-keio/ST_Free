@@ -25,6 +25,6 @@ int main()
     return 0;
 }
 
-void free_struct(struct test * t){
-    free(t);
+void free_struct(struct test * test_struct){
+    free(test_struct);
 }

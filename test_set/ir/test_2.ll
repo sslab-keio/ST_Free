@@ -29,11 +29,11 @@ entry:
 declare i8* @malloc(i64) #1
 
 ; Function Attrs: noinline nounwind optnone ssp uwtable
-define void @free_struct(%struct.test* %t) #0 {
+define void @free_struct(%struct.test* %test_struct) #0 {
 entry:
-  %t.addr = alloca %struct.test*, align 8
-  store %struct.test* %t, %struct.test** %t.addr, align 8
-  %0 = load %struct.test*, %struct.test** %t.addr, align 8
+  %test_struct.addr = alloca %struct.test*, align 8
+  store %struct.test* %test_struct, %struct.test** %test_struct.addr, align 8
+  %0 = load %struct.test*, %struct.test** %test_struct.addr, align 8
   %1 = bitcast %struct.test* %0 to i8*
   call void @free(i8* %1)
   ret void
@@ -51,4 +51,4 @@ attributes #3 = { allocsize(0) }
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 7, !"PIC Level", i32 2}
-!2 = !{!"clang version 8.0.0 (trunk 340813) (llvm/trunk 340812)"}
+!2 = !{!"clang version 8.0.0 (trunk 339409) (llvm/trunk 339408)"}

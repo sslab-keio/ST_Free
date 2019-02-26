@@ -19,11 +19,16 @@
 #include <queue>
 #include <algorithm>
 
+#define NO_ALLOC 0
+#define ALLOCATED 1
+#define FREED 2
+
 using namespace llvm;
 using namespace std;
 
 vector<string> alloc_funcs = {"malloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
 vector<string> free_funcs = {"free", "kfree"};
+map<Value *, int> stat_table;
 
 namespace{
     struct st_free : public FunctionPass {
@@ -37,25 +42,24 @@ namespace{
             for (BasicBlock &B: F) {
                 for (Instruction &I : B) {
                     if (auto* CI = dyn_cast<CallInst>(&I)) {
-                        if (Function* called_function = CI->getCalledFunction()){
-                            if (string(called_function->getName()) == "malloc"){
+                        if (Function* called_function = CI->getCalledFunction()) {
+                            if (isAllocFunction(string(called_function->getName()))) {
                                 generateWarning(CI, "Found Malloc");
                                 if(isStructEleAlloc(CI)){
                                     generateWarning(CI, "Found Struct element malloc");
                                 }
-                            }
-                            if (string(called_function->getName()) == "free"){
-                                for(auto args = CI->arg_begin(); args != CI->arg_end();args++){
-                                    if(Instruction * val = dyn_cast<Instruction>(* args)){
-                                        if(PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())){
+                            } else if (isFreeFunction(string(called_function->getName()))) {
+                                for (auto args = CI->arg_begin(); args != CI->arg_end();args++) {
+                                    if (Instruction * val = dyn_cast<Instruction>(* args)) {
+                                        if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
                                             LoadInst *load_inst = find_load(val);
-                                            if(load_inst != NULL){
+                                            if (load_inst != NULL) {
                                                 Type * tgt_type = get_type(load_inst->getPointerOperand());
-                                                if(tgt_type != NULL && tgt_type->isStructTy()){
+                                                if (tgt_type != NULL && tgt_type->isStructTy()) {
                                                     generateWarning(load_inst, "Found Struct");
-                                                    if(check_struct_ele_ptr(cast<StructType>(tgt_type))){
+                                                    if (check_struct_ele_ptr(cast<StructType>(tgt_type))) {
                                                         generateWarning(load_inst, "Has pointer element");
-                                                        if(isHeapValue(load_inst->getPointerOperand())){
+                                                        if (isHeapValue(load_inst->getPointerOperand())) {
                                                             generateWarning(load_inst, "Is heap");
                                                         }
                                                     }
@@ -70,6 +74,22 @@ namespace{
                 }
             }
            return false;
+        }
+
+        bool isAllocFunction(string name){
+            auto itr = find(alloc_funcs.begin(), alloc_funcs.end(), name);
+            if(itr != alloc_funcs.end()){
+                return true;
+            }
+            return false;
+        }
+
+        bool isFreeFunction(string name){
+            auto itr = find(free_funcs.begin(), free_funcs.end(), name);
+            if(itr != free_funcs.end()){
+                return true;
+            }
+            return false;
         }
 
         /*** Iterate Use until Load Instruction ***/
@@ -88,18 +108,28 @@ namespace{
         }
 
         bool isStructEleAlloc(Instruction * val){
-            for (User *Bit_usr: val->users()){
-                if(BitCastInst * bit_inst = dyn_cast<BitCastInst>(Bit_usr)){
-                    for(User * Store_usr: bit_inst->users()){
-                        if(StoreInst * str_inst = dyn_cast<StoreInst>(Store_usr)){
-                            for(Use &U : str_inst->operands()){
-                                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
-                                    return true;
-                                }
-                            }
+            for (User *usr: val->users()){
+                User * tmp_usr = usr;
+                if(!isa<StoreInst>(usr)){
+                    for(User * neo_usr: usr->users()){
+                        if(isa<StoreInst>(neo_usr)){
+                            tmp_usr = neo_usr;
+                            break;
                         }
                     }
                 }
+                // if(BitCastInst * bit_inst = dyn_cast<BitCastInst>(Bit_usr)){
+                    // for(User * Store_usr: bit_inst->users()){
+                        if(StoreInst * str_inst = dyn_cast<StoreInst>(tmp_usr)){
+                            Value * tgt_op = str_inst->getOperand(1);
+                            outs() << string(tgt_op->getName()) << "\n";
+                            if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(tgt_op)){
+                                stat_table[tgt_op] = ALLOCATED;
+                                return true;
+                            }
+                        }
+                    // }
+                // }
             }
             return false;
         }

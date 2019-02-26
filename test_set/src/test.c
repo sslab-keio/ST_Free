@@ -13,12 +13,12 @@ struct ref{
 
 int main()
 {
-    struct test* t;
+    struct test* struct_parent;
 
-    t = (struct test *)malloc(sizeof(struct test));
-    t->b = (struct ref *)malloc(sizeof(struct ref));
+    struct_parent = (struct test *)malloc(sizeof(struct test));
+    struct_parent->b = (struct ref *)malloc(sizeof(struct ref));
 
-    free(t);
+    free(struct_parent);
 
     return 0;
 }
