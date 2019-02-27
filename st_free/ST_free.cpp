@@ -28,9 +28,26 @@ using namespace std;
 
 vector<string> alloc_funcs = {"malloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
 vector<string> free_funcs = {"free", "kfree"};
-map<Value *, int> stat_table;
 
 namespace{
+    struct status_element{
+        Type * struct_type;
+        uint64_t index;
+        int status;
+        status_element(Type * t, uint64_t i){
+            struct_type = t;
+            index = i;
+            status = ALLOCATED;
+        }
+        friend bool operator==(const status_element &, const status_element &);
+    };
+
+    bool operator==(const status_element& a, const status_element& b){
+        return a.struct_type == b.struct_type && a.index == b.index;
+    }
+
+    vector<status_element> stat_table;
+
     struct st_free : public FunctionPass {
         static char ID;
 
@@ -46,24 +63,16 @@ namespace{
                             if (isAllocFunction(string(called_function->getName()))) {
                                 generateWarning(CI, "Found Malloc");
                                 if(isStructEleAlloc(CI)){
-                                    generateWarning(CI, "Found Struct element malloc");
+                                    generateWarning(CI, "Struct element malloc");
                                 }
                             } else if (isFreeFunction(string(called_function->getName()))) {
                                 for (auto args = CI->arg_begin(); args != CI->arg_end();args++) {
                                     if (Instruction * val = dyn_cast<Instruction>(* args)) {
                                         if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
-                                            LoadInst *load_inst = find_load(val);
-                                            if (load_inst != NULL) {
-                                                Type * tgt_type = get_type(load_inst->getPointerOperand());
-                                                if (tgt_type != NULL && tgt_type->isStructTy()) {
-                                                    generateWarning(load_inst, "Found Struct");
-                                                    if (check_struct_ele_ptr(cast<StructType>(tgt_type))) {
-                                                        generateWarning(load_inst, "Has pointer element");
-                                                        if (isHeapValue(load_inst->getPointerOperand())) {
-                                                            generateWarning(load_inst, "Is heap");
-                                                        }
-                                                    }
-                                                }
+                                            if(isStructEleFree(val)){
+                                                generateWarning(val, "Struct element free");
+                                            } else if (isStructFree(val)){
+                                                checkStructElements(val);
                                             }
                                         }
                                     }
@@ -118,32 +127,63 @@ namespace{
                         }
                     }
                 }
-                // if(BitCastInst * bit_inst = dyn_cast<BitCastInst>(Bit_usr)){
-                    // for(User * Store_usr: bit_inst->users()){
-                        if(StoreInst * str_inst = dyn_cast<StoreInst>(tmp_usr)){
-                            Value * tgt_op = str_inst->getOperand(1);
-                            outs() << string(tgt_op->getName()) << "\n";
-                            if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(tgt_op)){
-                                stat_table[tgt_op] = ALLOCATED;
-                                return true;
-                            }
-                        }
-                    // }
-                // }
-            }
-            return false;
-        }
-
-        bool isStructElement(Instruction * val){
-            LoadInst * l_inst = find_load(val);
-            for(Use &U : l_inst->operands()){
-                if(Instruction * inst = dyn_cast<Instruction>(U)){
-                    if(isa<GetElementPtrInst>(inst)){
+                if(StoreInst * str_inst = dyn_cast<StoreInst>(tmp_usr)){
+                    Value * tgt_op = str_inst->getOperand(1);
+                    // outs() << string(tgt_op->getName()) << "\n";
+                    if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(tgt_op)){
+                        status_element st_ele(inst->getSourceElementType(), cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
+                        stat_table.push_back(st_ele);
+                        // outs() << *(inst->getSourceElementType()) << "\n";
+                        // outs() << cast<ConstantInt>(inst->getOperand(2))->getZExtValue() << "\n";
                         return true;
                     }
                 }
             }
             return false;
+        }
+
+        bool isStructEleFree(Instruction * val){
+            LoadInst * l_inst = find_load(val);
+            for(Use &U : l_inst->operands()){
+                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
+                    status_element st_ele(inst->getSourceElementType(), cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
+                    auto ele = find(stat_table.begin(), stat_table.end(), st_ele);
+                    if(ele != stat_table.end()){
+                        generateWarning(l_inst, "Found Allocated Element Free");
+                        ele->status = FREED;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        bool isStructFree(Instruction * val){
+            LoadInst *load_inst = find_load(val);
+            if (load_inst != NULL) {
+                Type * tgt_type = get_type(load_inst->getPointerOperand());
+                if (tgt_type != NULL && tgt_type->isStructTy()) {
+                    generateWarning(load_inst, "Found Struct");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void checkStructElements(Instruction * val){
+            int index = 0;
+            LoadInst *load_inst = find_load(val);
+            StructType * tgt_type = cast<StructType>(get_type(load_inst->getPointerOperand()));
+            for(auto ele = tgt_type->element_begin(); ele != tgt_type->element_end(); ele++, index++){
+                if((*ele)->isPointerTy()){
+                    generateWarning(load_inst, "Has pointer element");
+                    status_element st_ele(tgt_type, index);
+                    auto ele = find(stat_table.begin(), stat_table.end(), st_ele);
+                    if(ele != stat_table.end() && ele->status != FREED){
+                        generateWarning(load_inst, "Unfreed pointer element found !!");
+                    }
+                }
+            }
         }
 
         /*** Retrieve Pointer Dereferance Type ***/
@@ -162,15 +202,15 @@ namespace{
         }
 
         /*** Check Struct Element for pointer type ***/
-        bool check_struct_ele_ptr(StructType *st_type){
-            bool has_pointer_ele = false;
-            for(auto ele = st_type->element_begin(); ele != st_type->element_end(); ele++){
-                if((*ele)->isPointerTy()){
-                    has_pointer_ele = true;
-                }
-            }
-            return has_pointer_ele;
-        }
+        // bool check_struct_ele_ptr(StructType *st_type){
+        //     bool has_pointer_ele = false;
+        //     for(auto ele = st_type->element_begin(); ele != st_type->element_end(); ele++){
+        //         if((*ele)->isPointerTy()){
+        //             has_pointer_ele = true;
+        //         }
+        //     }
+        //     return has_pointer_ele;
+        // }
 
         bool isHeapValue(Value *v){
             return true;
