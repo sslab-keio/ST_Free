@@ -1,23 +1,4 @@
-#include "llvm/Pass.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/Argument.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Value.h"
-#include "llvm/IR/Instruction.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/IR/DebugInfoMetadata.h"
-#include "llvm/IR/DebugLoc.h"
-#include "llvm/IR/DerivedTypes.h"
-
-// include STL
-#include <vector>
-#include <map>
-#include <queue>
-#include <algorithm>
+#include "ST_free.hpp"
 
 #define NO_ALLOC 0
 #define ALLOCATED 1
@@ -26,15 +7,13 @@
 using namespace llvm;
 using namespace std;
 
-vector<string> alloc_funcs = {"malloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
-vector<string> free_funcs = {"free", "kfree"};
-
 namespace{
     struct status_element{
         Type * struct_type;
+        Value * v;
         uint64_t index;
         int status;
-        status_element(Type * t, uint64_t i){
+        status_element(Type * t, Value *v, uint64_t i){
             struct_type = t;
             index = i;
             status = ALLOCATED;
@@ -47,6 +26,7 @@ namespace{
     }
 
     vector<status_element> stat_table;
+    map<Type *, map<Value *, vector<status_element>>> st_tab;
 
     struct st_free : public FunctionPass {
         static char ID;
@@ -116,6 +96,38 @@ namespace{
             return NULL;
         }
 
+        bool existsInList(Type *T, Value *V){
+            if(st_tab.find(T) != st_tab.end()){
+                if(st_tab[T].find(V) != st_tab[T].end()){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        int checkIndexStatus(Type *T, Value *V, uint64_t index){
+            return ALLOCATED;
+        }
+        void changeIndexStatus(Type *T, Value *V, uint64_t index, int stat){
+            return;
+        }
+
+        Value * getLoadeeValue(Value * val){
+            if(LoadInst *inst = dyn_cast<LoadInst>(val)){
+                // outs() << *(inst->getPointerOperand()) << "\n";
+                return inst->getPointerOperand();
+            }
+            return NULL;
+        }
+
+        bool indexExists(Type *T, Value *V, uint64_t index){
+            vector<status_element> stat_list = st_tab[T][V];
+            auto ele = find(stat_list.begin(), stat_list.end(), status_element(T, V, index));
+            if(ele != stat_list.end())
+                return true;
+            return false;
+        }
+
         bool isStructEleAlloc(Instruction * val){
             for (User *usr: val->users()){
                 User * tmp_usr = usr;
@@ -131,8 +143,15 @@ namespace{
                     Value * tgt_op = str_inst->getOperand(1);
                     // outs() << string(tgt_op->getName()) << "\n";
                     if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(tgt_op)){
-                        status_element st_ele(inst->getSourceElementType(), cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
-                        stat_table.push_back(st_ele);
+                        status_element st_ele(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand()), cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
+                        if(find(stat_table.begin(), stat_table.end(), st_ele) == stat_table.end()){
+                            stat_table.push_back(st_ele);
+                        }
+                    outs() << getLoadeeValue(inst->getPointerOperand()) << "\n";
+                        if (!existsInList(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand())) &&
+                                !indexExists(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand()), cast<ConstantInt>(inst->getOperand(2))->getZExtValue())){
+                            st_tab[inst->getSourceElementType()][getLoadeeValue(inst->getPointerOperand())].push_back(st_ele);
+                        }
                         // outs() << *(inst->getSourceElementType()) << "\n";
                         // outs() << cast<ConstantInt>(inst->getOperand(2))->getZExtValue() << "\n";
                         return true;
@@ -146,11 +165,18 @@ namespace{
             LoadInst * l_inst = find_load(val);
             for(Use &U : l_inst->operands()){
                 if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
-                    status_element st_ele(inst->getSourceElementType(), cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
+                    outs() << getLoadeeValue(inst->getPointerOperand()) << "\n";
+                    status_element st_ele(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand()), cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
                     auto ele = find(stat_table.begin(), stat_table.end(), st_ele);
                     if(ele != stat_table.end()){
                         generateWarning(l_inst, "Found Allocated Element Free");
                         ele->status = FREED;
+                        // return true;
+                    }
+                    if (existsInList(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand())) &&
+                            indexExists(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand()), cast<ConstantInt>(inst->getOperand(2))->getZExtValue())){
+                        generateWarning(l_inst, "Found Allocated Element Free");
+                        changeIndexStatus(st_ele.struct_type, st_ele.v, st_ele.index, FREED);
                         return true;
                     }
                 }
@@ -177,7 +203,8 @@ namespace{
             for(auto ele = tgt_type->element_begin(); ele != tgt_type->element_end(); ele++, index++){
                 if((*ele)->isPointerTy()){
                     generateWarning(load_inst, "Has pointer element");
-                    status_element st_ele(tgt_type, index);
+                    status_element st_ele(tgt_type, val, index);
+
                     auto ele = find(stat_table.begin(), stat_table.end(), st_ele);
                     if(ele != stat_table.end() && ele->status != FREED){
                         generateWarning(load_inst, "Unfreed pointer element found !!");
@@ -200,17 +227,6 @@ namespace{
             }
             return val_type;
         }
-
-        /*** Check Struct Element for pointer type ***/
-        // bool check_struct_ele_ptr(StructType *st_type){
-        //     bool has_pointer_ele = false;
-        //     for(auto ele = st_type->element_begin(); ele != st_type->element_end(); ele++){
-        //         if((*ele)->isPointerTy()){
-        //             has_pointer_ele = true;
-        //         }
-        //     }
-        //     return has_pointer_ele;
-        // }
 
         bool isHeapValue(Value *v){
             return true;
