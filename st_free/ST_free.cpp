@@ -25,7 +25,6 @@ namespace{
         return a.struct_type == b.struct_type && a.index == b.index;
     }
 
-    vector<status_element> stat_table;
     map<Type *, map<Value *, vector<status_element>>> st_tab;
 
     struct st_free : public FunctionPass {
@@ -106,10 +105,24 @@ namespace{
         }
 
         int checkIndexStatus(Type *T, Value *V, uint64_t index){
-            return ALLOCATED;
+            if(existsInList(T, V)){
+                for (auto ele = st_tab[T][V].begin();ele != st_tab[T][V].end(); ele++){
+                    if(ele->index == index)
+                        return ele->status;
+                }
+            }
+            return NO_ALLOC;
         }
+
         void changeIndexStatus(Type *T, Value *V, uint64_t index, int stat){
-            return;
+            if(existsInList(T, V)){
+                for (auto ele = st_tab[T][V].begin();ele != st_tab[T][V].end(); ele++){
+                    if(ele->index == index){
+                        ele->status = stat;
+                        return;
+                    }
+                }
+            }
         }
 
         Value * getLoadeeValue(Value * val){
@@ -143,11 +156,9 @@ namespace{
                     Value * tgt_op = str_inst->getOperand(1);
                     // outs() << string(tgt_op->getName()) << "\n";
                     if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(tgt_op)){
-                        status_element st_ele(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand()), cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
-                        if(find(stat_table.begin(), stat_table.end(), st_ele) == stat_table.end()){
-                            stat_table.push_back(st_ele);
-                        }
-                    outs() << getLoadeeValue(inst->getPointerOperand()) << "\n";
+                        status_element st_ele(inst->getSourceElementType(),
+                                getLoadeeValue(inst->getPointerOperand()),
+                                cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
                         if (!existsInList(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand())) &&
                                 !indexExists(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand()), cast<ConstantInt>(inst->getOperand(2))->getZExtValue())){
                             st_tab[inst->getSourceElementType()][getLoadeeValue(inst->getPointerOperand())].push_back(st_ele);
@@ -165,14 +176,9 @@ namespace{
             LoadInst * l_inst = find_load(val);
             for(Use &U : l_inst->operands()){
                 if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
-                    outs() << getLoadeeValue(inst->getPointerOperand()) << "\n";
-                    status_element st_ele(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand()), cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
-                    auto ele = find(stat_table.begin(), stat_table.end(), st_ele);
-                    if(ele != stat_table.end()){
-                        generateWarning(l_inst, "Found Allocated Element Free");
-                        ele->status = FREED;
-                        // return true;
-                    }
+                    status_element st_ele(inst->getSourceElementType(),
+                            getLoadeeValue(inst->getPointerOperand()),
+                            cast<ConstantInt>(inst->getOperand(2))->getZExtValue());
                     if (existsInList(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand())) &&
                             indexExists(inst->getSourceElementType(), getLoadeeValue(inst->getPointerOperand()), cast<ConstantInt>(inst->getOperand(2))->getZExtValue())){
                         generateWarning(l_inst, "Found Allocated Element Free");
@@ -203,11 +209,15 @@ namespace{
             for(auto ele = tgt_type->element_begin(); ele != tgt_type->element_end(); ele++, index++){
                 if((*ele)->isPointerTy()){
                     generateWarning(load_inst, "Has pointer element");
-                    status_element st_ele(tgt_type, val, index);
+                    status_element st_ele(tgt_type, load_inst->getPointerOperand(), index);
 
-                    auto ele = find(stat_table.begin(), stat_table.end(), st_ele);
-                    if(ele != stat_table.end() && ele->status != FREED){
-                        generateWarning(load_inst, "Unfreed pointer element found !!");
+                    if(existsInList(tgt_type, load_inst->getPointerOperand())){
+                        vector<status_element> stat_itr = st_tab[tgt_type][load_inst->getPointerOperand()];
+                        for (auto st_ele = stat_itr.begin();st_ele != stat_itr.end(); st_ele++){
+                            if(st_ele->status != FREED){
+                                generateWarning(load_inst, "Unfreed pointer element found !!");
+                            }
+                        }
                     }
                 }
             }
