@@ -1,3 +1,4 @@
+#pragma once
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Argument.h"
@@ -19,5 +20,9 @@
 #include <queue>
 #include <algorithm>
 
-std::vector<std::string> alloc_funcs = {"malloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
-std::vector<std::string> free_funcs = {"free", "kfree"};
+#define NO_ALLOC 0
+#define ALLOCATED 1
+#define FREED 2
+
+using namespace llvm;
+using namespace std;
