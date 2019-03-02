@@ -207,14 +207,14 @@ namespace{
                     generateWarning(load_inst, "Has pointer element");
                     // status_element st_ele(tgt_type, load_inst->getPointerOperand(), index);
 
-                    // if(stat.isInList(tgt_type, load_inst->getPointerOperand())){
-                    //     vector<status_element> stat_itr = st_tab[tgt_type][load_inst->getPointerOperand()];
-                    //     for (auto st_ele = stat_itr.begin();st_ele != stat_itr.end(); st_ele++){
-                    //         if(st_ele->status != FREED){
-                    //             generateWarning(load_inst, "Unfreed pointer element found !!");
-                    //         }
-                    //     }
-                    // }
+                    if(stat.isInList(tgt_type, load_inst->getPointerOperand())){
+                        vector<int> * itr_list = stat.getList(tgt_type, load_inst->getPointerOperand());
+                        for(auto ele = itr_list->begin(); ele != itr_list->end(); ele++){
+                            if(*ele == ALLOCATED){
+                                generateWarning(load_inst, "Unfreed pointer element found !!");
+                            }
+                        }
+                    }
                 }
             }
         }
