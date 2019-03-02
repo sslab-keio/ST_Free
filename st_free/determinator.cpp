@@ -7,43 +7,43 @@ const vector<string> alloc_funcs = {"malloc", "kzalloc", "kmalloc", "zalloc", "v
 const vector<string> free_funcs = {"free", "kfree"};
 
 namespace ST_free {
-    bool isAllocFunction(string name){
-        auto itr = find(alloc_funcs.begin(), alloc_funcs.end(), name);
-        if(itr != alloc_funcs.end()){
-            return true;
-        }
-        return false;
-    }
-
-    // bool isAllocFunction(Function *F){
-    //     string name = F->getName();
-    //     // if(name != NULL){
-    //         auto itr = find(alloc_funcs.begin(), alloc_funcs.end(), name);
-    //         if(itr != alloc_funcs.end()){
-    //             return true;
-    //         }
-    //     // }
+    // bool isAllocFunction(string name){
+    //     auto itr = find(alloc_funcs.begin(), alloc_funcs.end(), name);
+    //     if(itr != alloc_funcs.end()){
+    //         return true;
+    //     }
     //     return false;
     // }
 
-    bool isFreeFunction(string name){
-        auto itr = find(free_funcs.begin(), free_funcs.end(), name);
-        if(itr != free_funcs.end()){
-            return true;
-        }
+    bool isAllocFunction(Function *F){
+        string name = F->getName();
+        // if(name != NULL){
+            auto itr = find(alloc_funcs.begin(), alloc_funcs.end(), name);
+            if(itr != alloc_funcs.end()){
+                return true;
+            }
+        // }
         return false;
     }
 
-    // bool isFreeFunction(Function *F){
-    //     string name = F->getName();
-    //     // if(name != NULL){
-    //         auto itr = find(free_funcs.begin(), free_funcs.end(), name);
-    //         if(itr != free_funcs.end()){
-    //             return true;
-    //         }
-    //     // }
+    // bool isFreeFunction(string name){
+    //     auto itr = find(free_funcs.begin(), free_funcs.end(), name);
+    //     if(itr != free_funcs.end()){
+    //         return true;
+    //     }
     //     return false;
     // }
+
+    bool isFreeFunction(Function *F){
+        string name = F->getName();
+        // if(name != NULL){
+            auto itr = find(free_funcs.begin(), free_funcs.end(), name);
+            if(itr != free_funcs.end()){
+                return true;
+            }
+        // }
+        return false;
+    }
 
     bool isStructEleAlloc(Instruction * val){
         for (User *usr: val->users()){
