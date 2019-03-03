@@ -2,6 +2,7 @@
 #include "statList.hpp"
 #include "determinator.hpp"
 #include "support_funcs.hpp"
+#include "inter_analysis.hpp"
 
 using namespace ST_free;
 
@@ -9,6 +10,7 @@ namespace{
     struct st_free : public FunctionPass {
         static char ID;
         StatusList stat;
+        Analyzer analyze;
 
         st_free() : FunctionPass(ID){
         }
