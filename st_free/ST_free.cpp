@@ -17,6 +17,7 @@ namespace{
 
         /*** Main Moduler ***/
         bool runOnFunction(Function &F) override {
+            analyze.setFunction(&F);
             for (BasicBlock &B: F) {
                 for (Instruction &I : B) {
                     if (auto* CI = dyn_cast<CallInst>(&I)) {
@@ -46,8 +47,23 @@ namespace{
                                                     FREED
                                                 );
                                                 generateWarning(val, "Struct element free");
-                                            } else if (isStructFree(val)){
+                                            } else if (isStructFree(val)) {
                                                 checkStructElements(val);
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                int i = 0;
+                                for (auto args = CI->arg_begin(); args != CI->arg_end();args++, i++) {
+                                    if (Instruction * val = dyn_cast<Instruction>(* args)) {
+                                        if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
+                                            // TODO
+                                            LoadInst * load_inst = find_load(val);
+                                            Value * val = getLoadeeValue(load_inst);
+                                            if(val != NULL && stat.isInList(val->getType(), val)){
+                                                analyze.setFunction(CI->getCalledFunction());
+                                                analyze.addValue(CI->getCalledFunction(), val, i);
                                             }
                                         }
                                     }

@@ -39,6 +39,7 @@ namespace ST_free {
         }
         return val_type;
     }
+
     void generateWarning(Instruction * Inst, string warn){
         if(const DebugLoc &Loc = Inst->getDebugLoc()){
             unsigned line = Loc.getLine();
