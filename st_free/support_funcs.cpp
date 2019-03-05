@@ -50,4 +50,13 @@ namespace ST_free {
             outs() << warn << "\n";
         }
     }
+
+    Value * getArgAlloca(Value *arg){
+        for(auto usr = arg->user_begin(); usr != arg->user_end();usr++){
+             if(StoreInst * str_inst = dyn_cast<StoreInst>(*usr)){
+                return str_inst->getOperand(1);
+             }
+        }
+        return NULL;
+    }
 }
