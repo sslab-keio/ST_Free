@@ -31,6 +31,7 @@ $(TARGETS): $(SOURCES)
 		echo "Directory $(LOG_DIR) does not exist. Creating...";\
 		mkdir -p $(LOG_DIR);\
 		fi
+	@echo '================================='
 	@echo 'compiling' $@ 'with file:' $(FILE)
 	$(CC) $(CFLAGS) $(FILE) -o $(TGT_DIR)/$@ $(SRC_DIR)/$@$(SUFFIX)
 

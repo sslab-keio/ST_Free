@@ -1,6 +1,8 @@
 #include "ST_free.hpp"
 #include "inter_analysis.hpp"
 #include "statList.hpp"
+#include "argList.hpp"
+#include "determinator.hpp"
 #pragma once
 
 namespace ST_free{
@@ -8,12 +10,16 @@ namespace ST_free{
         private:
             static FuncIdentifier identifier;
             static StatusList stat;
-            vector<Value *> arg_list;
-            // Function F;
+            ArgList args;
+            Function * Funcs;
         public:
-            // Analyzer(Function func){
-            //     F = func;
-            // };
+            Analyzer(){
+                args = ArgList();
+            }
+            explicit Analyzer(Function *func){
+                Funcs = func;
+                args = ArgList(func->arg_size());
+            }
             void analyze(Function &);
             void analyzeDifferentFunc(Function &);
             void checkStructElements(Instruction *);

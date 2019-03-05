@@ -10,12 +10,7 @@ namespace ST_free{
             return;
 
         identifier.setFunction(&F);
-        for(auto args = F.arg_begin(); args != F.arg_end(); args++){
-            Value * v = getArgAlloca(args);
-            if(v != NULL){
-                arg_list.push_back(v);
-            }
-        }
+        args.setArgs(F);
 
         for (BasicBlock &B: F) {
             for (Instruction &I : B) {
