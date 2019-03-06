@@ -15,10 +15,12 @@
 #include "llvm/IR/DerivedTypes.h"
 
 // include STL
+#include <iostream>
 #include <vector>
 #include <map>
 #include <queue>
 #include <algorithm>
+#include <string>
 
 #define NO_ALLOC 0
 #define ALLOCATED 1

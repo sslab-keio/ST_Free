@@ -11,14 +11,21 @@ namespace ST_free{
 
         identifier.setFunction(&F);
         args.setArgs(F);
-
+        
+        /*** BasicBlock Interator ***/
         for (BasicBlock &B: F) {
+            /*** Instruction Iterator ***/
             for (Instruction &I : B) {
+                /*** is Call Instruction ***/
                 if (auto* CI = dyn_cast<CallInst>(&I)) {
+                    /*** get Called Function ***/
                     if (Function* called_function = CI->getCalledFunction()) {
+                        /*** is Allocation Function ***/
                         if (isAllocFunction(called_function)) {
                             generateWarning(CI, "Found Malloc");
+                            /*** is Struct Element Allocation ***/
                             if(isStructEleAlloc(CI)){
+                                /*** add status ***/
                                 GetElementPtrInst *inst = getAllocStructEleInfo(CI);
                                 stat.setStat(
                                     inst->getSourceElementType(),
@@ -26,11 +33,20 @@ namespace ST_free{
                                     cast<ConstantInt>(inst->getOperand(2))->getZExtValue(),
                                     ALLOCATED
                                 );
+
+                                /*** Is arg value ***/
+                                if(args.isInList(getLoadeeValue(inst->getPointerOperand()))){
+                                    identifier.setFunctionStatus(
+                                        &F,
+                                        args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
+                                        ALLOCATED
+                                    );
+                                }
                                 generateWarning(CI, "Struct element malloc");
                             }
                         } else if (isFreeFunction(called_function)) {
-                            for (auto args = CI->arg_begin(); args != CI->arg_end();args++) {
-                                if (Instruction * val = dyn_cast<Instruction>(* args)) {
+                            for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++) {
+                                if (Instruction * val = dyn_cast<Instruction>(* arguments)) {
                                     if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
                                         if(isStructEleFree(val)){
                                             GetElementPtrInst * inst = getFreeStructEleInfo(CI);
@@ -40,8 +56,26 @@ namespace ST_free{
                                                 cast<ConstantInt>(inst->getOperand(2))->getZExtValue(),
                                                 FREED
                                             );
+                                            // outs() << "Free " << *getLoadeeValue(inst->getPointerOperand()) << "\n";
+                                            if(args.isInList(getLoadeeValue(inst->getPointerOperand()))) {
+                                                identifier.setFunctionStatus(
+                                                    &F,
+                                                    args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
+                                                    FREED
+                                                );
+                                            }
                                             generateWarning(val, "Struct element free");
                                         } else if (isStructFree(val)) {
+                                            Value * loaded_value = getStructFreedValue(val);
+                                            if(loaded_value != NULL){
+                                                if(args.isInList(loaded_value)){
+                                                    identifier.setFunctionStatus(
+                                                        &F,
+                                                        args.getOperandNum(loaded_value),
+                                                        FREED
+                                                    );
+                                                }
+                                            }
                                             this->checkStructElements(val);
                                         }
                                     }
@@ -50,17 +84,46 @@ namespace ST_free{
                         } else {
                             this->analyzeDifferentFunc((Function &)(*(CI->getCalledFunction())));
                             vector<int> * statList = identifier.getStatusList(CI->getCalledFunction());
+
                             if(statList != NULL){
                                 for(uint64_t i = 0; i < statList->size(); i++){
-                                    if((*statList)[i] != NO_ALLOC){
+                                    if((*statList)[i] == ALLOCATED){
+                                        // TODO
+                                        // do allocation
+                                    } else if((*statList)[i] == FREED){
                                         //TODO
                                         Value * val = CI->getOperand(i);
                                         if (Instruction * inst = dyn_cast<Instruction>(val)) {
                                             if (PointerType * ptr_ty = dyn_cast<PointerType>(inst->getType())) {
-                                                LoadInst * load_inst = find_load(inst);
-                                                Value * loadee = getLoadeeValue(load_inst);
-                                                if(loadee != NULL && stat.isInList(loadee->getType(), val)){
-                                                    stat.setStat(loadee->getType(), val, i, ((*statList)[i]));
+                                                if(isStructEleFree(inst)){
+                                                    GetElementPtrInst * inst = getFreeStructEleInfo(CI);
+                                                    stat.setStat(
+                                                        inst->getSourceElementType(),
+                                                        getLoadeeValue(inst->getPointerOperand()),
+                                                        cast<ConstantInt>(inst->getOperand(2))->getZExtValue(),
+                                                        FREED
+                                                    );
+                                                    // outs() << "Free " << *getLoadeeValue(inst->getPointerOperand()) << "\n";
+                                                    if(args.isInList(getLoadeeValue(inst->getPointerOperand()))) {
+                                                        identifier.setFunctionStatus(
+                                                            &F,
+                                                            args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
+                                                            FREED
+                                                        );
+                                                    }
+                                                    generateWarning(inst, "Struct element free");
+                                                } else if (isStructFree(inst)) {
+                                                    Value * loaded_value = getStructFreedValue(inst);
+                                                    if(loaded_value != NULL){
+                                                        if(args.isInList(loaded_value)){
+                                                            identifier.setFunctionStatus(
+                                                                &F,
+                                                                args.getOperandNum(loaded_value),
+                                                                FREED
+                                                            );
+                                                        }
+                                                    }
+                                                    this->checkStructElements(inst);
                                                 }
                                             }
                                         }
@@ -74,11 +137,14 @@ namespace ST_free{
         }
         return;
     }
+
     void Analyzer::analyzeDifferentFunc(Function &F){
-        Analyzer called_function;
-        called_function.analyze(F);
+        Analyzer called_function(&F);
+        if(!identifier.isInMap(&F))
+            called_function.analyze(F);
         return;
     }
+
     void Analyzer::checkStructElements(Instruction * val){
         int index = 0;
         LoadInst *load_inst = find_load(val);

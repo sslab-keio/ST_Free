@@ -99,7 +99,14 @@ namespace ST_free {
         return false;
     }
 
-    bool isHeapValue(Value *v){
-        return true;
+    Value * getStructFreedValue(Instruction * val){
+        LoadInst *load_inst = find_load(val);
+        if (load_inst != NULL) {
+            Type * tgt_type = get_type(load_inst->getPointerOperand());
+            if (tgt_type != NULL && tgt_type->isStructTy()) {
+                return getLoadeeValue(load_inst);
+            }
+        }
+        return NULL;
     }
 }

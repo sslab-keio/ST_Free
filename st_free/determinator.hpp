@@ -9,6 +9,7 @@ namespace ST_free{
     bool isStructEleAlloc(Instruction *);
     bool isStructEleFree(Instruction *);
     bool isStructFree(Instruction *);
+    Value * getStructFreedValue(Instruction * val);
     bool isHeapValue(Value *);
     GetElementPtrInst * getAllocStructEleInfo(Instruction *);
     GetElementPtrInst* getFreeStructEleInfo(Instruction *);

@@ -10,13 +10,13 @@ using namespace ST_free;
 namespace{
     struct st_free : public FunctionPass {
         static char ID;
-        Analyzer analyze;
 
         st_free() : FunctionPass(ID){
         }
 
         /*** Main Moduler ***/
         bool runOnFunction(Function &F) override {
+            Analyzer analyze(&F);
             analyze.analyze(F);
             return false;
         }
