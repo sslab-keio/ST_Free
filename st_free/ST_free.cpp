@@ -17,7 +17,7 @@ namespace{
         /*** Main Moduler ***/
         bool runOnFunction(Function &F) override {
             Analyzer analyze(&F);
-            analyze.analyze(F);
+            analyze.analyze();
             return false;
         }
     }; // end of struct
