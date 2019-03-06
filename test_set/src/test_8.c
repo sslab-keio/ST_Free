@@ -13,6 +13,7 @@ struct ref{
 };
 
 void free_struct(struct test *);
+void free_struct_second(struct test * test_struct); 
 
 int main()
 {
@@ -27,5 +28,9 @@ int main()
 }
 
 void free_struct(struct test * test_struct){
+    free_struct_second(test_struct);
+}
+
+void free_struct_second(struct test * test_struct){
     free(test_struct);
 }

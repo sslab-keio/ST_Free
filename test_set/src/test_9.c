@@ -1,4 +1,4 @@
-/*** Interprocedural / Leaked ***/
+/*** Interprocedural / Unleaked ***/
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -12,7 +12,7 @@ struct ref{
     int y;
 };
 
-void free_struct(struct test *);
+void free_struct(struct ref *);
 
 int main()
 {
@@ -21,11 +21,12 @@ int main()
     t = (struct test *)malloc(sizeof(struct test));
     t->b = (struct ref *)malloc(sizeof(struct ref));
 
-    free_struct(t);
+    free_struct(t->b);
+    free(t);
 
     return 0;
 }
 
-void free_struct(struct test * test_struct){
+void free_struct(struct ref * test_struct){
     free(test_struct);
 }
