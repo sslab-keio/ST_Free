@@ -15,6 +15,7 @@ target_compile_features(StructFreeMod PRIVATE cxx_range_for cxx_auto_type)
 set_target_properties(StructFreeMod PROPERTIES
     COMPILE_FLAGS "-fno-rtti"
 )
+include_directories(./include)
 
 # Get proper shared-library behavior (where symbols are not necessarily
 # resolved when the shared library is linked) on OS X.
