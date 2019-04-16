@@ -9,10 +9,10 @@ namespace ST_free{
     void Analyzer::analyze(){
         Function & F = (Function &)(*Funcs);
 
-        if(identifier.isInMap(&F))
+        if(identifier.exists(&F))
             return;
 
-        identifier.setFunction(&F);
+        identifier.initFuncStat(&F);
         args.setArgs(F);
         
         /*** BasicBlock Interator ***/
@@ -33,18 +33,15 @@ namespace ST_free{
                                 this->checkAndMarkFree(cast<Value>(arguments), CI);
                             }
                         } else {
-                            this->analyzeDifferentFunc((Function &)(*(CI->getCalledFunction())));
-                            vector<int> * statList = identifier.getStatusList(CI->getCalledFunction());
+                            this->analyzeDifferentFunc((Function &)(*called_function));
 
-                            if(statList != NULL){
-                                for(uint64_t i = 0; i < statList->size(); i++){
-                                    if((*statList)[i] == ALLOCATED){
-                                        this->checkAndMarkAlloc(CI);
-                                        // TODO: need to look for struct itself allocation
-                                    } else if((*statList)[i] == FREED){
-                                        Value * val = CI->getOperand(i);
-                                        this->checkAndMarkFree(val, CI);
-                                    }
+                            for(size_t argNum = 0; argNum < identifier.getArgSize(called_function); argNum++){
+                                if(identifier.isArgAllocated(called_function, argNum)){
+                                    this->checkAndMarkAlloc(CI);
+                                    // TODO: need to look for struct itself allocation
+                                } else if(identifier.isArgFreed(called_function, argNum)){
+                                    Value * val = CI->getOperand(argNum);
+                                    this->checkAndMarkFree(val, CI);
                                 }
                             }
                         }
@@ -57,7 +54,7 @@ namespace ST_free{
 
     void Analyzer::analyzeDifferentFunc(Function &F){
         Analyzer called_function(&F);
-        if(!identifier.isInMap(&F))
+        if(!identifier.exists(&F))
             called_function.analyze();
         return;
     }
@@ -70,7 +67,7 @@ namespace ST_free{
             if((*ele)->isPointerTy()){
                 generateWarning(load_inst, "Has pointer element");
 
-                if(stat.isInList(tgt_type, load_inst->getPointerOperand())){
+                if(stat.exists(tgt_type, load_inst->getPointerOperand())){
                     vector<int> * itr_list = stat.getList(tgt_type, load_inst->getPointerOperand());
                     for(auto ele = itr_list->begin(); ele != itr_list->end(); ele++){
                         if(*ele == ALLOCATED){
@@ -94,7 +91,7 @@ namespace ST_free{
                         FREED
                     );
                     if(args.isInList(getLoadeeValue(inst->getPointerOperand()))) {
-                        identifier.setFunctionStatus(
+                        identifier.setFuncArgStat(
                             Funcs,
                             args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
                             FREED
@@ -105,7 +102,7 @@ namespace ST_free{
                     Value * loaded_value = getStructFreedValue(val);
                     if(loaded_value != NULL){
                         if(args.isInList(loaded_value)){
-                            identifier.setFunctionStatus(
+                            identifier.setFuncArgStat(
                                 Funcs,
                                 args.getOperandNum(loaded_value),
                                 FREED
@@ -131,7 +128,7 @@ namespace ST_free{
 
             /*** Is arg value ***/
             if(args.isInList(getLoadeeValue(inst->getPointerOperand()))){
-                identifier.setFunctionStatus(
+                identifier.setFuncArgStat(
                     Funcs,
                     args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
                     ALLOCATED

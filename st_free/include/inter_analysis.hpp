@@ -6,11 +6,13 @@ namespace ST_free{
         private:
             map<Function *, vector<int>> func_map;
         public:
-            bool isInMap(Function *);
-            bool isInMap(Function *, int);
-            vector<int> * getStatusList(Function *);
-            int getStatus(Function *, int);
-            void setFunction(Function *);
-            void setFunctionStatus(Function *, int, int);
-    };
-}
+            bool exists(Function *);
+            bool exists(Function *, int);
+            vector<int> * getArgStatList(Function *);
+            int getArgStat(Function *, int);
+            void initFuncStat(Function *);
+            void setFuncArgStat(Function *, int, int);
+            size_t getArgSize(Function *F);
+            bool isArgAllocated(Function *, int);
+            bool isArgFreed(Function *, int);
+    }
