@@ -8,16 +8,18 @@
 using namespace ST_free;
 
 namespace{
-    struct st_free : public FunctionPass {
+    struct st_free : public ModulePass {
         static char ID;
 
-        st_free() : FunctionPass(ID){
+        st_free() : ModulePass(ID){
         }
 
-        /*** Main Moduler ***/
-        bool runOnFunction(Function &F) override {
-            Analyzer analyze(&F);
-            analyze.analyze();
+        /*** Main Modular ***/
+        bool runOnModule(Module &M) override {
+            for(Function &F: M){
+                Analyzer analyze(&F);
+                analyze.analyze();
+            }
             return false;
         }
     }; // end of struct
@@ -32,7 +34,11 @@ static RegisterPass<st_free> X("st_free", "struct free checker",
 static void registerSTFreePass(const PassManagerBuilder &, legacy::PassManagerBase &PM) {
     PM.add(new st_free());
 }
-static RegisterStandardPasses
-  RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
-                 registerSTFreePass);
+// static RegisterStandardPasses
+//   RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
+//                  registerSTFreePass);
+static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_ModuleOptimizerEarly,
+                                                registerSTFreePass);
 
+static RegisterStandardPasses RegisterMyPass1(PassManagerBuilder::EP_EnabledOnOptLevel0,
+                                                registerSTFreePass);

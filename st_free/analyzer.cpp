@@ -5,6 +5,7 @@
 namespace ST_free{
     FuncIdentifier Analyzer::identifier;
     StatusList Analyzer::stat;
+
     void Analyzer::analyze(){
         Function & F = (Function &)(*Funcs);
 
