@@ -20,7 +20,6 @@ namespace ST_free{
                 Funcs = func;
                 args = ArgList(func->arg_size());
             }
-            // void analyze(Function &);
             void analyze();
             void analyzeDifferentFunc(Function &);
             void checkStructElements(Instruction *);

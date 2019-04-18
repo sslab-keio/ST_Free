@@ -34,13 +34,12 @@ namespace ST_free{
                             }
                         } else {
                             this->analyzeDifferentFunc((Function &)(*called_function));
-
-                            for(size_t argNum = 0; argNum < identifier.getArgSize(called_function); argNum++){
-                                if(identifier.isArgAllocated(called_function, argNum)){
+                            int i = 0;
+                            for(auto ele = identifier.itr_begin(called_function); ele != identifier.itr_end(called_function); ele++, i++){
+                                if(ele->isArgAllocated()){
                                     this->checkAndMarkAlloc(CI);
-                                    // TODO: need to look for struct itself allocation
-                                } else if(identifier.isArgFreed(called_function, argNum)){
-                                    Value * val = CI->getOperand(argNum);
+                                } else if(ele->isArgFreed()){
+                                    Value * val = CI->getOperand(i);
                                     this->checkAndMarkFree(val, CI);
                                 }
                             }
