@@ -35,9 +35,9 @@ namespace ST_free{
                         } else {
                             this->analyzeDifferentFunc((Function &)(*called_function));
                             for(struct FuncElement ele :identifier.getArgStatList(called_function)){
-                                if(ele.isArgAllocated()){
+                                if(ele.isArgAllocated()) {
                                     this->checkAndMarkAlloc(CI);
-                                } else if(ele.isArgFreed()){
+                                } else if(ele.isArgFreed()) {
                                     Value * val = CI->getOperand(ele.getArgNum());
                                     this->checkAndMarkFree(val, CI);
                                 }
