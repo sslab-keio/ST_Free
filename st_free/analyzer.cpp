@@ -35,13 +35,14 @@ namespace ST_free{
                         } else {
                             this->analyzeDifferentFunc((Function &)(*called_function));
                             int i = 0;
-                            for(auto ele = identifier.itr_begin(called_function); ele != identifier.itr_end(called_function); ele++, i++){
-                                if(ele->isArgAllocated()){
+                            for(struct FuncElement ele :identifier.getArgStatList(called_function)){
+                                if(ele.isArgAllocated()){
                                     this->checkAndMarkAlloc(CI);
-                                } else if(ele->isArgFreed()){
+                                } else if(ele.isArgFreed()){
                                     Value * val = CI->getOperand(i);
                                     this->checkAndMarkFree(val, CI);
                                 }
+                                i++;
                             }
                         }
                     }
@@ -78,10 +79,10 @@ namespace ST_free{
         }
     }
 
-    void Analyzer::checkAndMarkFree(Value * V, CallInst *CI){
+    void Analyzer::checkAndMarkFree(Value * V, CallInst *CI) {
         if (Instruction * val = dyn_cast<Instruction>(V)) {
             if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
-                if(isStructEleFree(val)){
+                if(isStructEleFree(val)) {
                     GetElementPtrInst * inst = getFreeStructEleInfo(CI);
                     stat.setStat(
                         inst->getSourceElementType(),

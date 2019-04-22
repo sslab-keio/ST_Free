@@ -22,7 +22,7 @@ namespace ST_free{
         public:
             bool exists(Function *);
             bool exists(Function *, int);
-            vector<struct FuncElement> * getArgStatList(Function *);
+            vector<struct FuncElement> getArgStatList(Function *);
             // vector<int> * getArgStatList(Function *);
             vector<struct FuncElement>::iterator itr_begin(Function *);
             vector<struct FuncElement>::iterator itr_end(Function *);

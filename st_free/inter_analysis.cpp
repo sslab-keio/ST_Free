@@ -20,11 +20,10 @@ namespace ST_free{
     //     return NULL;
     // }
 
-    vector<struct FuncElement> * FuncIdentifier::getArgStatList(Function * F){
-        if(this->exists(F)){
-            return &(func_map[F]);
-        }
-        return NULL;
+    vector<struct FuncElement> FuncIdentifier::getArgStatList(Function * F){
+        if(this->exists(F))
+            return func_map[F];
+        return vector<struct FuncElement>();
     }
 
     int FuncIdentifier::getArgStat(Function *F, int arg_no){
