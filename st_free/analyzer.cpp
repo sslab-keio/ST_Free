@@ -34,15 +34,13 @@ namespace ST_free{
                             }
                         } else {
                             this->analyzeDifferentFunc((Function &)(*called_function));
-                            int i = 0;
                             for(struct FuncElement ele :identifier.getArgStatList(called_function)){
                                 if(ele.isArgAllocated()){
                                     this->checkAndMarkAlloc(CI);
                                 } else if(ele.isArgFreed()){
-                                    Value * val = CI->getOperand(i);
+                                    Value * val = CI->getOperand(ele.getArgNum());
                                     this->checkAndMarkFree(val, CI);
                                 }
-                                i++;
                             }
                         }
                     }

@@ -12,6 +12,8 @@ namespace ST_free{
             bool isArgAllocated();
             bool isArgFreed();
             int getStat();
+            int getArgNum();
+            void setArgNum(int Arg);
             void setStat(int);
     };
 
@@ -24,8 +26,8 @@ namespace ST_free{
             bool exists(Function *, int);
             vector<struct FuncElement> getArgStatList(Function *);
             // vector<int> * getArgStatList(Function *);
-            vector<struct FuncElement>::iterator itr_begin(Function *);
-            vector<struct FuncElement>::iterator itr_end(Function *);
+            // vector<struct FuncElement>::iterator itr_begin(Function *);
+            // vector<struct FuncElement>::iterator itr_end(Function *);
             int getArgStat(Function *, int);
             void initFuncStat(Function *);
             void setFuncArgStat(Function *, int, int);

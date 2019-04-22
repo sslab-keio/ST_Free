@@ -36,6 +36,9 @@ namespace ST_free{
     void FuncIdentifier::initFuncStat(Function *F){
         if(!this->exists(F)){
             func_map[F] = vector<struct FuncElement>(F->arg_size(), FuncElement());
+            for(int ArgNum = 0; ArgNum < func_map[F].size(); ArgNum++){
+                func_map[F][ArgNum].setArgNum(ArgNum);
+            }
         }
         return;
     }
@@ -53,17 +56,17 @@ namespace ST_free{
         return 0;
     }
 
-    vector<struct FuncElement>::iterator FuncIdentifier::itr_begin(Function *F){
-        // if(this->exists(F))
-            return func_map[F].begin();
-        // return NULL;
-    }
+    // vector<struct FuncElement>::iterator FuncIdentifier::itr_begin(Function *F){
+    //     // if(this->exists(F))
+    //         return func_map[F].begin();
+    //     // return NULL;
+    // }
 
-    vector<struct FuncElement>::iterator FuncIdentifier::itr_end(Function *F){
-        // if(this->exists(F))
-            return func_map[F].end();
-        // return NULL;
-    }
+    // vector<struct FuncElement>::iterator FuncIdentifier::itr_end(Function *F){
+    //     // if(this->exists(F))
+    //         return func_map[F].end();
+    //     // return NULL;
+    // }
 
     bool FuncIdentifier::isArgAllocated(Function *F, int argNum){
         int stat = getArgStat(F, argNum);
@@ -95,5 +98,13 @@ namespace ST_free{
 
     void FuncElement::setStat(int stat){
         this->stat = stat;
+    }
+
+    void FuncElement::setArgNum(int ArgNum){
+        this->argNum = ArgNum;
+    }
+
+    int FuncElement::getArgNum(){
+        return this->argNum;
     }
 }
