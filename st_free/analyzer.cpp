@@ -14,7 +14,7 @@ namespace ST_free{
 
         identifier.initFuncStat(&F);
         args.setArgs(F);
-        
+
         /*** BasicBlock Interator ***/
         for (BasicBlock &B: F) {
             /*** Instruction Iterator ***/
@@ -46,6 +46,8 @@ namespace ST_free{
                     }
                 }
             }
+            // if(B.getSingleSuccessor()){
+            // }
         }
         return;
     }
