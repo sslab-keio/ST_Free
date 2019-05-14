@@ -4,7 +4,7 @@ CXX     = clang++
 CFLAGS  = -g -O0 -Xclang -load -Xclang
 IRFLAGS = -S -emit-llvm
 ifndef $(FILE)
-FILE    = ../build13/st_free/libStructFreeMod.so
+FILE    = ../../build/st_free/libStructFreeMod.so
 endif
 LIBS    =
 LOG_DIR = log

@@ -17,6 +17,7 @@ namespace{
         /*** Main Modular ***/
         bool runOnModule(Module &M) override {
             for(Function &F: M){
+                // outs() << F.getName() << "\n";
                 Analyzer analyze(&F);
                 analyze.analyze();
             }
