@@ -15,14 +15,12 @@ namespace ST_free{
         return NULL;
     }
 
-    void ArgList::setArgs(Function &F){
+    void ArgList::setArgs(Function *F){
         int i = 0;
-        for(auto args = F.arg_begin(); args != F.arg_end(); args++, i++){
+        for(auto args = F->arg_begin(); args != F->arg_end(); args++, i++){
             Value * v = getArgAlloca(args);
-            if(v != NULL){
-                // outs() << *v << "\n";
+            if(v != NULL)
                 this->setArg(i, v);
-            }
         }
         return;
     }

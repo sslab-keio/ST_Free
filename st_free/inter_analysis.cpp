@@ -1,95 +1,33 @@
 #include "inter_analysis.hpp"
 
 namespace ST_free{
-    bool FuncIdentifier::exists(Function *F){
+    bool FunctionManager::exists(Function *F) {
         if(func_map.find(F) != func_map.end())
             return true;
         return false;
     }
 
-    bool FuncIdentifier::exists(Function *F, int arg_no){
-         if(func_map.find(F) != func_map.end() && arg_no < F->arg_size())
-            return true;
-        return false;
+    FuncElement* FunctionManager::getElement(Function *F){
+        if(!this->exists(F))
+            func_map[F] = new struct FuncElement(F);
+        return func_map[F];
     }
 
-    // vector<int> * FuncIdentifier::getArgStatList(Function * F){
-    //     if(this->exists(F)){
-    //         return &(func_map[F]);
-    //     }
-    //     return NULL;
-    // }
-
-    vector<struct FuncElement> FuncIdentifier::getArgStatList(Function * F){
-        if(this->exists(F))
-            return func_map[F];
-        return vector<struct FuncElement>();
-    }
-
-    int FuncIdentifier::getArgStat(Function *F, int arg_no){
-        if(this->exists(F, arg_no)){
-            return func_map[F][arg_no].getStat();
+    FuncElement::FuncElement(Function *Func){
+        if (Func != NULL){
+            F = Func;
+            args = ArgList(Func->arg_size());
+            args.setArgs(Func);
+            stat = UNANALYZED;
         }
-        return NO_ALLOC;
-    }
-
-    void FuncIdentifier::initFuncStat(Function *F){
-        if(!this->exists(F)){
-            func_map[F] = vector<struct FuncElement>(F->arg_size(), FuncElement());
-            for(int ArgNum = 0; ArgNum < func_map[F].size(); ArgNum++){
-                func_map[F][ArgNum].setArgNum(ArgNum);
-            }
-        }
-        return;
-    }
-
-    void FuncIdentifier::setFuncArgStat(Function *F, int arg_no, int status){
-        if(this->exists(F, arg_no)){
-            func_map[F][arg_no].setStat(status);
-        }
-        return;
-    }
-
-    size_t FuncIdentifier::getArgSize(Function *F){
-        if(this->exists(F))
-            return func_map[F].size();
-        return 0;
-    }
-
-    // vector<struct FuncElement>::iterator FuncIdentifier::itr_begin(Function *F){
-    //     // if(this->exists(F))
-    //         return func_map[F].begin();
-    //     // return NULL;
-    // }
-
-    // vector<struct FuncElement>::iterator FuncIdentifier::itr_end(Function *F){
-    //     // if(this->exists(F))
-    //         return func_map[F].end();
-    //     // return NULL;
-    // }
-
-    bool FuncIdentifier::isArgAllocated(Function *F, int argNum){
-        int stat = getArgStat(F, argNum);
-        return (stat == ALLOCATED) ? true : false;
-    }
-
-    bool FuncIdentifier::isArgFreed(Function *F, int argNum){
-        int stat = getArgStat(F, argNum);
-        return (stat == FREED) ? true : false;
     }
 
     FuncElement::FuncElement(){
-        stat = NO_ALLOC;
-        argNum = 0;
-        arg = NULL;
+        stat = UNANALYZED;
     }
 
-    bool FuncElement::isArgAllocated(){
-        return (this->stat == ALLOCATED) ? true : false;
-    }
-
-    bool FuncElement::isArgFreed(){
-        return (this->stat == FREED) ? true : false;
+    Function & FuncElement::getFunction(){
+        return (Function &)(* this->F);
     }
 
     int FuncElement::getStat(){
@@ -100,11 +38,35 @@ namespace ST_free{
         this->stat = stat;
     }
 
-    void FuncElement::setArgNum(int ArgNum){
-        this->argNum = ArgNum;
+    void FuncElement::addEndPoint(BasicBlock *B){
+        endPoint.push_back(B);
     }
 
-    int FuncElement::getArgNum(){
-        return this->argNum;
+    void FuncElement::addFreeValue(BasicBlock *B, Value *V) {
+        BBManage.add(B, V, FREED);
+    }
+
+    void FuncElement::addAllocValue(BasicBlock *B, Value *V) {
+        BBManage.add(B, V, ALLOCATED);
+    }
+
+    bool FuncElement::isUnanalyzed(){
+        return getStat() == UNANALYZED ? true : false;
+    }
+    bool FuncElement::isInProgress(){
+        return getStat() == IN_PROGRESS ? true : false;
+    }
+    bool FuncElement::isAnalyzed(){
+        return getStat() == ANALYZED ? true : false;
+    }
+    void FuncElement::setAnalyzed(){
+        setStat(ANALYZED);
+    }
+
+    void FuncElement::setInProgress(){
+        setStat(IN_PROGRESS);
+    }
+    void FuncElement::BBCollectInfo(BasicBlock *B, bool isEntryPoint){
+        BBManage.CollectInInfo(B, isEntryPoint);
     }
 }

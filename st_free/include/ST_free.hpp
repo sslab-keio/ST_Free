@@ -13,6 +13,7 @@
 #include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/CFG.h"
 
 // include STL
 #include <iostream>
@@ -25,6 +26,12 @@
 #define NO_ALLOC 0
 #define ALLOCATED 1
 #define FREED 2
+
+#define UNANALYZED 1
+#define IN_PROGRESS 2
+#define ANALYZED 3
+// #define ALLOC 1
+// #define FREE 2
 
 using namespace llvm;
 using namespace std;

@@ -3,7 +3,7 @@
 
 using namespace ST_free;
 
-const vector<string> alloc_funcs = {"malloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
+const vector<string> alloc_funcs = {"malloc", "calloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
 const vector<string> free_funcs = {"free", "kfree"};
 
 namespace ST_free {
@@ -69,9 +69,11 @@ namespace ST_free {
 
     bool isStructEleFree(Instruction * val){
         LoadInst * l_inst = find_load(val);
-        for(Use &U : l_inst->operands()){
-            if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
-                return true;
+        if(l_inst != NULL && l_inst->getOperandList() != NULL){
+            for(Use &U : l_inst->operands()){
+                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
+                    return true;
+                }
             }
         }
         return false;
@@ -79,9 +81,11 @@ namespace ST_free {
 
     GetElementPtrInst* getFreeStructEleInfo(Instruction * val){
         LoadInst * l_inst = find_load(val);
-        for(Use &U : l_inst->operands()){
-            if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
-                return inst;
+        if(l_inst != NULL && l_inst->getOperandList() != NULL){
+            for(Use &U : l_inst->operands()){
+                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
+                    return inst;
+                }
             }
         }
         return NULL;

@@ -2,28 +2,30 @@
 #include "inter_analysis.hpp"
 #include "statList.hpp"
 #include "argList.hpp"
-#include "determinator.hpp"
-#pragma once
+#include "BBWorklist.hpp"
 
-namespace ST_free{
+namespace ST_free {
     class Analyzer {
         private:
-            static FuncIdentifier identifier;
+            static FunctionManager identifier;
             static StatusList stat;
-            ArgList args;
             Function * Funcs;
+            FuncElement * FEle;
         public:
             Analyzer(){
-                args = ArgList();
+                FEle = NULL;
             }
-            explicit Analyzer(Function *func){
+
+            explicit Analyzer(Function *func) {
+                FEle = identifier.getElement(func);
                 Funcs = func;
-                args = ArgList(func->arg_size());
             }
             void analyze();
+            void analyze(Function * F);
             void analyzeDifferentFunc(Function &);
             void checkStructElements(Instruction *);
             void checkAndMarkFree(Value * V, CallInst *CI);
             void checkAndMarkAlloc(CallInst *CI);
+            bool isReturnFunc(Instruction *I);
     };
 }

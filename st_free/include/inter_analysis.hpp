@@ -1,38 +1,39 @@
-#include "ST_free.hpp"
 #pragma once
+#include "ST_free.hpp"
+#include "BBWorklist.hpp"
+#include "argList.hpp"
 
 namespace ST_free{
     struct FuncElement {
         private:
-            int argNum;
+            Function *F;
             int stat;
-            Value *arg;
+            // Value *arg;
+            ArgList args;
+            vector<BasicBlock *> endPoint;
+            BasicBlockManager BBManage;
+            int getStat();
+            void setStat(int);
         public:
             FuncElement();
-            bool isArgAllocated();
-            bool isArgFreed();
-            int getStat();
-            int getArgNum();
-            void setArgNum(int Arg);
-            void setStat(int);
+            FuncElement(Function *F);
+            void addEndPoint(BasicBlock *B);
+            void addFreeValue(BasicBlock *B, Value *V);
+            void addAllocValue(BasicBlock *B, Value *V);
+            bool isUnanalyzed();
+            bool isAnalyzed();
+            bool isInProgress();
+            void setAnalyzed();
+            void setInProgress();
+            Function & getFunction();
+            void BBCollectInfo(BasicBlock *B, bool isEntryPoint);
     };
 
-    class FuncIdentifier{
+    class FunctionManager {
         private:
-            map<Function *, vector<struct FuncElement>> func_map;
-            // map<Function *, vector<int>> func_map;
+            map<Function *, struct FuncElement *> func_map;
         public:
             bool exists(Function *);
-            bool exists(Function *, int);
-            vector<struct FuncElement> getArgStatList(Function *);
-            // vector<int> * getArgStatList(Function *);
-            // vector<struct FuncElement>::iterator itr_begin(Function *);
-            // vector<struct FuncElement>::iterator itr_end(Function *);
-            int getArgStat(Function *, int);
-            void initFuncStat(Function *);
-            void setFuncArgStat(Function *, int, int);
-            size_t getArgSize(Function *F);
-            bool isArgAllocated(Function *, int);
-            bool isArgFreed(Function *, int);
+            struct FuncElement * getElement(Function *F);
     };
 }

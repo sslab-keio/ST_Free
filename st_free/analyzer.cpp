@@ -2,54 +2,81 @@
 #include "determinator.hpp"
 #include "support_funcs.hpp"
 
+#define isEntryPoint(F, B) &(F.getEntryBlock()) == &B ? true:false
+
 namespace ST_free{
-    FuncIdentifier Analyzer::identifier;
+    FunctionManager Analyzer::identifier;
     StatusList Analyzer::stat;
 
     void Analyzer::analyze(){
-        Function & F = (Function &)(*Funcs);
+        Function & F = FEle->getFunction();
 
-        if(identifier.exists(&F))
+        if(!FEle->isUnanalyzed())
             return;
 
-        identifier.initFuncStat(&F);
-        args.setArgs(F);
+        FEle->setInProgress();
 
         /*** BasicBlock Interator ***/
-        for (BasicBlock &B: F) {
-            // TODO: Check each prreceeder and add..
-            /*** Instruction Iterator ***/
-            for (Instruction &I : B) {
-                /*** is Call Instruction ***/
+        for (BasicBlock &B: F){
+            FEle->BBCollectInfo(&B, isEntryPoint(F, B));
+            for (Instruction &I: B){
                 if (auto* CI = dyn_cast<CallInst>(&I)) {
                     /*** get Called Function ***/
                     if (Function* called_function = CI->getCalledFunction()) {
                         /*** is Allocation Function ***/
                         if (isAllocFunction(called_function)) {
-                            generateWarning(CI, "Found Malloc");
-                            /*** is Struct Element Allocation ***/
+                            // generateWarning(CI, "Found Malloc");
+                            // if(isStructEleAlloc(CI)){
+                            //     generateWarning(CI, "Found Struct Element Malloc");
+                            // }
                             this->checkAndMarkAlloc(CI);
+                            /*** is Struct Element Allocation ***/
                         } else if (isFreeFunction(called_function)) {
+                            // generateWarning(CI, "Found Free");
+                            // if (isStructEleFree(CI)){
+                            //     generateWarning(CI, "Found Struct Free");
+                            // }
                             for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++) {
                                 this->checkAndMarkFree(cast<Value>(arguments), CI);
-                            }
-                        } else {
-                            this->analyzeDifferentFunc((Function &)(*called_function));
-                            for(struct FuncElement ele :identifier.getArgStatList(called_function)){
-                                if(ele.isArgAllocated()) {
-                                    this->checkAndMarkAlloc(CI);
-                                } else if(ele.isArgFreed()) {
-                                    Value * val = CI->getOperand(ele.getArgNum());
-                                    this->checkAndMarkFree(val, CI);
-                                }
                             }
                         }
                     }
                 }
             }
-            // if(B.getSingleSuccessor()){
-            // }
         }
+        // for (BasicBlock &B: F) {
+        //     // TODO: Check each prreceeder and add..
+        //     /*** Instruction Iterator ***/
+        //     for (Instruction &I : B) {
+        //         /*** is Call Instruction ***/
+        //         if (auto* CI = dyn_cast<CallInst>(&I)) {
+        //             /*** get Called Function ***/
+        //             if (Function* called_function = CI->getCalledFunction()) {
+        //                 /*** is Allocation Function ***/
+        //                 if (isAllocFunction(called_function)) {
+        //                     generateWarning(CI, "Found Malloc");
+        //                     /*** is Struct Element Allocation ***/
+        //                     this->checkAndMarkAlloc(CI);
+        //                 } else if (isFreeFunction(called_function)) {
+        //                     for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++) {
+        //                         this->checkAndMarkFree(cast<Value>(arguments), CI);
+        //                     }
+        //                 } else {
+        //                     this->analyzeDifferentFunc((Function &)(*called_function));
+        //                     for(struct FuncElement ele :identifier.getArgStatList(called_function)){
+        //                         if(ele.isArgAllocated()) {
+        //                             this->checkAndMarkAlloc(CI);
+        //                         } else if(ele.isArgFreed()) {
+        //                             Value * val = CI->getOperand(ele.getArgNum());
+        //                             this->checkAndMarkFree(val, CI);
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+        FEle->setAnalyzed();
         return;
     }
 
@@ -85,32 +112,32 @@ namespace ST_free{
             if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
                 if(isStructEleFree(val)) {
                     GetElementPtrInst * inst = getFreeStructEleInfo(CI);
-                    stat.setStat(
-                        inst->getSourceElementType(),
-                        getLoadeeValue(inst->getPointerOperand()),
-                        cast<ConstantInt>(inst->getOperand(2))->getZExtValue(),
-                        FREED
-                    );
-                    if(args.isInList(getLoadeeValue(inst->getPointerOperand()))) {
-                        identifier.setFuncArgStat(
-                            Funcs,
-                            args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
-                            FREED
-                        );
-                    }
+                    // stat.setStat(
+                    //     inst->getSourceElementType(),
+                    //     getLoadeeValue(inst->getPointerOperand()),
+                    //     cast<ConstantInt>(inst->getOperand(2))->getZExtValue(),
+                    //     FREED
+                    // );
+                    // if(args.isInList(getLoadeeValue(inst->getPointerOperand()))) {
+                    //     identifier.setFuncArgStat(
+                    //         Funcs,
+                    //         args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
+                    //         FREED
+                    //     );
+                    // }
                     generateWarning(val, "Struct element free");
-                } else if (isStructFree(val)) {
-                    Value * loaded_value = getStructFreedValue(val);
-                    if(loaded_value != NULL){
-                        if(args.isInList(loaded_value)){
-                            identifier.setFuncArgStat(
-                                Funcs,
-                                args.getOperandNum(loaded_value),
-                                FREED
-                            );
-                        }
-                    }
-                    this->checkStructElements(val);
+                // } else if (isStructFree(val)) {
+                //     Value * loaded_value = getStructFreedValue(val);
+                //     if(loaded_value != NULL){
+                //         if(args.isInList(loaded_value)){
+                //             identifier.setFuncArgStat(
+                //                 Funcs,
+                //                 args.getOperandNum(loaded_value),
+                //                 FREED
+                //             );
+                //         }
+                //     }
+                //     this->checkStructElements(val);
                 }
             }
         }
@@ -118,24 +145,28 @@ namespace ST_free{
 
     void Analyzer::checkAndMarkAlloc(CallInst *CI){
         if(isStructEleAlloc(CI)){
-            /*** add status ***/
-            GetElementPtrInst *inst = getAllocStructEleInfo(CI);
-            stat.setStat(
-                inst->getSourceElementType(),
-                getLoadeeValue(inst->getPointerOperand()),
-                cast<ConstantInt>(inst->getOperand(2))->getZExtValue(),
-                ALLOCATED
-            );
+            // /*** add status ***/
+            // GetElementPtrInst *inst = getAllocStructEleInfo(CI);
+            // stat.setStat(
+            //     inst->getSourceElementType(),
+            //     getLoadeeValue(inst->getPointerOperand()),
+            //     cast<ConstantInt>(inst->getOperand(2))->getZExtValue(),
+            //     ALLOCATED
+            // );
 
-            /*** Is arg value ***/
-            if(args.isInList(getLoadeeValue(inst->getPointerOperand()))){
-                identifier.setFuncArgStat(
-                    Funcs,
-                    args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
-                    ALLOCATED
-                );
-            }
+            // /*** Is arg value ***/
+            // if(args.isInList(getLoadeeValue(inst->getPointerOperand()))){
+            //     identifier.setFuncArgStat(
+            //         Funcs,
+            //         args.getOperandNum(getLoadeeValue(inst->getPointerOperand())),
+            //         ALLOCATED
+            //     );
+            // }
             generateWarning(CI, "Struct element malloc");
         }
+    }
+
+    bool Analyzer::isReturnFunc(Instruction *I){
+        return false;
     }
 }
