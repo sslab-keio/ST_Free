@@ -9,23 +9,18 @@ namespace ST_free {
         private:
             static FunctionManager identifier;
             static StatusList stat;
-            Function * Funcs;
             FuncElement * FEle;
+            void checkStructElements(Instruction *);
+            void addFree(Value * V, CallInst *CI, BasicBlock *B);
+            void addAlloc(CallInst *CI, BasicBlock *B);
+            bool isReturnFunc(Instruction *I);
         public:
             Analyzer(){
-                FEle = NULL;
             }
-
             explicit Analyzer(Function *func) {
                 FEle = identifier.getElement(func);
-                Funcs = func;
             }
             void analyze();
-            void analyze(Function * F);
             void analyzeDifferentFunc(Function &);
-            void checkStructElements(Instruction *);
-            void checkAndMarkFree(Value * V, CallInst *CI);
-            void checkAndMarkAlloc(CallInst *CI);
-            bool isReturnFunc(Instruction *I);
     };
 }
