@@ -2,7 +2,8 @@
 #include "statList.hpp"
 #include "determinator.hpp"
 #include "support_funcs.hpp"
-#include "inter_analysis.hpp"
+#include "functionManager.hpp"
+// #include "inter_analysis.hpp"
 #include "analyzer.hpp"
 
 using namespace ST_free;

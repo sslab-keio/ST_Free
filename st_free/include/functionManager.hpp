@@ -4,37 +4,38 @@
 #include "argList.hpp"
 
 namespace ST_free{
-    struct FuncElement {
-    // struct FuncController {
+    struct FunctionInformation {
         private:
             Function *F;
             int stat;
-            // Value *arg;
             ArgList args;
             vector<BasicBlock *> endPoint;
+            vector<Value *> freedStruct;
             BasicBlockManager BBManage;
             int getStat();
             void setStat(int);
         public:
-            FuncElement();
-            FuncElement(Function *F);
+            FunctionInformation();
+            FunctionInformation(Function *F);
             void addEndPoint(BasicBlock *B);
             void addFreeValue(BasicBlock *B, Value *V);
             void addAllocValue(BasicBlock *B, Value *V);
+            void addFreedStruct(Value *V);
+            vector<Value *> getFreedStruct(Value *V) const;
             bool isUnanalyzed();
             bool isAnalyzed();
             bool isInProgress();
             void setAnalyzed();
             void setInProgress();
             Function & getFunction();
-            void BBCollectInfo(BasicBlock *B, bool isEntryPoint);
+            void BBCollectInfo(BasicBlock& B, bool isEntryPoint);
     };
 
     class FunctionManager {
         private:
-            map<Function *, struct FuncElement *> func_map;
+            map<Function *, FunctionInformation *> func_map;
         public:
             bool exists(Function *);
-            struct FuncElement * getElement(Function *F);
+            FunctionInformation * getElement(Function *F);
     };
 }

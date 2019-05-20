@@ -1,5 +1,6 @@
 #include "ST_free.hpp"
-#include "inter_analysis.hpp"
+#include "functionManager.hpp"
+// #include "inter_analysis.hpp"
 #include "statList.hpp"
 #include "argList.hpp"
 #include "BBWorklist.hpp"
@@ -9,7 +10,9 @@ namespace ST_free {
         private:
             static FunctionManager identifier;
             static StatusList stat;
-            FuncElement * FEle;
+            FunctionInformation * FEle;
+            void checkAvailability();
+            void analyzeInstructions(BasicBlock &B);
             void checkStructElements(Instruction *);
             void addFree(Value * V, CallInst *CI, BasicBlock *B);
             void addAlloc(CallInst *CI, BasicBlock *B);
