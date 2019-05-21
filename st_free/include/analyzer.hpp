@@ -17,6 +17,7 @@ namespace ST_free {
             void addFree(Value * V, CallInst *CI, BasicBlock *B);
             void addAlloc(CallInst *CI, BasicBlock *B);
             bool isReturnFunc(Instruction *I);
+            void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
         public:
             Analyzer(){
             }

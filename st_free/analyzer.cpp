@@ -47,6 +47,7 @@ namespace ST_free{
                     } else {
                         // generateWarning(CI, "Analyzing Diffent Function");
                         this->analyzeDifferentFunc((Function &)(*called_function));
+                        this->copyArgStatus((Function &)(*called_function), CI, B);
                     }
                 }
             }
@@ -57,11 +58,10 @@ namespace ST_free{
         for(FreedStruct freedStruct: FEle->getFreedStruct()) {
             StructType * strTy = cast<StructType>(freedStruct.first);
             unsigned cPointers = strTy->getNumElements();
-            // vector<int> strList(strTy->getNumElements());
+            // vector<int> strList(strTy->getNumElements(), POINTER);
             // outs() << "Type: " <<  *strTy << "\n";
-
             for (Type * t: strTy->elements()) {
-                if(!t->isPointerTy())
+                if (!t->isPointerTy())
                     cPointers--;
             }
 
@@ -71,6 +71,7 @@ namespace ST_free{
                         cPointers--;
                 }
             }
+
             if (cPointers > 0)
                 outs() << "LOOKS LIKE Struct element is NOT Freed\n";
         }
@@ -109,6 +110,9 @@ namespace ST_free{
                 if(isStructEleFree(val)) {
                     GetElementPtrInst * inst = getFreeStructEleInfo(CI);
                     if (inst != NULL) {
+                        if (FEle->isArgValue(getLoadeeValue(inst->getPointerOperand())))
+                            FEle->setArgFree(getLoadeeValue(inst->getPointerOperand()));
+
                         FEle->addFreeValue(
                                 B, 
                                 getLoadeeValue(inst->getPointerOperand()), 
@@ -120,6 +124,8 @@ namespace ST_free{
                 } else if (isStructFree(val)) {
                     Value * loaded_value = getStructFreedValue(val);
                     if(loaded_value != NULL) {
+                        if (FEle->isArgValue(loaded_value))
+                            FEle->setArgFree(loaded_value);
                         FEle->addFreedStruct(getStructType(val), loaded_value);
                         FEle->addFreeValue(
                                 B, 
@@ -140,6 +146,8 @@ namespace ST_free{
             GetElementPtrInst *inst = getAllocStructEleInfo(CI);
 
             if(inst != NULL) {
+                if (FEle->isArgValue(getLoadeeValue(inst->getPointerOperand())))
+                    FEle->setArgAlloc(getLoadeeValue(inst->getPointerOperand()));
                 FEle->addAllocValue(
                         B,
                         getLoadeeValue(inst->getPointerOperand()),
@@ -157,5 +165,19 @@ namespace ST_free{
         if(isa<ReturnInst>(I))
             return true;
         return false;
+    }
+
+    void Analyzer::copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B){
+        int ind = 0;
+        FunctionInformation * DF = identifier.getElement(&Func);
+
+        for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++, ind++) {
+            if(DF->isArgFreed(ind))
+                this->addFree(cast<Value>(arguments), CI, &B);
+
+            if(DF->isArgAllocated(ind))
+                this->addAlloc(CI, &B);
+        }
+        return;
     }
 }

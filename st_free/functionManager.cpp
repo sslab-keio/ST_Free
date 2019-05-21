@@ -100,4 +100,21 @@ namespace ST_free{
     BasicBlockList FunctionInformation::getAllocList(BasicBlock *B) {
         return BBManage.getBasicBlockAllocList(B);
     }
+
+    bool FunctionInformation::isArgValue(Value *v){
+        return args.isInList(v);
+    }
+    void FunctionInformation::setArgFree(Value *V){
+        args.setFreed(V);
+    }
+
+    void FunctionInformation::setArgAlloc(Value *V){
+        args.setAllocated(V);
+    }
+    bool FunctionInformation::isArgFreed(int64_t num){
+        args.isArgFreed(num);
+    }
+    bool FunctionInformation::isArgAllocated(int64_t num){
+        args.isArgAllocated(num);
+    }
 }

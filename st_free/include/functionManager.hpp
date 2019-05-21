@@ -36,6 +36,11 @@ namespace ST_free{
             void BBCollectInfo(BasicBlock& B, bool isEntryPoint);
             BasicBlockList getFreeList(BasicBlock *B);
             BasicBlockList getAllocList(BasicBlock *B);
+            bool isArgValue(Value *V);
+            void setArgFree(Value *V);
+            void setArgAlloc(Value *V);
+            bool isArgFreed(int64_t num);
+            bool isArgAllocated(int64_t num);
     };
 
     class FunctionManager {
