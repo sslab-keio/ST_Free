@@ -3,6 +3,10 @@
 #include "support_funcs.hpp"
 
 #define isEntryPoint(F, B) &(F.getEntryBlock()) == &B ? true:false
+// #define NOT_POINTER 1
+// #define POINTER 2
+// #define FREED 3
+
 
 namespace ST_free{
     FunctionManager Analyzer::identifier;
@@ -34,10 +38,8 @@ namespace ST_free{
             if (auto* CI = dyn_cast<CallInst>(&I)) {
                 /*** get Called Function ***/
                 if (Function* called_function = CI->getCalledFunction()) {
-                    /*** is Allocation Function ***/
                     if (isAllocFunction(called_function)) {
                         this->addAlloc(CI, &B);
-                        /*** is Struct Element Allocation ***/
                     } else if (isFreeFunction(called_function)) {
                         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++) {
                             this->addFree(cast<Value>(arguments), CI, &B);
@@ -52,7 +54,26 @@ namespace ST_free{
     }
 
     void Analyzer::checkAvailability() {
+        for(FreedStruct freedStruct: FEle->getFreedStruct()) {
+            StructType * strTy = cast<StructType>(freedStruct.first);
+            unsigned cPointers = strTy->getNumElements();
+            // vector<int> strList(strTy->getNumElements());
+            // outs() << "Type: " <<  *strTy << "\n";
 
+            for (Type * t: strTy->elements()) {
+                if(!t->isPointerTy())
+                    cPointers--;
+            }
+
+            for (BasicBlock *B: FEle->getEndPoint()) {
+                for(ValueInformation vinfo: FEle->getFreeList(B)) {
+                    if (vinfo.getStructType() == strTy)
+                        cPointers--;
+                }
+            }
+            if (cPointers > 0)
+                outs() << "LOOKS LIKE Struct element is NOT Freed\n";
+        }
         return;
     }
 
@@ -88,13 +109,24 @@ namespace ST_free{
                 if(isStructEleFree(val)) {
                     GetElementPtrInst * inst = getFreeStructEleInfo(CI);
                     if (inst != NULL) {
-                        FEle->addFreeValue(B, getLoadeeValue(inst->getPointerOperand()));
+                        FEle->addFreeValue(
+                                B, 
+                                getLoadeeValue(inst->getPointerOperand()), 
+                                inst->getResultElementType(), 
+                                inst->getSourceElementType(),
+                                getValueIndices(inst));
                         generateWarning(val, "Struct element free");
                     }
                 } else if (isStructFree(val)) {
                     Value * loaded_value = getStructFreedValue(val);
-                    if(loaded_value != NULL){
-                        FEle->addFreeValue(B, loaded_value);
+                    if(loaded_value != NULL) {
+                        FEle->addFreedStruct(getStructType(val), loaded_value);
+                        FEle->addFreeValue(
+                                B, 
+                                loaded_value,
+                                getStructType(val),
+                                NULL,
+                                -1);
                         generateWarning(val, "Struct Free");
                     }
                 //     this->checkStructElements(val);
@@ -107,8 +139,13 @@ namespace ST_free{
         if(isStructEleAlloc(CI)){
             GetElementPtrInst *inst = getAllocStructEleInfo(CI);
 
-            if(inst != NULL){
-                FEle->addAllocValue(B, getLoadeeValue(inst->getPointerOperand()));
+            if(inst != NULL) {
+                FEle->addAllocValue(
+                        B,
+                        getLoadeeValue(inst->getPointerOperand()),
+                        inst->getResultElementType(),
+                        inst->getSourceElementType(),
+                        getValueIndices(inst));
                 generateWarning(CI, "Struct element malloc");
             }
         }
@@ -116,6 +153,7 @@ namespace ST_free{
     }
 
     bool Analyzer::isReturnFunc(Instruction *I){
+        //TODO: add terminating funcs 
         if(isa<ReturnInst>(I))
             return true;
         return false;

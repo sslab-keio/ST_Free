@@ -59,4 +59,15 @@ namespace ST_free {
         }
         return NULL;
     }
+
+    long getValueIndices(GetElementPtrInst * inst){
+        long indice = 0;
+        for(auto idx_itr = inst->idx_begin(); idx_itr != inst->idx_end(); idx_itr++){
+            if (idx_itr == inst->idx_begin())
+                continue;
+            if(ConstantInt * cint = dyn_cast<ConstantInt>(idx_itr->get())) 
+                indice = cint->getSExtValue();
+        }
+        return indice;
+    }
 }

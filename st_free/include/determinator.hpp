@@ -13,4 +13,5 @@ namespace ST_free{
     bool isHeapValue(Value *);
     GetElementPtrInst * getAllocStructEleInfo(Instruction *);
     GetElementPtrInst* getFreeStructEleInfo(Instruction *);
+    Type * getStructType(Instruction * val);
 }

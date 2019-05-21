@@ -7,4 +7,5 @@ namespace ST_free{
     Type * get_type(Value *);
     void generateWarning(Instruction *, std::string);
     Value * getArgAlloca(Value *arg);
+    long getValueIndices(GetElementPtrInst * inst);
 }

@@ -1,6 +1,27 @@
 #include "include/BBWorklist.hpp"
 
 namespace ST_free {
+    Value * ValueInformation::getValue() const{
+        return V;
+    }
+    Type * ValueInformation::getStructType() const{
+        return structType;
+    }
+
+    Type * ValueInformation::getMemberType() const{
+        return memberType;
+    }
+
+    long ValueInformation::getMemberNum() const{
+        return memberNum;
+    }
+
+    bool ValueInformation::isStructMember(){
+        if (memberType == NULL && structType == NULL)
+            return false;
+        return true;
+    }
+
     BasicBlockWorkList::BasicBlockWorkList(){
         MarkedValues = BasicBlockList();
     }
@@ -11,6 +32,10 @@ namespace ST_free {
 
     void BasicBlockWorkList::add(Value *v){
         MarkedValues.push_back(v);
+    }
+
+    void BasicBlockWorkList::add(Value * v, Type * memType, Type * structType, long memberNum){
+        MarkedValues.push_back(ValueInformation(v, memType, structType, memberNum));
     }
 
     bool BasicBlockWorkList::exists(Value * v){
@@ -45,6 +70,10 @@ namespace ST_free {
         freeList.add(v);
     }
 
+    void BasicBlockStat::addFree(Value * v, Type * memType, Type * structType, long memberNum){
+        freeList.add(v, memType, structType, memberNum);
+    }
+
     bool BasicBlockStat::FreeExists(Value *v){
         return freeList.exists(v);
     }
@@ -55,6 +84,10 @@ namespace ST_free {
 
     void BasicBlockStat::addAlloc(Value *v){
         allocList.add(v);
+    }
+
+    void BasicBlockStat::addAlloc(Value * v, Type * memType, Type * structType, long memberNum){
+        allocList.add(v, memType, structType, memberNum);
     }
 
     bool BasicBlockStat::AllocExists(Value *v){
@@ -91,6 +124,14 @@ namespace ST_free {
             BBMap[B].addFree(v);
         else if (mode == ALLOCATED)
             BBMap[B].addAlloc(v);
+        return;
+    }
+
+    void BasicBlockManager::add(BasicBlock *B, Value *v, Type * memTy, Type* stTy, long num, int mode){
+        if (mode == FREED)
+            BBMap[B].addFree(v, memTy, stTy, num);
+        else if (mode == ALLOCATED)
+            BBMap[B].addAlloc(v, memTy, stTy, num);
         return;
     }
 
@@ -133,6 +174,7 @@ namespace ST_free {
         }
         return BasicBlockList();
     }
+
     BasicBlockStat * BasicBlockManager::get(BasicBlock *B){
         if (this->exists(B))
             return &BBMap[B];

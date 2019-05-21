@@ -92,13 +92,17 @@ namespace ST_free {
     }
 
     bool isStructFree(Instruction * val){
-        LoadInst *load_inst = find_load(val);
-        if (load_inst != NULL && load_inst->getOperandList() != NULL) {
-            Type * tgt_type = get_type(load_inst->getPointerOperand());
-            if (tgt_type != NULL && tgt_type->isStructTy())
-                return true;
-        }
+        if(getStructFreedValue(val) != NULL)
+            return true;
         return false;
+    }
+
+    Type * getStructType(Instruction * val){
+        Type * tgt_type = NULL;
+        LoadInst *load_inst = find_load(val);
+        if (load_inst != NULL && load_inst->getOperandList() != NULL)
+            tgt_type = get_type(load_inst->getPointerOperand());
+        return tgt_type;
     }
 
     Value * getStructFreedValue(Instruction * val) {

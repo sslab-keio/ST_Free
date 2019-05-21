@@ -46,8 +46,16 @@ namespace ST_free{
         BBManage.add(B, V, FREED);
     }
 
+    void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
+        BBManage.add(B, V, memTy, stTy, num, FREED);
+    }
+
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V) {
         BBManage.add(B, V, ALLOCATED);
+    }
+
+    void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
+        BBManage.add(B, V, memTy, stTy, num, ALLOCATED);
     }
 
     bool FunctionInformation::isUnanalyzed(){
@@ -74,11 +82,22 @@ namespace ST_free{
         BBManage.CollectInInfo(&B, isEntryPoint);
     }
 
-    void FunctionInformation::addFreedStruct(Value *V){
-        freedStruct.push_back(V);
+    void FunctionInformation::addFreedStruct(Type *T, Value *V){
+        freedStruct.push_back(FreedStruct(T, V));
     }
 
-    vector<Value *> FunctionInformation::getFreedStruct(Value *V) const{
+    vector<BasicBlock *> FunctionInformation::getEndPoint() const{
+        return endPoint;
+    }
+
+    FreedStructList FunctionInformation::getFreedStruct() const{
         return freedStruct;
+    }
+    BasicBlockList FunctionInformation::getFreeList(BasicBlock *B) {
+        return BBManage.getBasicBlockFreeList(B);
+    }
+
+    BasicBlockList FunctionInformation::getAllocList(BasicBlock *B) {
+        return BBManage.getBasicBlockAllocList(B);
     }
 }
