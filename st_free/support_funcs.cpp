@@ -5,13 +5,21 @@ using namespace ST_free;
 namespace ST_free {
     /*** Iterate Use until Load Instruction ***/
     LoadInst * find_load(Instruction * val){
-        if(isa<LoadInst>(val)){
+        return find_load_recursively(val, 3);
+    }
+
+    static LoadInst * find_load_recursively(Instruction *val, int TTL) {
+        if(isa<LoadInst>(val))
             return cast<LoadInst>(val);
-        }
-        for(Use &U : val->operands()){
-            if(Instruction * inst = dyn_cast<Instruction>(U)){
-                if(isa<LoadInst>(inst)){
-                    return cast<LoadInst>(inst);
+
+        if(TTL >= 0){
+            for(Use &U : val->operands()){
+                if(Instruction * inst = dyn_cast<Instruction>(U)){
+                    if(isa<LoadInst>(inst))
+                        return cast<LoadInst>(inst);
+
+                    if(LoadInst * res = find_load_recursively(inst, --TTL))
+                        return res;
                 }
             }
         }
@@ -40,12 +48,23 @@ namespace ST_free {
         return val_type;
     }
 
+#define DEBUG_TYPE "warning"
     void generateWarning(Instruction * Inst, string warn){
         if(const DebugLoc &Loc = Inst->getDebugLoc()){
             unsigned line = Loc.getLine();
             unsigned col = Loc.getCol();
+            LLVM_DEBUG(outs() << "\033[1;34m[ST_free]\033[0m ");
+            LLVM_DEBUG(outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ");
+            LLVM_DEBUG(outs() << warn << "\n");
+        }
+    }
+#undef DEBUG_TYPE
+
+    void generateError(Instruction * Inst, string warn){
+        if(const DebugLoc &Loc = Inst->getDebugLoc()){
+            unsigned line = Loc.getLine();
+            unsigned col = Loc.getCol();
             outs() << "\033[1;31m[ST_free]\033[0m ";
-            // outs() << string(Loc->getDirectory()) << "/" << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
             outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
             outs() << warn << "\n";
         }

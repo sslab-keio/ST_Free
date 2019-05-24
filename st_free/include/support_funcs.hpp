@@ -6,6 +6,8 @@ namespace ST_free{
     Value * getLoadeeValue(Value *);
     Type * get_type(Value *);
     void generateWarning(Instruction *, std::string);
+    void generateError(Instruction *, std::string);
     Value * getArgAlloca(Value *arg);
     long getValueIndices(GetElementPtrInst * inst);
+    static LoadInst * find_load_recursively(Instruction *val, int TTL);
 }

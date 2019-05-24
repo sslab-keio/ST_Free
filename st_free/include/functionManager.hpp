@@ -4,7 +4,23 @@
 #include "argList.hpp"
 
 namespace ST_free{
-    using FreedStruct = pair<Type *, Value *>;
+    struct FreedStruct {
+        private:
+            Type *T;
+            Value *V;
+            Instruction *I;
+        public:
+            FreedStruct(){};
+            FreedStruct(Type *Ty, Value *val, Instruction *Inst){
+                T=Ty;
+                V=val;
+                I=Inst;
+            };
+            Type * getType() const {return T;};
+            Value * getValue() const {return V;};
+            Instruction * getInst() const {return I;};
+    };
+    // using FreedStruct = pair<Type *, Value *>;
     using FreedStructList = vector<FreedStruct>;
     struct FunctionInformation {
         private:
@@ -25,8 +41,8 @@ namespace ST_free{
             void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
             void addAllocValue(BasicBlock *B, Value *V);
             void addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
-            void addFreedStruct(Type *T, Value *V);
-            vector<pair<Type *, Value *>> getFreedStruct() const;
+            void addFreedStruct(Type *T, Value *V, Instruction *I);
+            FreedStructList getFreedStruct() const;
             bool isUnanalyzed();
             bool isAnalyzed();
             bool isInProgress();

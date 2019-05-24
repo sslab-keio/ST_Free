@@ -82,8 +82,8 @@ namespace ST_free{
         BBManage.CollectInInfo(&B, isEntryPoint);
     }
 
-    void FunctionInformation::addFreedStruct(Type *T, Value *V){
-        freedStruct.push_back(FreedStruct(T, V));
+    void FunctionInformation::addFreedStruct(Type *T, Value *V, Instruction *I){
+        freedStruct.push_back(FreedStruct(T, V, I));
     }
 
     vector<BasicBlock *> FunctionInformation::getEndPoint() const{
