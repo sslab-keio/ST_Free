@@ -101,7 +101,7 @@ namespace ST_free{
 
     void Analyzer::addFree(Value * V, CallInst *CI, BasicBlock *B) {
         if (Instruction * val = dyn_cast<Instruction>(V)) {
-            if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
+            // if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
                 if(isStructEleFree(val)) {
                     GetElementPtrInst * inst = getFreeStructEleInfo(val);
                     if (inst != NULL) {
@@ -141,7 +141,7 @@ namespace ST_free{
                         generateWarning(val, "Value Free");
                     }
                 }
-            }
+            // }
         }
     }
 
