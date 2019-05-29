@@ -77,4 +77,41 @@ namespace ST_free{
             return allocList[num];
         return false;
     }
+
+    void ArgList::setFreedStructNumber(int64_t arg, int64_t num){
+        freedStructList[arg] = vector<bool>(num, false);
+    }
+
+    void ArgList::setAllocatedStructNumber(int64_t arg, int64_t num){
+        allocatedStructList[arg] = vector<bool>(num, false);
+    }
+
+    void ArgList::setStructMemberFree(int64_t arg, int64_t num){
+        freedStructList[arg][num] = true;
+    }
+    void ArgList::setStructMemberAllocated(int64_t arg, int64_t num){
+        allocatedStructList[arg][num] = true;
+    }
+    void ArgList::setFreedStructNumber(Value * val, int64_t num){
+        int64_t arg = getOperandNum(val);
+        if(arg >= 0)
+            freedStructList[arg] = vector<bool>(num, false);
+    }
+
+    void ArgList::setAllocatedStructNumber(Value * val, int64_t num){
+        int64_t arg = getOperandNum(val);
+        if(arg >= 0)
+            allocatedStructList[arg] = vector<bool>(num, false);
+    }
+
+    void ArgList::setStructMemberFree(Value * val, int64_t num){
+        int64_t arg = getOperandNum(val);
+        if(arg >= 0)
+            freedStructList[arg][num] = true;
+    }
+    void ArgList::setStructMemberAllocated(Value * val, int64_t num){
+        int64_t arg = getOperandNum(val);
+        if(arg >= 0)
+            allocatedStructList[arg][num] = true;
+    }
 }

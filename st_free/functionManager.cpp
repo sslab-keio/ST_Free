@@ -111,6 +111,18 @@ namespace ST_free{
     void FunctionInformation::setArgAlloc(Value *V){
         args.setAllocated(V);
     }
+    void FunctionInformation::setStructArgFree(Value *V, int64_t num){
+        args.setFreedStructNumber(V, num);
+    }
+    void FunctionInformation::setStructArgAlloc(Value *V, int64_t num){
+        args.setAllocatedStructNumber(V, num);
+    }
+    void FunctionInformation::setStructMemberArgFreed(Value *V, int64_t num){
+        args.setStructMemberFree(V, num);
+    }
+    void FunctionInformation::setStructMemberArgAllocated(Value *V, int64_t num){
+        args.setStructMemberAllocated(V, num);
+    }
     bool FunctionInformation::isArgFreed(int64_t num){
         args.isArgFreed(num);
     }
@@ -124,5 +136,26 @@ namespace ST_free{
 
     LocalVarList FunctionInformation::getLocalVar() const{
         return localVariables;
+    }
+    void FunctionInformation::setStructMemberFreed(FreedStruct *fstruct, int64_t num){
+        auto fs = find(freedStruct.begin(), freedStruct.end(), *fstruct);
+        if(fs != freedStruct.end())
+            fs->setFreedMember(num);
+    }
+    vector<bool> FunctionInformation::getStructMemberFreed(Type * T){
+        auto fs = find(freedStruct.begin(), freedStruct.end(), T);
+        if(fs != freedStruct.end())
+            return fs->getFreedMember();
+        return vector<bool>();
+    }
+    void FunctionInformation::copyStructMemberFreed(Type * T,vector<bool> members){
+        auto fs = find(freedStruct.begin(), freedStruct.end(), T);
+        if(fs != freedStruct.end())
+            for(int ind = 0; ind != members.size(); ind++){
+                if(members[ind])
+                    fs->setFreedMember(ind);
+            }
+            //Copy vector member infos
+        
     }
 }

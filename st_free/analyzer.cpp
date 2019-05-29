@@ -14,20 +14,11 @@ namespace ST_free{
             return;
         FEle->setInProgress();
 
-        //ValueSymbolTable * vst = F.getValueSymbolTable();
-        //if(vst != NULL) {
-        //    if(!vst->empty()){
-        //        outs() << "Value Table Found: " << F.getName() << " " << vst->size() << "\n";
-        //        for(auto v = vst->begin(); v != vst->end(); v++){
-        //            outs() << "Value: " << v->getKey() << "\n";
-        //           //DO SOMETHING
-        //        }
-        //    }
-        //}
         for (BasicBlock &B: F){
             FEle->BBCollectInfo(B, isEntryPoint(F, B));
             this->analyzeInstructions(B);
         }
+
         this->checkAvailability();
         FEle->setAnalyzed();
         return;
@@ -39,7 +30,11 @@ namespace ST_free{
                 FEle->addEndPoint(&B);
             if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I))
                 if (get_type(ainst->getType())->isStructTy())
-                    FEle->addLocalVar(get_type(ainst->getType()), ainst, cast<Instruction>(getFirstUser(&I)));
+                    FEle->addLocalVar(
+                            get_type(ainst->getType()),
+                            ainst,
+                            cast<Instruction>(getFirstUser(&I))
+                        );
             
             if (auto* CI = dyn_cast<CallInst>(&I)) {
                 /*** get Called Function ***/
@@ -61,14 +56,14 @@ namespace ST_free{
     
     void Analyzer::checkAvailability() {
         FreedStructList fsl = FEle->getFreedStruct();
+
         for(FreedStruct localVar: FEle->getLocalVar()) {
-            if(!FEle->isArgValue(localVar.getValue())) {
+            if(!FEle->isArgValue(localVar.getValue()))
                 if(find(fsl.begin(), fsl.end(), localVar.getValue()) == fsl.end())
                     fsl.push_back(localVar);
-            }
         }
+
         for(FreedStruct freedStruct: fsl) {
-        // for(FreedStruct freedStruct: FEle->getFreedStruct()) {
             StructType * strTy = cast<StructType>(freedStruct.getType());
             int cPointers = strTy->getNumElements();
             // outs() <<"Before: " << cPointers << "\n";
@@ -81,11 +76,15 @@ namespace ST_free{
 
             for (BasicBlock *B: FEle->getEndPoint()) {
                 for(ValueInformation vinfo: FEle->getFreeList(B)) {
-                    if (vinfo.getStructType() == strTy)
+                    if (vinfo.getStructType() == strTy){
                         cPointers--;
+                        FEle->setStructMemberFreed(&freedStruct, vinfo.getMemberNum());
+                        if(FEle->isArgValue(vinfo.getValue()))
+                            FEle->setStructMemberArgFreed(vinfo.getValue(), vinfo.getMemberNum());
+                    }
                 }
             }
-            if (cPointers > 0){
+            if (cPointers > 0) {
                 generateError(freedStruct.getInst(), "Struct element is NOT Freed");
                 // outs() << "After: " << cPointers << "\n";
             }
@@ -119,8 +118,10 @@ namespace ST_free{
                 } else if (isStructFree(val)) {
                     Value * loaded_value = getStructFreedValue(val);
                     if(loaded_value != NULL) {
-                        if (FEle->isArgValue(loaded_value))
+                        if (FEle->isArgValue(loaded_value)){
                             FEle->setArgFree(loaded_value);
+                            FEle->setStructArgFree(loaded_value, get_type(loaded_value)->getStructNumElements());
+                        }
 
                         FEle->addFreedStruct(getStructType(val), loaded_value, val);
                         FEle->addFreeValue(
@@ -184,8 +185,13 @@ namespace ST_free{
         FunctionInformation * DF = identifier.getElement(&Func);
 
         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++, ind++) {
-            if(DF->isArgFreed(ind))
+            if(DF->isArgFreed(ind)) {
+                Type * T = get_type(cast<Value>(arguments));
                 this->addFree(cast<Value>(arguments), CI, &B);
+                if(isa<StructType>(T)) {
+                    FEle->copyStructMemberFreed(T, DF->getStructMemberFreed(T));
+                }
+            }
 
             if(DF->isArgAllocated(ind))
                 this->addAlloc(CI, &B);

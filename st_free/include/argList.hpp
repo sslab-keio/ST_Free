@@ -9,6 +9,8 @@ namespace ST_free{
             vector<Value *> arg_list;
             vector<bool> freeList;
             vector<bool> allocList;
+            vector<vector<bool>> freedStructList;
+            vector<vector<bool>> allocatedStructList;
         public:
             ArgList(){
                 arg_list = vector<Value *>();
@@ -18,6 +20,8 @@ namespace ST_free{
                 arg_list = vector<Value *>(arg_num, NULL);
                 freeList = vector<bool>(arg_num, false);
                 allocList = vector<bool>(arg_num, false);
+                freedStructList = vector<vector<bool>>(arg_num);
+                allocatedStructList = vector<vector<bool>>(arg_num);
             }
             void setArg(uint64_t arg_no, Value * V);
             Value * getArg(uint64_t arg_no);
@@ -30,5 +34,13 @@ namespace ST_free{
             void setAllocated(int64_t num);
             bool isArgFreed(int64_t num);
             bool isArgAllocated(int64_t num);
+            void setFreedStructNumber(int64_t arg, int64_t num);
+            void setAllocatedStructNumber(int64_t arg, int64_t num);
+            void setStructMemberFree(int64_t arg, int64_t num);
+            void setStructMemberAllocated(int64_t arg, int64_t num);
+            void setFreedStructNumber(Value * val, int64_t num);
+            void setAllocatedStructNumber(Value * val, int64_t num);
+            void setStructMemberFree(Value * val, int64_t num);
+            void setStructMemberAllocated(Value * val, int64_t num);
     };
 }
