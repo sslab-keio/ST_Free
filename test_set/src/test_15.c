@@ -26,15 +26,10 @@ int main()
     t->str = "test\0";
     printf("%d, %s",t->x, t->str);
 
-    freeElement((unsigned long) t->str);
-    freeStructs(t);
+    // freeElement((unsigned long) t->str);
     return 0;
 }
 
 void freeElement(unsigned long t){
     free((void *)t);
 }
-
-void freeStructs(void *t){
-    free(t);
-} 

@@ -11,6 +11,7 @@ namespace ST_free{
     bool isStructFree(Instruction *);
     Value * getStructFreedValue(Instruction * val);
     bool isHeapValue(Value *);
+    bool isFuncPointer(Type * t);
     GetElementPtrInst * getAllocStructEleInfo(Instruction *);
     GetElementPtrInst* getFreeStructEleInfo(Instruction *);
     Type * getStructType(Instruction * val);

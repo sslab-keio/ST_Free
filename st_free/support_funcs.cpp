@@ -37,7 +37,7 @@ namespace ST_free {
     Type * get_type(Value * val){
         Type * val_type;
 
-        if(val_type == NULL){
+        if(val == NULL){
             return NULL;
         }
 
@@ -48,6 +48,17 @@ namespace ST_free {
         return val_type;
     }
 
+    Type * get_type(Type * t){
+        Type * val_type;
+
+        if(t == NULL)
+            return NULL;
+        val_type = t;
+        while(val_type->isPointerTy()){
+            val_type = (cast<PointerType>(val_type))->getElementType();
+        }
+        return val_type;
+    }
 #define DEBUG_TYPE "warning"
     void generateWarning(Instruction * Inst, string warn){
         if(const DebugLoc &Loc = Inst->getDebugLoc()){
@@ -57,6 +68,10 @@ namespace ST_free {
             LLVM_DEBUG(outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ");
             LLVM_DEBUG(outs() << warn << "\n");
         }
+    }
+    void generateWarning(string warn){
+            LLVM_DEBUG(outs() << "\033[1;34m[ST_free]\033[0m: ");
+            LLVM_DEBUG(outs() << warn << "\n");
     }
 #undef DEBUG_TYPE
 
@@ -88,5 +103,9 @@ namespace ST_free {
                 indice = cint->getSExtValue();
         }
         return indice;
+    }
+    User * getFirstUser(Value * v){
+        for(User * usr : v->users())
+            return usr;
     }
 }

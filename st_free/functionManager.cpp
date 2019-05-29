@@ -117,4 +117,12 @@ namespace ST_free{
     bool FunctionInformation::isArgAllocated(int64_t num){
         args.isArgAllocated(num);
     }
+    
+    void FunctionInformation::addLocalVar(Type *T, Value * V, Instruction * I){
+        localVariables.push_back(FreedStruct(T, V, I));
+    }
+
+    LocalVarList FunctionInformation::getLocalVar() const{
+        return localVariables;
+    }
 }

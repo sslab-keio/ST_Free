@@ -123,6 +123,13 @@ namespace ST_free {
         return tgt_type;
     }
 
+    bool isFuncPointer(Type * t){
+        Type * tgt = get_type(t);
+        if(tgt->isFunctionTy())
+            return true;
+        return false;
+    }
+
     Value * getStructFreedValue(Instruction * val) {
         LoadInst *load_inst = find_load(val);
         if (load_inst != NULL) {

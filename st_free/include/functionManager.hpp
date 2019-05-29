@@ -16,18 +16,22 @@ namespace ST_free{
                 V=val;
                 I=Inst;
             };
+            bool operator ==(Value * v){
+                return V == v;
+            }
             Type * getType() const {return T;};
             Value * getValue() const {return V;};
             Instruction * getInst() const {return I;};
     };
-    // using FreedStruct = pair<Type *, Value *>;
     using FreedStructList = vector<FreedStruct>;
+    using LocalVarList = vector<FreedStruct>;
     struct FunctionInformation {
         private:
             Function *F;
             int stat;
             ArgList args;
             vector<BasicBlock *> endPoint;
+            LocalVarList localVariables;
             FreedStructList freedStruct;
             BasicBlockManager BBManage;
             int getStat();
@@ -57,6 +61,8 @@ namespace ST_free{
             void setArgAlloc(Value *V);
             bool isArgFreed(int64_t num);
             bool isArgAllocated(int64_t num);
+            void addLocalVar(Type *, Value *, Instruction *);
+            LocalVarList getLocalVar() const;
     };
 
     class FunctionManager {

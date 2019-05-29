@@ -9,10 +9,12 @@ struct test{
     int y;
     int z;
     char * str;
+    size_t (*store)(int x);
 };
 
 void freeElement(unsigned long t);
 void freeStructs(void *t);
+size_t funcPtr(int x);
 
 int main()
 {
@@ -20,6 +22,8 @@ int main()
 
     t = (struct test *)malloc(sizeof(struct test));
     t->x = 10;
+    t->store = funcPtr;
+    (*t->store)(t->x);
 
     t->str = (char *)malloc(sizeof(char) * 8);
 
@@ -37,4 +41,10 @@ void freeElement(unsigned long t){
 
 void freeStructs(void *t){
     free(t);
-} 
+}
+
+size_t funcPtr(int x){
+    if (x > 20)
+        return sizeof(int);
+    return sizeof(long long);
+}

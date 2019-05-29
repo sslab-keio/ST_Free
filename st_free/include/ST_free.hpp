@@ -15,7 +15,7 @@
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/CFG.h"
-
+#include "llvm/IR/ValueSymbolTable.h"
 
 // include STL
 #include <iostream>
