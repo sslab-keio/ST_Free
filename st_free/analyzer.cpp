@@ -66,13 +66,19 @@ namespace ST_free{
         for(FreedStruct freedStruct: fsl) {
             StructType * strTy = cast<StructType>(freedStruct.getType());
             int cPointers = strTy->getNumElements();
+            vector<bool> alreadyFreed = freedStruct.getFreedMember();
             // outs() <<"Before: " << cPointers << "\n";
+            int ind = 0;
             for (Type * t: strTy->elements()) {
-                if (!t->isPointerTy()) 
+                if (!t->isPointerTy())
                     cPointers--;
                 else if(isFuncPointer(t))
                     cPointers--;
+                else if(alreadyFreed[ind])
+                    cPointers--;
+                ind++;
             }
+
 
             for (BasicBlock *B: FEle->getEndPoint()) {
                 for(ValueInformation vinfo: FEle->getFreeList(B)) {
