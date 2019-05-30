@@ -85,6 +85,7 @@ namespace ST_free{
             bool isArgAllocated(int64_t num);
             void addLocalVar(Type *, Value *, Instruction *);
             LocalVarList getLocalVar() const;
+            bool localVarExists(Type *);
     };
 
     class FunctionManager {

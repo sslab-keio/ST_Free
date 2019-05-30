@@ -28,14 +28,16 @@ namespace ST_free{
         for (Instruction &I: B){
             if(this->isReturnFunc(&I))
                 FEle->addEndPoint(&B);
-            if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I))
-                if (get_type(ainst->getType())->isStructTy())
-                    FEle->addLocalVar(
-                            get_type(ainst->getType()),
-                            ainst,
-                            cast<Instruction>(getFirstUser(&I))
-                        );
-            
+            if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I)){
+                this->addLocalStruct(ainst->getType(), ainst, cast<Instruction>(getFirstUser(&I)));
+                // if (StructType * strty = dyn_cast<StructType>(get_type(ainst->getType()))){
+                //     FEle->addLocalVar(
+                //             get_type(ainst->getType()),
+                //             ainst,
+                //             cast<Instruction>(getFirstUser(&I))
+                //         );
+                // }
+            }
             if (auto* CI = dyn_cast<CallInst>(&I)) {
                 /*** get Called Function ***/
                 if (Function* called_function = CI->getCalledFunction()) {
@@ -58,8 +60,9 @@ namespace ST_free{
         FreedStructList fsl = FEle->getFreedStruct();
 
         for(FreedStruct localVar: FEle->getLocalVar()) {
+            // outs() << "Local Variable: " << * localVar.getType() << "\n";
             if(!FEle->isArgValue(localVar.getValue()))
-                if(find(fsl.begin(), fsl.end(), localVar.getValue()) == fsl.end())
+                if(find(fsl.begin(), fsl.end(), localVar.getType()) == fsl.end())
                     fsl.push_back(localVar);
         }
 
@@ -67,32 +70,50 @@ namespace ST_free{
             StructType * strTy = cast<StructType>(freedStruct.getType());
             int cPointers = strTy->getNumElements();
             vector<bool> alreadyFreed = freedStruct.getFreedMember();
-            // outs() <<"Before: " << cPointers << "\n";
             int ind = 0;
+            // outs() << * strTy << "\n";
             for (Type * t: strTy->elements()) {
-                if (!t->isPointerTy())
+                if (!t->isPointerTy() 
+                        || isFuncPointer(t)
+                        || alreadyFreed[ind])
                     cPointers--;
-                else if(isFuncPointer(t))
-                    cPointers--;
-                else if(alreadyFreed[ind])
-                    cPointers--;
+                // if(t->isStructTy())
+                //     outs() << "Found Struct in struct\n";
                 ind++;
             }
-
 
             for (BasicBlock *B: FEle->getEndPoint()) {
                 for(ValueInformation vinfo: FEle->getFreeList(B)) {
                     if (vinfo.getStructType() == strTy){
                         cPointers--;
                         FEle->setStructMemberFreed(&freedStruct, vinfo.getMemberNum());
-                        if(FEle->isArgValue(vinfo.getValue()))
-                            FEle->setStructMemberArgFreed(vinfo.getValue(), vinfo.getMemberNum());
+                        // if(FEle->isArgValue(vinfo.getValue()))
+                        //     FEle->setStructMemberArgFreed(vinfo.getValue(), vinfo.getMemberNum());
                     }
                 }
             }
             if (cPointers > 0) {
                 generateError(freedStruct.getInst(), "Struct element is NOT Freed");
                 // outs() << "After: " << cPointers << "\n";
+            }
+        }
+        return;
+    }
+
+    void Analyzer::addLocalStruct(Type * T, Value * V, Instruction * I){
+        if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
+            // outs() << "Struct Type Member: " << *strTy << "\n";
+            FEle->addLocalVar(strTy, V, I);
+
+            for (Type * ele: strTy->elements()) {
+                if(ele->isStructTy())
+                    this->addLocalStruct(ele, V, I);
+                else if(ele->isPointerTy()){
+                    Type * extractEle = get_type(ele);
+                    if(extractEle != NULL && !FEle->localVarExists(extractEle)){
+                        this->addLocalStruct(extractEle, V, I);
+                    }
+                }
             }
         }
         return;
@@ -194,7 +215,7 @@ namespace ST_free{
             if(DF->isArgFreed(ind)) {
                 Type * T = get_type(cast<Value>(arguments));
                 this->addFree(cast<Value>(arguments), CI, &B);
-                if(isa<StructType>(T)) {
+                if (isa<StructType>(T)) {
                     FEle->copyStructMemberFreed(T, DF->getStructMemberFreed(T));
                 }
             }

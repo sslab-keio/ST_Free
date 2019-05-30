@@ -137,6 +137,12 @@ namespace ST_free{
     LocalVarList FunctionInformation::getLocalVar() const{
         return localVariables;
     }
+
+    bool FunctionInformation::localVarExists(Type * T){
+        if(find(localVariables.begin(), localVariables.end(), T) == localVariables.end())
+            return false;
+        return true;
+    }
     void FunctionInformation::setStructMemberFreed(FreedStruct *fstruct, int64_t num){
         auto fs = find(freedStruct.begin(), freedStruct.end(), *fstruct);
         if(fs != freedStruct.end())
