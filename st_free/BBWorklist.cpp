@@ -44,6 +44,18 @@ namespace ST_free {
         return false;
     }
 
+    void BasicBlockWorkList::incrementRefCount(Value *v, Value * refVal){
+        auto MVal = find(MarkedValues.begin(), MarkedValues.end(), v);
+        if(MVal != MarkedValues.end())
+            MVal->incrementRefCount(refVal);
+    }
+
+    void BasicBlockWorkList::decrementRefCount(Value *v, Value * refVal){
+        auto MVal = find(MarkedValues.begin(), MarkedValues.end(), v);
+        if(MVal != MarkedValues.end())
+            MVal->decrementRefCount();
+    }
+
     void BasicBlockWorkList::setList(BasicBlockList v){
         MarkedValues = BasicBlockList(v);
     }
@@ -90,6 +102,18 @@ namespace ST_free {
         allocList.add(v, memType, structType, memberNum);
     }
 
+    void BasicBlockStat::incrementFreedRefCount(Value *v, Value * refVal){
+        freeList.incrementRefCount(v, refVal);
+    }
+    void BasicBlockStat::decrementFreedRefCount(Value *v, Value * refVal){
+        freeList.decrementRefCount(v, refVal);
+    }
+    void BasicBlockStat::incrementAllocatedRefCount(Value *v, Value * refVal){
+        allocList.incrementRefCount(v, refVal);
+    }
+    void BasicBlockStat::decrementAllocatedRefCount(Value *v, Value * refVal){
+        allocList.decrementRefCount(v, refVal);
+    }
     bool BasicBlockStat::AllocExists(Value *v){
         return allocList.exists(v);
     }
@@ -138,6 +162,19 @@ namespace ST_free {
     void BasicBlockManager::copy(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt] = BasicBlockStat(BBMap[src]);
         return;
+    }
+    void BasicBlockManager::incrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode){
+        if(mode == FREED)
+            BBMap[B].incrementFreedRefCount(v, refVal);
+        if(mode == ALLOCATED)
+            BBMap[B].incrementAllocatedRefCount(v, refVal);
+    }
+
+    void BasicBlockManager::decrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode){
+        if(mode == FREED)
+            BBMap[B].decrementFreedRefCount(v, refVal);
+        if(mode == ALLOCATED)
+            BBMap[B].decrementAllocatedRefCount(v, refVal);
     }
 
     void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt){

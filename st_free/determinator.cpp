@@ -149,4 +149,11 @@ namespace ST_free {
             return getLoadeeValue(load_inst);
         return NULL;
     }
+
+    GetElementPtrInst *  getStoredStructEle(StoreInst * SI) {
+        if(auto LInst = dyn_cast<LoadInst>(SI->getValueOperand()))
+            if(auto GEle = dyn_cast<GetElementPtrInst>(LInst->getPointerOperand()))
+                return GEle;
+        return NULL;
+    }
 }

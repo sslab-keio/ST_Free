@@ -16,7 +16,7 @@ namespace ST_free {
             void addAlloc(CallInst *CI, BasicBlock *B);
             bool isReturnFunc(Instruction *I);
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
-            void addLocalStruct(Type * T, Value *V, Instruction *I);
+            void addLocalStruct(Type * T, Value *V, Instruction *I, ParentList P);
         public:
             Analyzer(){
             }

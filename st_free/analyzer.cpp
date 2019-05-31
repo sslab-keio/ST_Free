@@ -24,33 +24,47 @@ namespace ST_free{
         return;
     }
 
-    void Analyzer::analyzeInstructions(BasicBlock &B){
+    void Analyzer::analyzeInstructions(BasicBlock &B) {
         for (Instruction &I: B){
             if(this->isReturnFunc(&I))
                 FEle->addEndPoint(&B);
-            if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I)){
-                this->addLocalStruct(ainst->getType(), ainst, cast<Instruction>(getFirstUser(&I)));
-                // if (StructType * strty = dyn_cast<StructType>(get_type(ainst->getType()))){
-                //     FEle->addLocalVar(
-                //             get_type(ainst->getType()),
-                //             ainst,
-                //             cast<Instruction>(getFirstUser(&I))
-                //         );
-                // }
-            }
+
+            if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I))
+                this->addLocalStruct(
+                        ainst->getType(),
+                        ainst,
+                        cast<Instruction>(getFirstUser(&I)),
+                        ParentList()
+                    );
+
             if (auto* CI = dyn_cast<CallInst>(&I)) {
                 /*** get Called Function ***/
                 if (Function* called_function = CI->getCalledFunction()) {
                     if (isAllocFunction(called_function)) {
                         this->addAlloc(CI, &B);
                     } else if (isFreeFunction(called_function)) {
-                        for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++) {
+                        for (auto arguments = CI->arg_begin(); arguments != CI->arg_end(); arguments++) {
                             this->addFree(cast<Value>(arguments), CI, &B);
                         }
                     } else {
                         this->analyzeDifferentFunc((Function &)(*called_function));
                         this->copyArgStatus((Function &)(*called_function), CI, B);
                     }
+                }
+            }
+
+            if (auto *SI = dyn_cast<StoreInst>(&I)) {
+                // outs() << "ValueOperand: " << *SI->getValueOperand() << "\n";
+                // outs() << "PointerOperand: " << *SI->getPointerOperand() << "\n";
+                // if(auto *LI = dyn_cast<LoadInst>(SI->getValueOperand())){
+                //     outs() << "Load Inst: " << *LI->getPointerOperand() << "\n";
+                // }
+                // BBManage.incrementRefCount(*SI->getValueOperand(), *SI->getPointerOperand());
+                GetElementPtrInst * GEle = getStoredStructEle(SI);
+                if(GEle != NULL){
+                FEle->incrementAllocatedRefCount(&B, SI->getValueOperand(), SI->getPointerOperand());
+                    // outs() << "Loadee Value : " << *getLoadeeValue(GEle->getPointerOperand()) <<"\n";
+                    // outs() << "Source : " << *GEle->getSourceElementType() << " " << getValueIndices(GEle) << "\n";
                 }
             }
         }
@@ -62,7 +76,7 @@ namespace ST_free{
         for(FreedStruct localVar: FEle->getLocalVar()) {
             // outs() << "Local Variable: " << * localVar.getType() << "\n";
             if(!FEle->isArgValue(localVar.getValue()))
-                if(find(fsl.begin(), fsl.end(), localVar.getType()) == fsl.end())
+                if(find(fsl.begin(), fsl.end(), pair<Type *, Value *>(localVar.getType(), localVar.getValue())) == fsl.end())
                     fsl.push_back(localVar);
         }
 
@@ -71,14 +85,11 @@ namespace ST_free{
             int cPointers = strTy->getNumElements();
             vector<bool> alreadyFreed = freedStruct.getFreedMember();
             int ind = 0;
-            // outs() << * strTy << "\n";
             for (Type * t: strTy->elements()) {
                 if (!t->isPointerTy() 
                         || isFuncPointer(t)
                         || alreadyFreed[ind])
                     cPointers--;
-                // if(t->isStructTy())
-                //     outs() << "Found Struct in struct\n";
                 ind++;
             }
 
@@ -100,20 +111,20 @@ namespace ST_free{
         return;
     }
 
-    void Analyzer::addLocalStruct(Type * T, Value * V, Instruction * I){
+    void Analyzer::addLocalStruct(Type * T, Value * V, Instruction * I, ParentList P){
         if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
             // outs() << "Struct Type Member: " << *strTy << "\n";
             FEle->addLocalVar(strTy, V, I);
 
+            P.push_back(T);
             for (Type * ele: strTy->elements()) {
                 if(ele->isStructTy())
-                    this->addLocalStruct(ele, V, I);
-                else if(ele->isPointerTy()){
-                    Type * extractEle = get_type(ele);
-                    if(extractEle != NULL && !FEle->localVarExists(extractEle)){
-                        this->addLocalStruct(extractEle, V, I);
-                    }
-                }
+                    this->addLocalStruct(ele, V, I, P);
+                // else if(ele->isPointerTy()){
+                //     Type * extractEle = get_type(ele);
+                //     if(extractEle != NULL && !FEle->localVarExists(extractEle)){
+                //         this->addLocalStruct(extractEle, V, I);
+                //     }
             }
         }
         return;
@@ -126,6 +137,7 @@ namespace ST_free{
     }
 
     void Analyzer::addFree(Value * V, CallInst *CI, BasicBlock *B) {
+        bool isStructRelated = false;
         if (Instruction * val = dyn_cast<Instruction>(V)) {
             // if (PointerType * ptr_ty = dyn_cast<PointerType>(val->getType())) {
                 if(isStructEleFree(val)) {
@@ -133,7 +145,6 @@ namespace ST_free{
                     if (inst != NULL) {
                         if (FEle->isArgValue(getLoadeeValue(inst->getPointerOperand())))
                             FEle->setArgFree(getLoadeeValue(inst->getPointerOperand()));
-
                         FEle->addFreeValue(
                                 B,
                                 getLoadeeValue(inst->getPointerOperand()),
@@ -142,10 +153,12 @@ namespace ST_free{
                                 getValueIndices(inst));
                         generateWarning(val, "Struct element free");
                     }
-                } else if (isStructFree(val)) {
+                    isStructRelated = true;
+                }
+                if (isStructFree(val)) {
                     Value * loaded_value = getStructFreedValue(val);
                     if(loaded_value != NULL) {
-                        if (FEle->isArgValue(loaded_value)){
+                        if (FEle->isArgValue(loaded_value)) {
                             FEle->setArgFree(loaded_value);
                             FEle->setStructArgFree(loaded_value, get_type(loaded_value)->getStructNumElements());
                         }
@@ -159,7 +172,9 @@ namespace ST_free{
                                 -1);
                         generateWarning(val, "Struct Free");
                     }
-                } else {
+                    isStructRelated = true;
+                }
+                if(!isStructRelated) {
                     Value * loaded_value = getFreedValue(val);
                     if(loaded_value != NULL) {
                         if (FEle->isArgValue(loaded_value))

@@ -4,9 +4,11 @@
 #include "argList.hpp"
 
 namespace ST_free{
+    using ParentList = vector<Type *>;
     struct FreedStruct {
         private:
             Type *T;
+            ParentList ParentType;
             Value *V;
             Instruction *I;
             vector<bool> FreedMembers; 
@@ -17,6 +19,13 @@ namespace ST_free{
                 V=val;
                 I=Inst;
                 FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+            };
+            FreedStruct(Type *Ty, Value *val, Instruction *Inst, ParentList P){
+                T=Ty;
+                V=val;
+                I=Inst;
+                FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                ParentType = ParentList(P);
             };
             bool operator ==(Value * v){
                 return V == v;
@@ -30,13 +39,18 @@ namespace ST_free{
             bool operator !=(FreedStruct v){
                 return V != v.getValue() && T != v.getType() && I != v.getInst();
             }
+            bool operator ==(pair<Type *, Value *> t){
+                return T == t.first && V == t.second;
+            }
+            bool operator !=(pair<Type *, Value *> t){
+                return T != t.first && V != t.second;
+            }
             Type * getType() const {return T;};
             Value * getValue() const {return V;};
             Instruction * getInst() const {return I;};
             void setFreedMember(int64_t num){FreedMembers[num] = true;}
             vector<bool> getFreedMember() const{return FreedMembers;}
     };
-
     using FreedStructList = vector<FreedStruct>;
     using LocalVarList = vector<FreedStruct>;
     struct FunctionInformation {
@@ -59,6 +73,10 @@ namespace ST_free{
             void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
             void addAllocValue(BasicBlock *B, Value *V);
             void addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
+            void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
+            void incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
+            void decrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
+            void decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void addFreedStruct(Type *T, Value *V, Instruction *I);
             FreedStructList getFreedStruct() const;
             bool isUnanalyzed();
@@ -84,6 +102,7 @@ namespace ST_free{
             bool isArgFreed(int64_t num);
             bool isArgAllocated(int64_t num);
             void addLocalVar(Type *, Value *, Instruction *);
+            void addLocalVar(Type *, Value *, Instruction *, ParentList P);
             LocalVarList getLocalVar() const;
             bool localVarExists(Type *);
     };

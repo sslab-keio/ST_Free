@@ -134,6 +134,23 @@ namespace ST_free{
         localVariables.push_back(FreedStruct(T, V, I));
     }
 
+    void FunctionInformation::addLocalVar(Type *T, Value * V, Instruction * I, ParentList P){
+        localVariables.push_back(FreedStruct(T, V, I, P));
+    }
+    void FunctionInformation::incrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
+        BBManage.incrementRefCount(B, V, ref, FREED);
+    }
+
+    void FunctionInformation::incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref){
+        BBManage.incrementRefCount(B, V, ref, ALLOCATED);
+    }
+
+void FunctionInformation::decrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
+        BBManage.decrementRefCount(B, V, ref, FREED);
+    }
+void FunctionInformation::decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref){
+        BBManage.decrementRefCount(B, V, ref, ALLOCATED);
+    }
     LocalVarList FunctionInformation::getLocalVar() const{
         return localVariables;
     }
