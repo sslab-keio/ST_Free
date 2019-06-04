@@ -57,7 +57,7 @@ namespace ST_free{
             if (auto *SI = dyn_cast<StoreInst>(&I)) {
                 GetElementPtrInst * GEle = getStoredStructEle(SI);
                 if(GEle != NULL){
-                FEle->incrementAllocatedRefCount(&B, SI->getValueOperand(), SI->getPointerOperand());
+                    FEle->incrementAllocatedRefCount(&B, SI->getValueOperand(), SI->getPointerOperand());
                 }
             }
         }
@@ -86,19 +86,17 @@ namespace ST_free{
                 ind++;
             }
 
-            for (BasicBlock *B: FEle->getEndPoint()) {
-                for(ValueInformation vinfo: FEle->getFreeList(B)) {
-                    if (vinfo.getStructType() == strTy){
-                        cPointers--;
-                        FEle->setStructMemberFreed(&freedStruct, vinfo.getMemberNum());
-                        // if(FEle->isArgValue(vinfo.getValue()))
-                        //     FEle->setStructMemberArgFreed(vinfo.getValue(), vinfo.getMemberNum());
-                    }
+            for(pair<Value *, Type *> val: FEle->getFreeList(freedStruct.getFreedBlock())) {
+                ValueInformation * vinfo = FEle->getValueInfo(val.first, val.second);
+                if (vinfo != NULL && vinfo->getStructType() == strTy) {
+                    cPointers--;
+                    FEle->setStructMemberFreed(&freedStruct, vinfo->getMemberNum());
+                    if(FEle->isArgValue(vinfo->getValue()))
+                        FEle->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
                 }
             }
             if (cPointers > 0) {
                 generateError(freedStruct.getInst(), "Struct element is NOT Freed");
-                // outs() << "After: " << cPointers << "\n";
             }
         }
         return;
@@ -122,7 +120,7 @@ namespace ST_free{
     void Analyzer::addLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
         ValueInformation *vinfo = FEle->addVariable(V);
         FEle->addBasicBlockLiveVariable(B, V);
-        if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
+        if (StructType * strTy = dyn_cast<StructType>(T)) {
             FEle->addLocalVar(B, strTy, V, I, P, vinfo);
 
             P.push_back(T);
@@ -155,7 +153,8 @@ namespace ST_free{
                                 inst->getResultElementType(),
                                 inst->getSourceElementType(),
                                 getValueIndices(inst));
-                        generateWarning(val, "Struct element free"); }
+                        generateWarning(val, "Struct element free");
+                    }
                     isStructRelated = true;
                 }
                 if (isStructFree(val)) {
@@ -165,11 +164,6 @@ namespace ST_free{
                             FEle->setArgFree(loaded_value);
                             FEle->setStructArgFree(loaded_value, get_type(loaded_value)->getStructNumElements());
                         }
-                        // ValueInformation * vinfo = FEle->addVariable(
-                        //         loaded_value,
-                        //         getStructType(val),
-                        //         NULL,
-                        //         -1);
                         FEle->addFreeValue(
                                 B,
                                 loaded_value,
@@ -203,12 +197,12 @@ namespace ST_free{
                 if (FEle->isArgValue(getLoadeeValue(inst->getPointerOperand())))
                     FEle->setArgAlloc(getLoadeeValue(inst->getPointerOperand()));
 
-                FEle->addAllocValue(
-                        B,
-                        getLoadeeValue(inst->getPointerOperand()),
-                        inst->getResultElementType(),
-                        inst->getSourceElementType(),
-                        getValueIndices(inst));
+                // FEle->addAllocValue(
+                //         B,
+                //         getLoadeeValue(inst->getPointerOperand()),
+                //         inst->getResultElementType(),
+                //         inst->getSourceElementType(),
+                //         getValueIndices(inst));
                 generateWarning(CI, "Struct element malloc");
             }
         } else {

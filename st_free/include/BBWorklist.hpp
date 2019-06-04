@@ -3,18 +3,20 @@
 #pragma once
 
 namespace ST_free {
-    using BasicBlockList = vector<ValueInformation>;
+    using BasicBlockList = vector<pair<Value *, Type *>>;
+    // using BasicBlockList = vector<ValueInformation>;
     class BasicBlockWorkList {
         private:
+            using hashKeys = pair<Value *, Type *>;
             BasicBlockList MarkedValues;
         public:
             BasicBlockWorkList();
             BasicBlockWorkList(const BasicBlockList);
-            void add(Value * v);
-            void add(Value * v, Type * memType, Type * structType, long memberNum);
-            bool exists(Value * v);
-            void incrementRefCount(Value *v, Value * refVal);
-            void decrementRefCount(Value *v, Value * refVal);
+            void add(Value * v, Type * t);
+            // void add(Value * v, Type * memType, Type * structType, long memberNum);
+            bool exists(Value * v, Type *t);
+            // void incrementRefCount(Value *v, Value * refVal);
+            // void decrementRefCount(Value *v, Value * refVal);
             BasicBlockList getList() const;
             void setList(BasicBlockList);
             // void intersect(vector<Value *>);
@@ -30,19 +32,19 @@ namespace ST_free {
             BasicBlockStat();
             BasicBlockStat(const BasicBlockStat &);
             /*** Free Related Methods ***/
-            void addFree(Value *v);
-            void addFree(Value * v, Type * memType, Type * structType, long memberNum);
-            bool FreeExists(Value *v);
+            // void addFree(Value *v);
+            void addFree(Value * v, Type * ty);
+            bool FreeExists(Value *v, Type * ty);
             void setFreeList(BasicBlockList);
-            void incrementFreedRefCount(Value *v, Value * refVal);
-            void decrementFreedRefCount(Value *v, Value * refVal);
+            // void incrementFreedRefCount(Value *v, Value * refVal);
+            // void decrementFreedRefCount(Value *v, Value * refVal);
             /*** Alloc Related Methods ***/
-            void addAlloc(Value *v);
-            void addAlloc(Value * v, Type * memType, Type * structType, long memberNum);
-            bool AllocExists(Value *v);
+            void addAlloc(Value *v, Type * ty);
+            // void addAlloc(Value * v, Type * memType, Type * structType, long memberNum);
+            bool AllocExists(Value *v, Type *ty);
             void setAllocList(BasicBlockList);
-            void incrementAllocatedRefCount(Value *v, Value * refVal);
-            void decrementAllocatedRefCount(Value *v, Value * refVal);
+            // void incrementAllocatedRefCount(Value *v, Value * refVal);
+            // void decrementAllocatedRefCount(Value *v, Value * refVal);
             /*** Live Variable Methods ***/
             // void addLiveVariable(Value * v, Type * memType, Type * structType, long memberNum);
             void setLiveVariables(LiveVariableList);
@@ -64,9 +66,9 @@ namespace ST_free {
         public:
             void CollectInInfo(BasicBlock *B, bool isEntryPoint);
             void add(BasicBlock * B, Value *v, int mode);
-            void add(BasicBlock * B, Value *v, Type * memTy, Type * stTy, long num, int mode);
-            void incrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode);
-            void decrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode);
+            void add(BasicBlock * B, Value *v, Type * memTy, int mode);
+            // void incrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode);
+            // void decrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode);
             void copy(BasicBlock *src, BasicBlock *tgt);
             void intersect(BasicBlock *src, BasicBlock *tgt);
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);

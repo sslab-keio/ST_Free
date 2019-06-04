@@ -19,6 +19,13 @@ namespace ST_free{
                 structType = NULL;
                 refCount = 0;
             }
+            ValueInformation(Value * val, Type * ty){
+                V = val;
+                memberNum = -1;
+                memberType = ty;
+                structType = NULL;
+                refCount = 0;
+            }
             ValueInformation(Value * val, Type * memType, Type * parType, long num){
                 V = val;
                 memberNum = num;
@@ -48,5 +55,21 @@ namespace ST_free{
             void decrementRefCount(){if(refCount > 0)refCount--;};
             bool noRefCount(){return refCount == 0;};
             void addRefereeValue(Value *);
+            void setStructType(Type *T){structType = T;};
+            void setMemberNum(long num){memberNum = num;};
+            void addStructParams(Type *T, long num){setStructType(T);setMemberNum(num);};
+    };
+    class ValueManager{
+        private:
+            using hashKeys = pair<Value *, Type *>;
+            map<hashKeys, ValueInformation *> vinfos;
+        public:
+            bool exists(Value *val, Type * ty);
+            bool exists(Value *val);
+            ValueInformation * getValueInfo(Value *val, Type * ty);
+            ValueInformation * getValueInfo(Value *val);
+            void addValueInfo(Value * val, Type * ty);
+            void addValueInfo(Value * val);
+            void addValueInfo(Value * val, Type * memType, Type * parType, long num);
     };
 }

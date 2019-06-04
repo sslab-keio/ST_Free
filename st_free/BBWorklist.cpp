@@ -10,31 +10,31 @@ namespace ST_free {
         MarkedValues = BasicBlockList(v);
     }
 
-    void BasicBlockWorkList::add(Value *v){
-        MarkedValues.push_back(v);
+    void BasicBlockWorkList::add(Value *v, Type * ty){
+        MarkedValues.push_back(hashKeys(v, ty));
     }
 
-    void BasicBlockWorkList::add(Value * v, Type * memType, Type * structType, long memberNum){
-        MarkedValues.push_back(ValueInformation(v, memType, structType, memberNum));
-    }
+    // void BasicBlockWorkList::add(Value * v, Type * memType, Type * structType, long memberNum){
+    //     MarkedValues.push_back(ValueInformation(v, memType, structType, memberNum));
+    // }
 
-    bool BasicBlockWorkList::exists(Value * v){
-        if(find(MarkedValues.begin(), MarkedValues.end(), v) != MarkedValues.end())
+    bool BasicBlockWorkList::exists(Value * v, Type * ty){
+        if(find(MarkedValues.begin(), MarkedValues.end(), hashKeys(v, ty)) != MarkedValues.end())
             return true;
         return false;
     }
 
-    void BasicBlockWorkList::incrementRefCount(Value *v, Value * refVal){
-        auto MVal = find(MarkedValues.begin(), MarkedValues.end(), v);
-        if(MVal != MarkedValues.end())
-            MVal->incrementRefCount(refVal);
-    }
+    // void BasicBlockWorkList::incrementRefCount(Value *v, Value * refVal){
+    //     auto MVal = find(MarkedValues.begin(), MarkedValues.end(), v);
+    //     if(MVal != MarkedValues.end())
+    //         MVal->incrementRefCount(refVal);
+    // }
 
-    void BasicBlockWorkList::decrementRefCount(Value *v, Value * refVal){
-        auto MVal = find(MarkedValues.begin(), MarkedValues.end(), v);
-        if(MVal != MarkedValues.end())
-            MVal->decrementRefCount();
-    }
+    // void BasicBlockWorkList::decrementRefCount(Value *v, Value * refVal){
+    //     auto MVal = find(MarkedValues.begin(), MarkedValues.end(), v);
+    //     if(MVal != MarkedValues.end())
+    //         MVal->decrementRefCount();
+    // }
 
     void BasicBlockWorkList::setList(BasicBlockList v){
         MarkedValues = BasicBlockList(v);
@@ -59,44 +59,44 @@ namespace ST_free {
         return MarkedValues;
     }
 
-    void BasicBlockStat::addFree(Value *v){
-        freeList.add(v);
+    void BasicBlockStat::addFree(Value *v, Type * ty){
+        freeList.add(v, ty);
     }
 
-    void BasicBlockStat::addFree(Value * v, Type * memType, Type * structType, long memberNum){
-        freeList.add(v, memType, structType, memberNum);
-    }
+    // void BasicBlockStat::addFree(Value * v, Type * memType, Type * structType, long memberNum){
+    //     freeList.add(v, memType, structType, memberNum);
+    // }
 
-    bool BasicBlockStat::FreeExists(Value *v){
-        return freeList.exists(v);
+    bool BasicBlockStat::FreeExists(Value *v, Type * ty){
+        return freeList.exists(v, ty);
     }
 
     void BasicBlockStat::setFreeList(BasicBlockList v){
         freeList.setList(v);
     }
 
-    void BasicBlockStat::addAlloc(Value *v){
-        allocList.add(v);
+    void BasicBlockStat::addAlloc(Value *v, Type * ty){
+        allocList.add(v, ty);
     }
 
-    void BasicBlockStat::addAlloc(Value * v, Type * memType, Type * structType, long memberNum){
-        allocList.add(v, memType, structType, memberNum);
-    }
+    // void BasicBlockStat::addAlloc(Value * v, Type * memType, Type * structType, long memberNum){
+    //     allocList.add(v, memType, structType, memberNum);
+    // }
 
-    void BasicBlockStat::incrementFreedRefCount(Value *v, Value * refVal){
-        freeList.incrementRefCount(v, refVal);
-    }
-    void BasicBlockStat::decrementFreedRefCount(Value *v, Value * refVal){
-        freeList.decrementRefCount(v, refVal);
-    }
-    void BasicBlockStat::incrementAllocatedRefCount(Value *v, Value * refVal){
-        allocList.incrementRefCount(v, refVal);
-    }
-    void BasicBlockStat::decrementAllocatedRefCount(Value *v, Value * refVal){
-        allocList.decrementRefCount(v, refVal);
-    }
-    bool BasicBlockStat::AllocExists(Value *v){
-        return allocList.exists(v);
+    // void BasicBlockStat::incrementFreedRefCount(Value *v, Value * refVal){
+    //     freeList.incrementRefCount(v, refVal);
+    // }
+    // void BasicBlockStat::decrementFreedRefCount(Value *v, Value * refVal){
+    //     freeList.decrementRefCount(v, refVal);
+    // }
+    // void BasicBlockStat::incrementAllocatedRefCount(Value *v, Value * refVal){
+    //     allocList.incrementRefCount(v, refVal);
+    // }
+    // void BasicBlockStat::decrementAllocatedRefCount(Value *v, Value * refVal){
+        // allocList.decrementRefCount(v, refVal);
+    // }
+    bool BasicBlockStat::AllocExists(Value *v, Type *ty){
+        return allocList.exists(v, ty);
     }
 
     void BasicBlockStat::setAllocList(BasicBlockList v){
@@ -137,17 +137,17 @@ namespace ST_free {
 
     void BasicBlockManager::add(BasicBlock *B, Value *v, int mode){
         if (mode == FREED)
-            BBMap[B].addFree(v);
+            BBMap[B].addFree(v, v->getType());
         else if (mode == ALLOCATED)
-            BBMap[B].addAlloc(v);
+            BBMap[B].addAlloc(v, v->getType());
         return;
     }
 
-    void BasicBlockManager::add(BasicBlock *B, Value *v, Type * memTy, Type* stTy, long num, int mode){
+    void BasicBlockManager::add(BasicBlock *B, Value *v, Type * memTy, int mode){
         if (mode == FREED)
-            BBMap[B].addFree(v, memTy, stTy, num);
+            BBMap[B].addFree(v, memTy);
         else if (mode == ALLOCATED)
-            BBMap[B].addAlloc(v, memTy, stTy, num);
+            BBMap[B].addAlloc(v, memTy);
         return;
     }
 
@@ -155,19 +155,19 @@ namespace ST_free {
         BBMap[tgt] = BasicBlockStat(BBMap[src]);
         return;
     }
-    void BasicBlockManager::incrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode){
-        if(mode == FREED)
-            BBMap[B].incrementFreedRefCount(v, refVal);
-        if(mode == ALLOCATED)
-            BBMap[B].incrementAllocatedRefCount(v, refVal);
-    }
+    // void BasicBlockManager::incrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode){
+    //     if(mode == FREED)
+    //         BBMap[B].incrementFreedRefCount(v, refVal);
+    //     if(mode == ALLOCATED)
+    //         BBMap[B].incrementAllocatedRefCount(v, refVal);
+    // }
 
-    void BasicBlockManager::decrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode){
-        if(mode == FREED)
-            BBMap[B].decrementFreedRefCount(v, refVal);
-        if(mode == ALLOCATED)
-            BBMap[B].decrementAllocatedRefCount(v, refVal);
-    }
+    // void BasicBlockManager::decrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode){
+    //     if(mode == FREED)
+    //         BBMap[B].decrementFreedRefCount(v, refVal);
+    //     if(mode == ALLOCATED)
+    //         BBMap[B].decrementAllocatedRefCount(v, refVal);
+    // }
 
     void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt){
         BBMap[src].setFreeList(intersectList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));

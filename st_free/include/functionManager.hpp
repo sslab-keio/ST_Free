@@ -67,12 +67,12 @@ namespace ST_free{
             Type * getType() const {return T;};
             Value * getValue() const {return V;};
             Instruction * getInst() const {return I;};
-            void setFreedMember(int64_t num){FreedMembers[num] = true;}
-            vector<bool> getFreedMember() const{return FreedMembers;}
+            void setFreedMember(int64_t num){FreedMembers[num] = true;};
+            vector<bool> getFreedMember() const{return FreedMembers;};
+            BasicBlock * getFreedBlock() const{return freedBlock;};
     };
     using FreedStructList = vector<FreedStruct>;
     using LocalVarList = vector<FreedStruct>;
-    using Variables = map<Value *, ValueInformation *>;
     struct FunctionInformation {
         private:
             Function *F;
@@ -80,9 +80,9 @@ namespace ST_free{
             ArgList args;
             vector<BasicBlock *> endPoint;
             LocalVarList localVariables;
-            Variables VarInfos;
             FreedStructList freedStruct;
             BasicBlockManager BBManage;
+            ValueManager VManage;
             int getStat();
             void setStat(int);
         public:
@@ -102,7 +102,7 @@ namespace ST_free{
             FreedStructList getFreedStruct() const;
             /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V);
-            void addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
+            // void addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
             void incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
             /*** Status Related ***/
@@ -133,6 +133,8 @@ namespace ST_free{
             ValueInformation * addVariable(Value * val);
             ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
 			ValueInformation * getValueInfo(Value * val);
+			ValueInformation * getValueInfo(Value * val, Type * ty);
+            bool variableExists(Value *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *, ParentList P, ValueInformation *);
             LocalVarList getLocalVar() const;

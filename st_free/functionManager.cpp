@@ -46,20 +46,22 @@ namespace ST_free{
     }
 
     void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
-        ValueInformation * varinfo = this->getValueInfo(V);
+        ValueInformation * varinfo = this->getValueInfo(V, memTy);
         if(varinfo == NULL)
             varinfo = this->addVariable(V, memTy, stTy, num);
+        else
+            varinfo->addStructParams(stTy, num);
         // BBManage.add(B, V, memTy, stTy, num, FREED);
-        BBManage.add(B, V, FREED);
+        BBManage.add(B, V, memTy, FREED);
     }
 
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V) {
         BBManage.add(B, V, ALLOCATED);
     }
 
-    void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
-        BBManage.add(B, V, memTy, stTy, num, ALLOCATED);
-    }
+    // void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
+    //     BBManage.add(B, V, memTy, stTy, num, ALLOCATED);
+    // }
 
     bool FunctionInformation::isUnanalyzed(){
         return getStat() == UNANALYZED ? true : false;
@@ -136,20 +138,23 @@ namespace ST_free{
         args.isArgAllocated(num);
     }
     ValueInformation * FunctionInformation::addVariable(Value * val){
-        ValueInformation * vInfo = new ValueInformation(val);
-        VarInfos[val] = vInfo;
-        return vInfo;
+        if(!VManage.exists(val))
+            VManage.addValueInfo(val);
+        return VManage.getValueInfo(val);
     }
     
     ValueInformation * FunctionInformation::addVariable(Value * val, Type * memType, Type *parType, long num){
-        ValueInformation * vInfo = new ValueInformation(val, memType, parType, num);
-        VarInfos[val] = vInfo;
-        return vInfo;
+        if(!VManage.exists(val, memType))
+            VManage.addValueInfo(val, memType, parType, num);
+        return VManage.getValueInfo(val, memType);
     }
+
     ValueInformation * FunctionInformation::getValueInfo(Value * val){
-        if (VarInfos.find(val) != VarInfos.end())
-            return VarInfos[val];
-        return NULL;
+        return VManage.getValueInfo(val);
+    }
+
+    ValueInformation * FunctionInformation::getValueInfo(Value * val, Type * ty){
+        return VManage.getValueInfo(val, ty);
     }
 
     void FunctionInformation::addLocalVar(BasicBlock *B, Type *T, Value * V, Instruction * I) {
@@ -161,18 +166,20 @@ namespace ST_free{
     }
     
     void FunctionInformation::incrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
-        BBManage.incrementRefCount(B, V, ref, FREED);
+        ValueInformation * vinfo = VManage.getValueInfo(V);
+        if(vinfo != NULL)
+            vinfo->incrementRefCount(ref);
     }
 
     void FunctionInformation::incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref) {
-        BBManage.incrementRefCount(B, V, ref, ALLOCATED);
+        // BBManage.incrementRefCount(B, V, ref, ALLOCATED);
     }
 
-void FunctionInformation::decrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
-        BBManage.decrementRefCount(B, V, ref, FREED);
+    void FunctionInformation::decrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
+        // BBManage.decrementRefCount(B, V, ref, FREED);
     }
-void FunctionInformation::decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref){
-        BBManage.decrementRefCount(B, V, ref, ALLOCATED);
+    void FunctionInformation::decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref){
+        // BBManage.decrementRefCount(B, V, ref, ALLOCATED);
     }
     LocalVarList FunctionInformation::getLocalVar() const{
         return localVariables;
