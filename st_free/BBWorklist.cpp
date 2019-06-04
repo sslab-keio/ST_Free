@@ -1,26 +1,6 @@
 #include "include/BBWorklist.hpp"
 
 namespace ST_free {
-    Value * ValueInformation::getValue() const{
-        return V;
-    }
-    Type * ValueInformation::getStructType() const{
-        return structType;
-    }
-
-    Type * ValueInformation::getMemberType() const{
-        return memberType;
-    }
-
-    long ValueInformation::getMemberNum() const{
-        return memberNum;
-    }
-
-    bool ValueInformation::isStructMember(){
-        if (memberType == NULL && structType == NULL)
-            return false;
-        return true;
-    }
 
     BasicBlockWorkList::BasicBlockWorkList(){
         MarkedValues = BasicBlockList();
@@ -66,6 +46,7 @@ namespace ST_free {
     BasicBlockStat::BasicBlockStat(const BasicBlockStat& BStat){
         freeList = BasicBlockWorkList(BStat.getWorkList(FREED).getList());
         allocList = BasicBlockWorkList(BStat.getWorkList(ALLOCATED).getList());
+        liveVariables = LiveVariableList(BStat.getLiveVariables());
     }
 
     BasicBlockWorkList BasicBlockStat::getWorkList(int mode) const {
@@ -120,6 +101,17 @@ namespace ST_free {
 
     void BasicBlockStat::setAllocList(BasicBlockList v){
         allocList.setList(v);
+    }
+
+    void BasicBlockStat::addLiveVariable(Value *v){
+        liveVariables.push_back(v);
+    }
+
+    LiveVariableList BasicBlockStat::getLiveVariables() const {
+        return liveVariables;
+    }
+    void BasicBlockStat::setLiveVariables(LiveVariableList lvl){
+        liveVariables = LiveVariableList(lvl);
     }
 
     bool BasicBlockManager::exists(BasicBlock *B){
@@ -180,7 +172,7 @@ namespace ST_free {
     void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt){
         BBMap[src].setFreeList(intersectList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
         BBMap[src].setAllocList(intersectList(this->getBasicBlockAllocList(src), this->getBasicBlockAllocList(tgt)));
-
+        BBMap[src].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src), this->getLiveVariables(tgt)));
         return;
     }
 
@@ -197,7 +189,19 @@ namespace ST_free {
 
         return tmp;
     }
+    LiveVariableList BasicBlockManager::intersectLiveVariables(LiveVariableList src, LiveVariableList tgt){
+        LiveVariableList tmp;
+        llvm::sort(src.begin(), src.end());
+        llvm::sort(tgt.begin(), tgt.end());
 
+        set_intersection(
+                src.begin(), src.end(),
+                tgt.begin(),tgt.end(),
+                back_inserter(tmp)
+            );
+
+        return tmp;
+    }
     BasicBlockList BasicBlockManager::getBasicBlockFreeList(BasicBlock *src) {
         if(this->exists(src)){
             return BBMap[src].getWorkList(FREED).getList();
@@ -216,5 +220,11 @@ namespace ST_free {
         if (this->exists(B))
             return &BBMap[B];
         return NULL;
+    }
+    void BasicBlockManager::addLiveVariable(BasicBlock *B,Value *val){
+        BBMap[B].addLiveVariable(val);
+    }
+    LiveVariableList BasicBlockManager::getLiveVariables(BasicBlock *B){
+        return BBMap[B].getLiveVariables();
     }
 }

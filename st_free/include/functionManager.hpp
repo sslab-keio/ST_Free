@@ -12,6 +12,8 @@ namespace ST_free{
             Value *V;
             Instruction *I;
             vector<bool> FreedMembers; 
+            ValueInformation * valInfo;
+            BasicBlock * freedBlock;
         public:
             FreedStruct(){};
             FreedStruct(Type *Ty, Value *val, Instruction *Inst){
@@ -26,6 +28,23 @@ namespace ST_free{
                 I=Inst;
                 FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
                 ParentType = ParentList(P);
+                valInfo = NULL;
+            };
+            FreedStruct(Type *Ty, Value *val, Instruction *Inst, BasicBlock * freedB, ValueInformation *vinfo){
+                T=Ty;
+                V=val;
+                I=Inst;
+                FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                valInfo = vinfo;
+                freedBlock = freedB;
+            };
+            FreedStruct(Type *Ty, Value *val, Instruction *Inst, ParentList P, BasicBlock * freedB, ValueInformation *vinfo){
+                T=Ty;
+                V=val;
+                I=Inst;
+                FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                valInfo = vinfo;
+                freedBlock = freedB;
             };
             bool operator ==(Value * v){
                 return V == v;
@@ -53,6 +72,7 @@ namespace ST_free{
     };
     using FreedStructList = vector<FreedStruct>;
     using LocalVarList = vector<FreedStruct>;
+    using Variables = map<Value *, ValueInformation *>;
     struct FunctionInformation {
         private:
             Function *F;
@@ -60,34 +80,43 @@ namespace ST_free{
             ArgList args;
             vector<BasicBlock *> endPoint;
             LocalVarList localVariables;
+            Variables VarInfos;
             FreedStructList freedStruct;
             BasicBlockManager BBManage;
             int getStat();
             void setStat(int);
         public:
+            /*** Costructor ***/
             FunctionInformation();
             FunctionInformation(Function *F);
+            /*** EndPoints ***/
             void addEndPoint(BasicBlock *B);
             vector<BasicBlock *> getEndPoint() const;
+            /*** FreeValue Related ***/
             void addFreeValue(BasicBlock *B, Value *V);
             void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
+            void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
+            void decrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
+            void addFreedStruct(Type *T, Value *V, Instruction *I);
+            void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I);
+            FreedStructList getFreedStruct() const;
+            /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V);
             void addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
-            void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
-            void decrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
-            void addFreedStruct(Type *T, Value *V, Instruction *I);
-            FreedStructList getFreedStruct() const;
+            /*** Status Related ***/
             bool isUnanalyzed();
             bool isAnalyzed();
             bool isInProgress();
             void setAnalyzed();
             void setInProgress();
+            /*** Function/BasicBlock Related ***/
             Function & getFunction();
             void BBCollectInfo(BasicBlock& B, bool isEntryPoint);
             BasicBlockList getFreeList(BasicBlock *B);
             BasicBlockList getAllocList(BasicBlock *B);
+            /*** Argument Values ***/
             bool isArgValue(Value *V);
             void setArgFree(Value *V);
             void setArgAlloc(Value *V);
@@ -101,9 +130,13 @@ namespace ST_free{
             void setStructMemberArgAllocated(Value *V, int64_t num);
             bool isArgFreed(int64_t num);
             bool isArgAllocated(int64_t num);
-            void addLocalVar(Type *, Value *, Instruction *);
-            void addLocalVar(Type *, Value *, Instruction *, ParentList P);
+            ValueInformation * addVariable(Value * val);
+            ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
+			ValueInformation * getValueInfo(Value * val);
+            void addLocalVar(BasicBlock *, Type *, Value *, Instruction *);
+            void addLocalVar(BasicBlock *, Type *, Value *, Instruction *, ParentList P, ValueInformation *);
             LocalVarList getLocalVar() const;
+            void addBasicBlockLiveVariable(BasicBlock *B, Value *);
             bool localVarExists(Type *);
     };
 

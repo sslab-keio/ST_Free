@@ -30,7 +30,8 @@ namespace ST_free{
                 FEle->addEndPoint(&B);
 
             if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I))
-                this->addLocalStruct(
+                this->addLocalVariable(
+                        &B,
                         ainst->getType(),
                         ainst,
                         cast<Instruction>(getFirstUser(&I)),
@@ -54,17 +55,9 @@ namespace ST_free{
             }
 
             if (auto *SI = dyn_cast<StoreInst>(&I)) {
-                // outs() << "ValueOperand: " << *SI->getValueOperand() << "\n";
-                // outs() << "PointerOperand: " << *SI->getPointerOperand() << "\n";
-                // if(auto *LI = dyn_cast<LoadInst>(SI->getValueOperand())){
-                //     outs() << "Load Inst: " << *LI->getPointerOperand() << "\n";
-                // }
-                // BBManage.incrementRefCount(*SI->getValueOperand(), *SI->getPointerOperand());
                 GetElementPtrInst * GEle = getStoredStructEle(SI);
                 if(GEle != NULL){
                 FEle->incrementAllocatedRefCount(&B, SI->getValueOperand(), SI->getPointerOperand());
-                    // outs() << "Loadee Value : " << *getLoadeeValue(GEle->getPointerOperand()) <<"\n";
-                    // outs() << "Source : " << *GEle->getSourceElementType() << " " << getValueIndices(GEle) << "\n";
                 }
             }
         }
@@ -111,25 +104,36 @@ namespace ST_free{
         return;
     }
 
-    void Analyzer::addLocalStruct(Type * T, Value * V, Instruction * I, ParentList P){
+    void Analyzer::addLocalStruct(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
+        ValueInformation *vinfo = FEle->addVariable(V);
+        FEle->addBasicBlockLiveVariable(B, V);
         if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
-            // outs() << "Struct Type Member: " << *strTy << "\n";
-            FEle->addLocalVar(strTy, V, I);
+            FEle->addLocalVar(B, strTy, V, I, P, vinfo);
 
             P.push_back(T);
             for (Type * ele: strTy->elements()) {
                 if(ele->isStructTy())
-                    this->addLocalStruct(ele, V, I, P);
-                // else if(ele->isPointerTy()){
-                //     Type * extractEle = get_type(ele);
-                //     if(extractEle != NULL && !FEle->localVarExists(extractEle)){
-                //         this->addLocalStruct(extractEle, V, I);
-                //     }
+                    this->addLocalStruct(B, ele, V, I, P);
             }
-        }
+		}
         return;
     }
 
+    void Analyzer::addLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
+        ValueInformation *vinfo = FEle->addVariable(V);
+        FEle->addBasicBlockLiveVariable(B, V);
+        if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
+            FEle->addLocalVar(B, strTy, V, I, P, vinfo);
+
+            P.push_back(T);
+            for (Type * ele: strTy->elements()) {
+                if(ele->isStructTy())
+                    this->addLocalVariable(B, ele, V, I, P);
+            }
+		}
+        return;
+    }
+    
     void Analyzer::analyzeDifferentFunc(Function &F) {
         Analyzer called_function(&F);
         called_function.analyze();
@@ -151,8 +155,7 @@ namespace ST_free{
                                 inst->getResultElementType(),
                                 inst->getSourceElementType(),
                                 getValueIndices(inst));
-                        generateWarning(val, "Struct element free");
-                    }
+                        generateWarning(val, "Struct element free"); }
                     isStructRelated = true;
                 }
                 if (isStructFree(val)) {
@@ -162,14 +165,18 @@ namespace ST_free{
                             FEle->setArgFree(loaded_value);
                             FEle->setStructArgFree(loaded_value, get_type(loaded_value)->getStructNumElements());
                         }
-
-                        FEle->addFreedStruct(getStructType(val), loaded_value, val);
+                        // ValueInformation * vinfo = FEle->addVariable(
+                        //         loaded_value,
+                        //         getStructType(val),
+                        //         NULL,
+                        //         -1);
                         FEle->addFreeValue(
                                 B,
                                 loaded_value,
                                 getStructType(val),
                                 NULL,
                                 -1);
+                        FEle->addFreedStruct(B, getStructType(val), loaded_value, val);
                         generateWarning(val, "Struct Free");
                     }
                     isStructRelated = true;

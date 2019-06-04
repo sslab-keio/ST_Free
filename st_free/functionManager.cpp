@@ -9,7 +9,7 @@ namespace ST_free{
 
     FunctionInformation* FunctionManager::getElement(Function *F){
         if(!this->exists(F))
-            func_map[F] = new struct FunctionInformation(F);
+            func_map[F] = new FunctionInformation(F);
         return func_map[F];
     }
 
@@ -41,13 +41,16 @@ namespace ST_free{
     void FunctionInformation::addEndPoint(BasicBlock *B){
         endPoint.push_back(B);
     }
-
     void FunctionInformation::addFreeValue(BasicBlock *B, Value *V) {
         BBManage.add(B, V, FREED);
     }
 
     void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
-        BBManage.add(B, V, memTy, stTy, num, FREED);
+        ValueInformation * varinfo = this->getValueInfo(V);
+        if(varinfo == NULL)
+            varinfo = this->addVariable(V, memTy, stTy, num);
+        // BBManage.add(B, V, memTy, stTy, num, FREED);
+        BBManage.add(B, V, FREED);
     }
 
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V) {
@@ -86,6 +89,9 @@ namespace ST_free{
         freedStruct.push_back(FreedStruct(T, V, I));
     }
 
+    void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I){
+        freedStruct.push_back(FreedStruct(T, V, I, B, NULL));
+    }
     vector<BasicBlock *> FunctionInformation::getEndPoint() const{
         return endPoint;
     }
@@ -129,19 +135,36 @@ namespace ST_free{
     bool FunctionInformation::isArgAllocated(int64_t num){
         args.isArgAllocated(num);
     }
+    ValueInformation * FunctionInformation::addVariable(Value * val){
+        ValueInformation * vInfo = new ValueInformation(val);
+        VarInfos[val] = vInfo;
+        return vInfo;
+    }
     
-    void FunctionInformation::addLocalVar(Type *T, Value * V, Instruction * I){
+    ValueInformation * FunctionInformation::addVariable(Value * val, Type * memType, Type *parType, long num){
+        ValueInformation * vInfo = new ValueInformation(val, memType, parType, num);
+        VarInfos[val] = vInfo;
+        return vInfo;
+    }
+    ValueInformation * FunctionInformation::getValueInfo(Value * val){
+        if (VarInfos.find(val) != VarInfos.end())
+            return VarInfos[val];
+        return NULL;
+    }
+
+    void FunctionInformation::addLocalVar(BasicBlock *B, Type *T, Value * V, Instruction * I) {
         localVariables.push_back(FreedStruct(T, V, I));
     }
 
-    void FunctionInformation::addLocalVar(Type *T, Value * V, Instruction * I, ParentList P){
-        localVariables.push_back(FreedStruct(T, V, I, P));
+    void FunctionInformation::addLocalVar(BasicBlock *B, Type *T, Value * V, Instruction * I, ParentList P, ValueInformation *vinfo) {
+        localVariables.push_back(FreedStruct(T, V, I, P, B, vinfo));
     }
+    
     void FunctionInformation::incrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
         BBManage.incrementRefCount(B, V, ref, FREED);
     }
 
-    void FunctionInformation::incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref){
+    void FunctionInformation::incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref) {
         BBManage.incrementRefCount(B, V, ref, ALLOCATED);
     }
 
@@ -180,5 +203,8 @@ void FunctionInformation::decrementAllocatedRefCount(BasicBlock *B, Value *V, Va
             }
             //Copy vector member infos
         
+    }
+    void FunctionInformation::addBasicBlockLiveVariable(BasicBlock * B, Value *V){
+        BBManage.addLiveVariable(B, V);
     }
 }
