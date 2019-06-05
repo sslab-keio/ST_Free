@@ -57,7 +57,17 @@ namespace ST_free{
             if (auto *SI = dyn_cast<StoreInst>(&I)) {
                 GetElementPtrInst * GEle = getStoredStructEle(SI);
                 if(GEle != NULL){
-                    FEle->incrementAllocatedRefCount(&B, SI->getValueOperand(), SI->getPointerOperand());
+                    FEle->addVariable(
+                            getLoadeeValue(GEle->getPointerOperand()),
+                            GEle->getResultElementType(),
+                            GEle->getSourceElementType(),
+                            getValueIndices(GEle)
+                        );
+                    FEle->incrementRefCount(
+                            getLoadeeValue(GEle->getPointerOperand()),
+                            GEle->getResultElementType(),
+                            SI->getPointerOperand()
+                        );
                 }
             }
         }
@@ -81,20 +91,39 @@ namespace ST_free{
             for (Type * t: strTy->elements()) {
                 if (!t->isPointerTy() 
                         || isFuncPointer(t)
-                        || alreadyFreed[ind])
+                        || alreadyFreed[ind]){
                     cPointers--;
+                } else {
+                    ValueInformation *vinfo = FEle->getValueInfo(freedStruct.getValue(), t);
+                    if(vinfo != NULL){
+                        if(FEle->isFreedInBasicBlock(freedStruct.getFreedBlock(), vinfo->getValue(), t) || !vinfo->noRefCount())
+                            cPointers--;
+                        else if (!vinfo->noRefCount()){
+                            for(Value * referee: vinfo->getReferees()){
+                                if (FEle->isLiveInBasicBlock(freedStruct.getFreedBlock(), referee)){
+                                    cPointers--;
+                                    break;
+                                }
+                            }
+                        }
+
+                        FEle->setStructMemberFreed(&freedStruct, vinfo->getMemberNum());
+                        if(FEle->isArgValue(vinfo->getValue()))
+                            FEle->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
+                    }
+                }
                 ind++;
             }
 
-            for(pair<Value *, Type *> val: FEle->getFreeList(freedStruct.getFreedBlock())) {
-                ValueInformation * vinfo = FEle->getValueInfo(val.first, val.second);
-                if (vinfo != NULL && vinfo->getStructType() == strTy) {
-                    cPointers--;
-                    FEle->setStructMemberFreed(&freedStruct, vinfo->getMemberNum());
-                    if(FEle->isArgValue(vinfo->getValue()))
-                        FEle->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
-                }
-            }
+//             for(pair<Value *, Type *> val: FEle->getFreeList(freedStruct.getFreedBlock())) {
+//                 ValueInformation * vinfo = FEle->getValueInfo(val.first, val.second);
+//                 if (vinfo != NULL && vinfo->getStructType() == strTy) {
+//                     cPointers--;
+//                     FEle->setStructMemberFreed(&freedStruct, vinfo->getMemberNum());
+//                     if(FEle->isArgValue(vinfo->getValue()))
+//                         FEle->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
+//                 }
+//             }
             if (cPointers > 0) {
                 generateError(freedStruct.getInst(), "Struct element is NOT Freed");
             }

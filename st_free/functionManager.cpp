@@ -164,6 +164,14 @@ namespace ST_free{
     void FunctionInformation::addLocalVar(BasicBlock *B, Type *T, Value * V, Instruction * I, ParentList P, ValueInformation *vinfo) {
         localVariables.push_back(FreedStruct(T, V, I, P, B, vinfo));
     }
+    void FunctionInformation::incrementRefCount(Value *V, Type *T, Value *ref){
+        ValueInformation * vinfo = VManage.getValueInfo(V, T);
+        if(vinfo == NULL){
+            VManage.addValueInfo(V, T);
+            vinfo = VManage.getValueInfo(V, T);
+        }
+        vinfo->incrementRefCount(ref);
+    }
     
     void FunctionInformation::incrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
         ValueInformation * vinfo = VManage.getValueInfo(V);
@@ -213,5 +221,14 @@ namespace ST_free{
     }
     void FunctionInformation::addBasicBlockLiveVariable(BasicBlock * B, Value *V){
         BBManage.addLiveVariable(B, V);
+    }
+    bool FunctionInformation::isFreedInBasicBlock(BasicBlock *B, Value *val, Type* ty){
+       BBManage.existsInFreedList(B, val, ty);
+    }
+    bool FunctionInformation::isAllocatedInBasicBlock(BasicBlock *B, Value *val, Type* ty){
+       BBManage.existsInAllocatedList(B, val, ty);
+    }
+    bool FunctionInformation::isLiveInBasicBlock(BasicBlock *B, Value *val){
+       BBManage.existsInLiveVariableList(B, val);
     }
 }

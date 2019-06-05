@@ -78,6 +78,11 @@ namespace ST_free {
     void BasicBlockStat::addAlloc(Value *v, Type * ty){
         allocList.add(v, ty);
     }
+    bool BasicBlockStat::LiveVariableExists(Value * v){
+        if(find(liveVariables.begin(), liveVariables.end(), v) != liveVariables.end())
+            return true;
+        return false;
+    }
 
     // void BasicBlockStat::addAlloc(Value * v, Type * memType, Type * structType, long memberNum){
     //     allocList.add(v, memType, structType, memberNum);
@@ -226,5 +231,14 @@ namespace ST_free {
     }
     LiveVariableList BasicBlockManager::getLiveVariables(BasicBlock *B){
         return BBMap[B].getLiveVariables();
+    }
+    void BasicBlockManager::existsInFreedList(BasicBlock *B, Value *val, Type *ty){
+        BBMap[B].FreeExists(val, ty);
+    }
+    void BasicBlockManager::existsInAllocatedList(BasicBlock *B, Value *val, Type *ty){
+        BBMap[B].AllocExists(val, ty);
+    }
+    bool BasicBlockManager::existsInLiveVariableList(BasicBlock * B, Value *val){
+        return BBMap[B].LiveVariableExists(val);
     }
 }

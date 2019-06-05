@@ -116,6 +116,8 @@ namespace ST_free{
             void BBCollectInfo(BasicBlock& B, bool isEntryPoint);
             BasicBlockList getFreeList(BasicBlock *B);
             BasicBlockList getAllocList(BasicBlock *B);
+            bool isFreedInBasicBlock(BasicBlock *B, Value * val, Type * ty);
+            bool isAllocatedInBasicBlock(BasicBlock *B, Value * val, Type * ty);
             /*** Argument Values ***/
             bool isArgValue(Value *V);
             void setArgFree(Value *V);
@@ -140,6 +142,8 @@ namespace ST_free{
             LocalVarList getLocalVar() const;
             void addBasicBlockLiveVariable(BasicBlock *B, Value *);
             bool localVarExists(Type *);
+            void incrementRefCount(Value *V, Type *T, Value *ref);
+            bool isLiveInBasicBlock(BasicBlock *B, Value *val);
     };
 
     class FunctionManager {

@@ -49,7 +49,7 @@ namespace ST_free {
             // void addLiveVariable(Value * v, Type * memType, Type * structType, long memberNum);
             void setLiveVariables(LiveVariableList);
             void addLiveVariable(Value * v);
-            void LiveVariableExists(Value * v);
+            bool LiveVariableExists(Value * v);
             void incrementRefCount(Value * v);
             void decrementRefCount(Value * v);
             /*** Utilities ***/
@@ -67,13 +67,14 @@ namespace ST_free {
             void CollectInInfo(BasicBlock *B, bool isEntryPoint);
             void add(BasicBlock * B, Value *v, int mode);
             void add(BasicBlock * B, Value *v, Type * memTy, int mode);
-            // void incrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode);
-            // void decrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode);
             void copy(BasicBlock *src, BasicBlock *tgt);
             void intersect(BasicBlock *src, BasicBlock *tgt);
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);
             BasicBlockList getBasicBlockAllocList(BasicBlock *src);
             void addLiveVariable(BasicBlock *B, Value *val);
             LiveVariableList getLiveVariables(BasicBlock *B);
+            void existsInFreedList(BasicBlock *B, Value *val, Type *ty);
+            void existsInAllocatedList(BasicBlock *B, Value *val, Type *ty);
+            bool existsInLiveVariableList(BasicBlock * B, Value *val);
     };
 }

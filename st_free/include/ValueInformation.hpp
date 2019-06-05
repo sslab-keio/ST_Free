@@ -57,7 +57,8 @@ namespace ST_free{
             void addRefereeValue(Value *);
             void setStructType(Type *T){structType = T;};
             void setMemberNum(long num){memberNum = num;};
-            void addStructParams(Type *T, long num){setStructType(T);setMemberNum(num);};
+            void addStructParams(Type *T, long num){setStructType(T);setMemberNum(num);}; 
+            vector<Value *> getReferees() const {return referees;};
     };
     class ValueManager{
         private:
