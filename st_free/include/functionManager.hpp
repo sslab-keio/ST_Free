@@ -103,7 +103,7 @@ namespace ST_free{
             FreedStructList getFreedStruct() const;
             /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V);
-            // void addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
+            void addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
             void incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
             /*** Status Related ***/
