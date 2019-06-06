@@ -18,4 +18,6 @@ namespace ST_free{
     Type * getStructType(Instruction * val);
     Value * getFreedValue(Instruction * val);
     Value * getAllocatedValue(Instruction *I) ;
+    bool isStoreFromStruct(StoreInst * SI);
+    bool isStoreToStruct(StoreInst * SI);
 }

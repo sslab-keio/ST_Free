@@ -11,7 +11,7 @@ namespace ST_free {
     }
 
     void BasicBlockWorkList::add(Value *v, Type * ty){
-        MarkedValues.push_back(hashKeys(v, ty));
+        MarkedValues.push_back(uniqueKey(v, ty));
     }
 
     // void BasicBlockWorkList::add(Value * v, Type * memType, Type * structType, long memberNum){
@@ -19,7 +19,7 @@ namespace ST_free {
     // }
 
     bool BasicBlockWorkList::exists(Value * v, Type * ty){
-        if(find(MarkedValues.begin(), MarkedValues.end(), hashKeys(v, ty)) != MarkedValues.end())
+        if(find(MarkedValues.begin(), MarkedValues.end(), uniqueKey(v, ty)) != MarkedValues.end())
             return true;
         return false;
     }
@@ -40,16 +40,19 @@ namespace ST_free {
         MarkedValues = BasicBlockList(v);
     }
 
-    BasicBlockStat::BasicBlockStat(){
+    BasicBlockInformation::BasicBlockInformation(){
+        correctlyBranched = false;
     }
 
-    BasicBlockStat::BasicBlockStat(const BasicBlockStat& BStat){
+    BasicBlockInformation::BasicBlockInformation(const BasicBlockInformation& BStat){
         freeList = BasicBlockWorkList(BStat.getWorkList(FREED).getList());
         allocList = BasicBlockWorkList(BStat.getWorkList(ALLOCATED).getList());
         liveVariables = LiveVariableList(BStat.getLiveVariables());
+        correctlyFreed = BasicBlockWorkList(BStat.getCorrectlyFreedValues());
+        correctlyBranched = false;
     }
 
-    BasicBlockWorkList BasicBlockStat::getWorkList(int mode) const {
+    BasicBlockWorkList BasicBlockInformation::getWorkList(int mode) const {
         if(mode == FREED)
             return freeList;
         return allocList;
@@ -59,63 +62,83 @@ namespace ST_free {
         return MarkedValues;
     }
 
-    void BasicBlockStat::addFree(Value *v, Type * ty){
+    void BasicBlockInformation::addFree(Value *v, Type * ty){
         freeList.add(v, ty);
     }
 
-    // void BasicBlockStat::addFree(Value * v, Type * memType, Type * structType, long memberNum){
+    void BasicBlockInformation::setCorrectlyBranched(){
+        correctlyBranched = true;
+    }
+
+    bool BasicBlockInformation::isCorrectlyBranched(){
+        return correctlyBranched;
+    }
+
+    void BasicBlockInformation::addCorrectlyFreedValue(Value * V, Type * T){
+        correctlyFreed.add(V, T);
+    }
+
+    bool BasicBlockInformation::CorrectlyFreedValueExists(Value * V, Type * T){
+        return correctlyFreed.exists(V, T);
+    }
+
+    BasicBlockWorkList BasicBlockInformation::getCorrectlyFreedValues() const{
+        return correctlyFreed;
+    }
+
+    // void BasicBlockInformation::addFree(Value * v, Type * memType, Type * structType, long memberNum){
     //     freeList.add(v, memType, structType, memberNum);
     // }
 
-    bool BasicBlockStat::FreeExists(Value *v, Type * ty){
+    bool BasicBlockInformation::FreeExists(Value *v, Type * ty){
         return freeList.exists(v, ty);
     }
 
-    void BasicBlockStat::setFreeList(BasicBlockList v){
+    void BasicBlockInformation::setFreeList(BasicBlockList v){
         freeList.setList(v);
     }
 
-    void BasicBlockStat::addAlloc(Value *v, Type * ty){
+    void BasicBlockInformation::addAlloc(Value *v, Type * ty){
         allocList.add(v, ty);
     }
-    bool BasicBlockStat::LiveVariableExists(Value * v){
+    bool BasicBlockInformation::LiveVariableExists(Value * v){
         if(find(liveVariables.begin(), liveVariables.end(), v) != liveVariables.end())
             return true;
         return false;
     }
 
-    // void BasicBlockStat::addAlloc(Value * v, Type * memType, Type * structType, long memberNum){
+    // void BasicBlockInformation::addAlloc(Value * v, Type * memType, Type * structType, long memberNum){
     //     allocList.add(v, memType, structType, memberNum);
     // }
 
-    // void BasicBlockStat::incrementFreedRefCount(Value *v, Value * refVal){
+    // void BasicBlockInformation::incrementFreedRefCount(Value *v, Value * refVal){
     //     freeList.incrementRefCount(v, refVal);
     // }
-    // void BasicBlockStat::decrementFreedRefCount(Value *v, Value * refVal){
+    // void BasicBlockInformation::decrementFreedRefCount(Value *v, Value * refVal){
     //     freeList.decrementRefCount(v, refVal);
     // }
-    // void BasicBlockStat::incrementAllocatedRefCount(Value *v, Value * refVal){
+    // void BasicBlockInformation::incrementAllocatedRefCount(Value *v, Value * refVal){
     //     allocList.incrementRefCount(v, refVal);
     // }
-    // void BasicBlockStat::decrementAllocatedRefCount(Value *v, Value * refVal){
+    // void BasicBlockInformation::decrementAllocatedRefCount(Value *v, Value * refVal){
         // allocList.decrementRefCount(v, refVal);
     // }
-    bool BasicBlockStat::AllocExists(Value *v, Type *ty){
+    bool BasicBlockInformation::AllocExists(Value *v, Type *ty){
         return allocList.exists(v, ty);
     }
 
-    void BasicBlockStat::setAllocList(BasicBlockList v){
+    void BasicBlockInformation::setAllocList(BasicBlockList v){
         allocList.setList(v);
     }
 
-    void BasicBlockStat::addLiveVariable(Value *v){
+    void BasicBlockInformation::addLiveVariable(Value *v){
         liveVariables.push_back(v);
     }
 
-    LiveVariableList BasicBlockStat::getLiveVariables() const {
+    LiveVariableList BasicBlockInformation::getLiveVariables() const {
         return liveVariables;
     }
-    void BasicBlockStat::setLiveVariables(LiveVariableList lvl){
+    void BasicBlockInformation::setLiveVariables(LiveVariableList lvl){
         liveVariables = LiveVariableList(lvl);
     }
 
@@ -157,7 +180,7 @@ namespace ST_free {
     }
 
     void BasicBlockManager::copy(BasicBlock *src, BasicBlock *tgt){
-        BBMap[tgt] = BasicBlockStat(BBMap[src]);
+        BBMap[tgt] = BasicBlockInformation(BBMap[src]);
         return;
     }
     // void BasicBlockManager::incrementRefCount(BasicBlock *B, Value *v, Value * refVal, int mode){
@@ -221,7 +244,7 @@ namespace ST_free {
         return BasicBlockList();
     }
 
-    BasicBlockStat * BasicBlockManager::get(BasicBlock *B){
+    BasicBlockInformation * BasicBlockManager::get(BasicBlock *B){
         if (this->exists(B))
             return &BBMap[B];
         return NULL;
@@ -240,5 +263,27 @@ namespace ST_free {
     }
     bool BasicBlockManager::existsInLiveVariableList(BasicBlock * B, Value *val){
         return BBMap[B].LiveVariableExists(val);
+    }
+
+    void BasicBlockManager::setCorrectlyBranched(BasicBlock *B){
+        BBMap[B].setCorrectlyBranched();
+    }
+    bool BasicBlockManager::isCorrectlyBranched(BasicBlock *B){
+        return BBMap[B].isCorrectlyBranched();
+    }
+    bool BasicBlockManager::isPredBlockCorrectlyBranched(BasicBlock *B){
+        if(pred_size(B) == 1){
+            for (BasicBlock* PredBB: predecessors(B)) {
+                if(this->isCorrectlyBranched(PredBB))
+                    return true;
+            }
+        }
+        return false;
+    }
+    void BasicBlockManager::addCorrectlyFreedValue(BasicBlock *B, Value * V, Type * T){
+        BBMap[B].addCorrectlyFreedValue(V, T);
+    }
+    bool BasicBlockManager::correctlyFreedValueExists(BasicBlock *B, Value * V, Type * T){
+        return BBMap[B].CorrectlyFreedValueExists(V, T);
     }
 }

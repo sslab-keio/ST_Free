@@ -7,6 +7,7 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/PassManager.h"

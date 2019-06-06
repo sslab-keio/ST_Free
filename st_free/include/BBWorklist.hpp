@@ -3,11 +3,11 @@
 #pragma once
 
 namespace ST_free {
-    using BasicBlockList = vector<pair<Value *, Type *>>;
+    using uniqueKey = pair<Value *, Type *>;
+    using BasicBlockList = vector<uniqueKey>;
     // using BasicBlockList = vector<ValueInformation>;
     class BasicBlockWorkList {
         private:
-            using hashKeys = pair<Value *, Type *>;
             BasicBlockList MarkedValues;
         public:
             BasicBlockWorkList();
@@ -23,14 +23,17 @@ namespace ST_free {
     };
 
     using LiveVariableList = vector<Value *>;
-    class BasicBlockStat {
+    class BasicBlockInformation {
         private:
             BasicBlockWorkList freeList;
             BasicBlockWorkList allocList;
+            BasicBlockWorkList correctlyFreed;
             LiveVariableList liveVariables;
+            bool correctlyBranched;
+            bool predCorrectlyBranched;
         public:
-            BasicBlockStat();
-            BasicBlockStat(const BasicBlockStat &);
+            BasicBlockInformation();
+            BasicBlockInformation(const BasicBlockInformation &);
             /*** Free Related Methods ***/
             // void addFree(Value *v);
             void addFree(Value * v, Type * ty);
@@ -52,15 +55,21 @@ namespace ST_free {
             bool LiveVariableExists(Value * v);
             void incrementRefCount(Value * v);
             void decrementRefCount(Value * v);
+            /*** Correct Branch Freed Methods ***/
+            void setCorrectlyBranched();
+            bool isCorrectlyBranched();
+            void addCorrectlyFreedValue(Value * V, Type * T);
+            bool CorrectlyFreedValueExists(Value * V, Type * T);
+            BasicBlockWorkList getCorrectlyFreedValues() const;
             /*** Utilities ***/
             BasicBlockWorkList getWorkList(int mode) const;
             LiveVariableList getLiveVariables() const;
     };
     class BasicBlockManager {
         private:
-            map<BasicBlock *,BasicBlockStat> BBMap;
+            map<BasicBlock *,BasicBlockInformation> BBMap;
             bool exists(BasicBlock *B);
-            BasicBlockStat * get(BasicBlock *B);
+            BasicBlockInformation * get(BasicBlock *B);
             BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
             LiveVariableList intersectLiveVariables(LiveVariableList src, LiveVariableList tgt);
         public:
@@ -76,5 +85,10 @@ namespace ST_free {
             void existsInFreedList(BasicBlock *B, Value *val, Type *ty);
             void existsInAllocatedList(BasicBlock *B, Value *val, Type *ty);
             bool existsInLiveVariableList(BasicBlock * B, Value *val);
+            void setCorrectlyBranched(BasicBlock * B);
+            bool isCorrectlyBranched(BasicBlock * B);
+            bool isPredBlockCorrectlyBranched(BasicBlock *B);
+            void addCorrectlyFreedValue(BasicBlock *, Value *, Type *);
+            bool correctlyFreedValueExists(BasicBlock *, Value *, Type *);
     };
 }

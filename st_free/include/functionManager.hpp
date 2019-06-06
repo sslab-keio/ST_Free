@@ -81,6 +81,7 @@ namespace ST_free{
             vector<BasicBlock *> endPoint;
             LocalVarList localVariables;
             FreedStructList freedStruct;
+            vector<pair<Value *, Type *>> isCorrectlyBranchedFreeValues;
             BasicBlockManager BBManage;
             ValueManager VManage;
             int getStat();
@@ -118,6 +119,8 @@ namespace ST_free{
             BasicBlockList getAllocList(BasicBlock *B);
             bool isFreedInBasicBlock(BasicBlock *B, Value * val, Type * ty);
             bool isAllocatedInBasicBlock(BasicBlock *B, Value * val, Type * ty);
+            void addCorrectlyFreedValue(BasicBlock *, Value *,Type *);
+            bool isCorrectlyBranchedFreeValue(BasicBlock *, Value *, Type *);
             /*** Argument Values ***/
             bool isArgValue(Value *V);
             void setArgFree(Value *V);
@@ -144,6 +147,9 @@ namespace ST_free{
             bool localVarExists(Type *);
             void incrementRefCount(Value *V, Type *T, Value *ref);
             bool isLiveInBasicBlock(BasicBlock *B, Value *val);
+            void setCorrectlyBranched(BasicBlock *B);
+            bool isCorrectlyBranched(BasicBlock *B);
+            bool isPredBlockCorrectlyBranched(BasicBlock *B);
     };
 
     class FunctionManager {

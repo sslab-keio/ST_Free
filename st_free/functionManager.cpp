@@ -51,8 +51,11 @@ namespace ST_free{
             varinfo = this->addVariable(V, memTy, stTy, num);
         else
             varinfo->addStructParams(stTy, num);
-        // BBManage.add(B, V, memTy, stTy, num, FREED);
         BBManage.add(B, V, memTy, FREED);
+        if(BBManage.isPredBlockCorrectlyBranched(B)){
+            // outs() << *varinfo->getValue() << " " << *varinfo->getMemberType() << "\n";
+            this->addCorrectlyFreedValue(B, V, memTy);
+        }
     }
 
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V) {
@@ -216,8 +219,6 @@ namespace ST_free{
                 if(members[ind])
                     fs->setFreedMember(ind);
             }
-            //Copy vector member infos
-        
     }
     void FunctionInformation::addBasicBlockLiveVariable(BasicBlock * B, Value *V){
         BBManage.addLiveVariable(B, V);
@@ -230,5 +231,20 @@ namespace ST_free{
     }
     bool FunctionInformation::isLiveInBasicBlock(BasicBlock *B, Value *val){
        BBManage.existsInLiveVariableList(B, val);
+    }
+    void FunctionInformation::setCorrectlyBranched(BasicBlock *B){
+        BBManage.setCorrectlyBranched(B);
+    }
+    bool FunctionInformation::isCorrectlyBranched(BasicBlock *B){
+        return BBManage.isCorrectlyBranched(B);
+    }
+    bool FunctionInformation::isPredBlockCorrectlyBranched(BasicBlock *B){
+        return BBManage.isPredBlockCorrectlyBranched(B);
+    }
+    void FunctionInformation::addCorrectlyFreedValue(BasicBlock * B, Value * V,Type * T){
+        BBManage.addCorrectlyFreedValue(B, V, T);
+    }
+    bool FunctionInformation::isCorrectlyBranchedFreeValue(BasicBlock *B, Value *V, Type *T){
+        return BBManage.correctlyFreedValueExists(B, V, T);
     }
 }

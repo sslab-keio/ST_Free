@@ -28,7 +28,8 @@ namespace ST_free {
 
     Value * getLoadeeValue(Value * val){
         if(LoadInst *inst = dyn_cast<LoadInst>(val)){
-            // outs() << *(inst->getPointerOperand()) << "\n";
+            // if(GetElementPtrInst *gele = dyn_cast<GetElementPtrInst>(inst->getPointerOperand()))
+            //     return getLoadeeValue(gele->getPointerOperand());
             return inst->getPointerOperand();
         }
         return NULL;
