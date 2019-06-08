@@ -3,23 +3,17 @@
 #pragma once
 
 namespace ST_free {
-    using uniqueKey = pair<Value *, Type *>;
     using BasicBlockList = vector<uniqueKey>;
-    // using BasicBlockList = vector<ValueInformation>;
     class BasicBlockWorkList {
         private:
             BasicBlockList MarkedValues;
         public:
             BasicBlockWorkList();
             BasicBlockWorkList(const BasicBlockList);
-            void add(Value * v, Type * t);
-            // void add(Value * v, Type * memType, Type * structType, long memberNum);
-            bool exists(Value * v, Type *t);
-            // void incrementRefCount(Value *v, Value * refVal);
-            // void decrementRefCount(Value *v, Value * refVal);
+            void add(Value * v, Type * t, long mem);
+            bool exists(Value * v, Type *t, long mem);
             BasicBlockList getList() const;
             void setList(BasicBlockList);
-            // void intersect(vector<Value *>);
     };
 
     using LiveVariableList = vector<Value *>;
@@ -35,21 +29,14 @@ namespace ST_free {
             BasicBlockInformation();
             BasicBlockInformation(const BasicBlockInformation &);
             /*** Free Related Methods ***/
-            // void addFree(Value *v);
-            void addFree(Value * v, Type * ty);
-            bool FreeExists(Value *v, Type * ty);
+            void addFree(Value * v, Type * ty, long mem);
+            bool FreeExists(Value *v, Type * ty, long mem);
             void setFreeList(BasicBlockList);
-            // void incrementFreedRefCount(Value *v, Value * refVal);
-            // void decrementFreedRefCount(Value *v, Value * refVal);
             /*** Alloc Related Methods ***/
-            void addAlloc(Value *v, Type * ty);
-            // void addAlloc(Value * v, Type * memType, Type * structType, long memberNum);
-            bool AllocExists(Value *v, Type *ty);
+            void addAlloc(Value *v, Type * ty, long mem);
+            bool AllocExists(Value *v, Type *ty, long mem);
             void setAllocList(BasicBlockList);
-            // void incrementAllocatedRefCount(Value *v, Value * refVal);
-            // void decrementAllocatedRefCount(Value *v, Value * refVal);
             /*** Live Variable Methods ***/
-            // void addLiveVariable(Value * v, Type * memType, Type * structType, long memberNum);
             void setLiveVariables(LiveVariableList);
             void addLiveVariable(Value * v);
             bool LiveVariableExists(Value * v);
@@ -58,8 +45,8 @@ namespace ST_free {
             /*** Correct Branch Freed Methods ***/
             void setCorrectlyBranched();
             bool isCorrectlyBranched();
-            void addCorrectlyFreedValue(Value * V, Type * T);
-            bool CorrectlyFreedValueExists(Value * V, Type * T);
+            void addCorrectlyFreedValue(Value * V, Type * T, long mem);
+            bool CorrectlyFreedValueExists(Value * V, Type * T, long mem);
             BasicBlockWorkList getCorrectlyFreedValues() const;
             /*** Utilities ***/
             BasicBlockWorkList getWorkList(int mode) const;
@@ -75,20 +62,20 @@ namespace ST_free {
         public:
             void CollectInInfo(BasicBlock *B, bool isEntryPoint);
             void add(BasicBlock * B, Value *v, int mode);
-            void add(BasicBlock * B, Value *v, Type * memTy, int mode);
+            void add(BasicBlock * B, Value *v, Type * memTy, long mem, int mode);
             void copy(BasicBlock *src, BasicBlock *tgt);
             void intersect(BasicBlock *src, BasicBlock *tgt);
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);
             BasicBlockList getBasicBlockAllocList(BasicBlock *src);
             void addLiveVariable(BasicBlock *B, Value *val);
             LiveVariableList getLiveVariables(BasicBlock *B);
-            void existsInFreedList(BasicBlock *B, Value *val, Type *ty);
-            void existsInAllocatedList(BasicBlock *B, Value *val, Type *ty);
+            bool existsInFreedList(BasicBlock *B, Value *val, Type *ty, long mem);
+            bool existsInAllocatedList(BasicBlock *B, Value *val, Type *ty, long mem);
             bool existsInLiveVariableList(BasicBlock * B, Value *val);
             void setCorrectlyBranched(BasicBlock * B);
             bool isCorrectlyBranched(BasicBlock * B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
-            void addCorrectlyFreedValue(BasicBlock *, Value *, Type *);
-            bool correctlyFreedValueExists(BasicBlock *, Value *, Type *);
+            void addCorrectlyFreedValue(BasicBlock *, Value *, Type *, long mem);
+            bool correctlyFreedValueExists(BasicBlock *, Value *, Type *, long mem);
     };
 }

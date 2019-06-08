@@ -50,29 +50,36 @@ namespace ST_free{
                 return V == v;
             }
             bool operator ==(Type * t){
-                return T == t;
+                return this->T == t;
             }
-            bool operator ==(FreedStruct v){
-                return V == v.getValue() && T == v.getType() && I == v.getInst();
+            bool operator ==(Type t){
+                return this->T == &t;
             }
-            bool operator !=(FreedStruct v){
-                return V != v.getValue() && T != v.getType() && I != v.getInst();
+            bool operator ==(FreedStruct *v){
+                return V == v->getValue() && T == v->getType() && I == v->getInst();
             }
-            bool operator ==(pair<Type *, Value *> t){
-                return T == t.first && V == t.second;
+            bool operator !=(FreedStruct *v){
+                return V != v->getValue() && T != v->getType() && I != v->getInst();
             }
-            bool operator !=(pair<Type *, Value *> t){
-                return T != t.first && V != t.second;
+            bool operator ==(uniqueKey uk){
+                return T == uk.getType() && V == uk.getValue();
             }
+            bool operator !=(uniqueKey uk){
+                return T != uk.getType() && V != uk.getValue();
+            }
+
             Type * getType() const {return T;};
             Value * getValue() const {return V;};
             Instruction * getInst() const {return I;};
             void setFreedMember(int64_t num){FreedMembers[num] = true;};
             vector<bool> getFreedMember() const{return FreedMembers;};
+            bool memberIsFreed(int ind) {return ind < FreedMembers.size() ? FreedMembers[ind]:false;};
+            unsigned memberSize() {return FreedMembers.size();};
             BasicBlock * getFreedBlock() const{return freedBlock;};
+            void print();
     };
-    using FreedStructList = vector<FreedStruct>;
-    using LocalVarList = vector<FreedStruct>;
+    using FreedStructList = vector<FreedStruct *>;
+    using LocalVarList = vector<FreedStruct *>;
     struct FunctionInformation {
         private:
             Function *F;
@@ -81,7 +88,7 @@ namespace ST_free{
             vector<BasicBlock *> endPoint;
             LocalVarList localVariables;
             FreedStructList freedStruct;
-            vector<pair<Value *, Type *>> isCorrectlyBranchedFreeValues;
+            vector<uniqueKey> isCorrectlyBranchedFreeValues;
             BasicBlockManager BBManage;
             ValueManager VManage;
             int getStat();
@@ -102,8 +109,7 @@ namespace ST_free{
             void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I);
             FreedStructList getFreedStruct() const;
             /** AllocValue Related ***/
-            void addAllocValue(BasicBlock *B, Value *V);
-            void addAllocValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
+            void addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
             void incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
             /*** Status Related ***/
@@ -117,10 +123,10 @@ namespace ST_free{
             void BBCollectInfo(BasicBlock& B, bool isEntryPoint);
             BasicBlockList getFreeList(BasicBlock *B);
             BasicBlockList getAllocList(BasicBlock *B);
-            bool isFreedInBasicBlock(BasicBlock *B, Value * val, Type * ty);
-            bool isAllocatedInBasicBlock(BasicBlock *B, Value * val, Type * ty);
-            void addCorrectlyFreedValue(BasicBlock *, Value *,Type *);
-            bool isCorrectlyBranchedFreeValue(BasicBlock *, Value *, Type *);
+            bool isFreedInBasicBlock(BasicBlock *B, Value * val, Type * ty, long mem);
+            bool isAllocatedInBasicBlock(BasicBlock *B, Value * val, Type * ty, long mem);
+            void addCorrectlyFreedValue(BasicBlock *, Value *, Type *, long mem);
+            bool isCorrectlyBranchedFreeValue(BasicBlock *, Value *, Type *, long mem);
             /*** Argument Values ***/
             bool isArgValue(Value *V);
             void setArgFree(Value *V);
@@ -138,18 +144,19 @@ namespace ST_free{
             ValueInformation * addVariable(Value * val);
             ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
 			ValueInformation * getValueInfo(Value * val);
-			ValueInformation * getValueInfo(Value * val, Type * ty);
+			ValueInformation * getValueInfo(Value * val, Type * ty, long num);
             bool variableExists(Value *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *, ParentList P, ValueInformation *);
             LocalVarList getLocalVar() const;
             void addBasicBlockLiveVariable(BasicBlock *B, Value *);
             bool localVarExists(Type *);
-            void incrementRefCount(Value *V, Type *T, Value *ref);
+            void incrementRefCount(Value *V, Type *T, long mem, Value *ref);
             bool isLiveInBasicBlock(BasicBlock *B, Value *val);
             void setCorrectlyBranched(BasicBlock *B);
             bool isCorrectlyBranched(BasicBlock *B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
+            void printVal(){VManage.print();}
     };
 
     class FunctionManager {

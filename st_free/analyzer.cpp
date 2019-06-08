@@ -1,6 +1,4 @@
-#include "analyzer.hpp"
-#include "determinator.hpp"
-#include "support_funcs.hpp"
+#include "include/analyzer.hpp"
 
 #define isEntryPoint(F, B) &(F.getEntryBlock()) == &B ? true:false
 
@@ -42,7 +40,7 @@ namespace ST_free{
                 /*** get Called Function ***/
                 if (Function* called_function = CI->getCalledFunction()) {
                     if (isAllocFunction(called_function)) {
-                        this->addAlloc(CI, &B);
+                        // this->addAlloc(CI, &B);
                     } else if (isFreeFunction(called_function)) {
                         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end(); arguments++) {
                             this->addFree(cast<Value>(arguments), CI, &B);
@@ -56,10 +54,10 @@ namespace ST_free{
 
             if (auto *SI = dyn_cast<StoreInst>(&I)) {
                 if(isStoreToStruct(SI)){
-                    // generateError(SI, "is Store to struct");
+                    generateWarning(SI, "is Store to struct");
                 }
                 if(isStoreFromStruct(SI)){
-                    // generateError(SI, "is Store from struct");
+                    generateWarning(SI, "is Store from struct");
                     GetElementPtrInst * GEle = getStoredStructEle(SI);
                     if(GEle != NULL){
                         FEle->addVariable(
@@ -71,11 +69,13 @@ namespace ST_free{
                         FEle->incrementRefCount(
                                 getLoadeeValue(GEle->getPointerOperand()),
                                 GEle->getResultElementType(),
+                                getValueIndices(GEle),
                                 SI->getPointerOperand()
                             );
                     }
                 }
             }
+
             if(auto *BI = dyn_cast<BranchInst>(&I)) {
                 if(this->isCorrectlyBranched(BI)) {
                     generateWarning(BI, "Correctly Branched");
@@ -88,16 +88,19 @@ namespace ST_free{
     void Analyzer::checkAvailability() {
         FreedStructList fsl = FEle->getFreedStruct();
 
-        for(FreedStruct localVar: FEle->getLocalVar()) {
-            if(!FEle->isArgValue(localVar.getValue()))
-                if(find(fsl.begin(), fsl.end(), pair<Type *, Value *>(localVar.getType(), localVar.getValue())) == fsl.end())
+        for(FreedStruct * localVar: FEle->getLocalVar()) {
+            if(!FEle->isArgValue(localVar->getValue())){
+                uniqueKey uk(localVar->getValue(), localVar->getType(), -1);
+                if(find_if(fsl.begin(), fsl.end(), 
+                            [uk](FreedStruct *f){return *f == uk;}) == fsl.end())
                     fsl.push_back(localVar);
+            }
         }
 
-        for(FreedStruct freedStruct: fsl) {
-            StructType * strTy = cast<StructType>(freedStruct.getType());
+        for(FreedStruct * freedStruct: fsl) {
+            StructType * strTy = cast<StructType>(freedStruct->getType());
             int cPointers = strTy->getNumElements();
-            vector<bool> alreadyFreed = freedStruct.getFreedMember();
+            vector<bool> alreadyFreed = freedStruct->getFreedMember();
             int ind = 0;
             for (Type * t: strTy->elements()) {
                 if (!t->isPointerTy() 
@@ -105,31 +108,36 @@ namespace ST_free{
                         || alreadyFreed[ind]){
                     cPointers--;
                 } else {
-                    ValueInformation *vinfo = FEle->getValueInfo(freedStruct.getValue(), t);
+                    ValueInformation *vinfo = FEle->getValueInfo(freedStruct->getValue(), t, ind);
                     if(vinfo != NULL){
-                        if(FEle->isFreedInBasicBlock(freedStruct.getFreedBlock(), vinfo->getValue(), t)
-                                || FEle->isCorrectlyBranchedFreeValue(freedStruct.getFreedBlock(), vinfo->getValue(), t))
+                        if(FEle->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
+                                || FEle->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind))
                             cPointers--;
                         else if (!vinfo->noRefCount()) {
                             for(Value * referee: vinfo->getReferees()) {
-                                if (FEle->isLiveInBasicBlock(freedStruct.getFreedBlock(), referee)){
+                                if (FEle->isLiveInBasicBlock(freedStruct->getFreedBlock(), referee)){
                                     cPointers--;
                                     break;
                                 }
                             }
                         }
 
-                        FEle->setStructMemberFreed(&freedStruct, vinfo->getMemberNum());
-                        if(FEle->isArgValue(vinfo->getValue()))
+                        FEle->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
+                        if(FEle->isArgValue(vinfo->getValue())) {
                             FEle->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
+                            cPointers--;
+                        }
                     }
                 }
                 ind++;
             }
-            if (cPointers > 0) {
-                generateError(freedStruct.getInst(), "Struct element is NOT Freed");
+            if (!FEle->isArgValue(freedStruct->getValue())){
+                // if(cPointers > 0)
+                //     generateError(freedStruct->getInst(), "Struct element is NOT Freed");
+                stManage->addCandidateValue(&(FEle->getFunction()), strTy, freedStruct);
             }
         }
+        // FEle->printVal();
         return;
     }
 
@@ -144,20 +152,20 @@ namespace ST_free{
         return false;
     }
 
-    void Analyzer::addLocalStruct(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
-        ValueInformation *vinfo = FEle->addVariable(V);
-        FEle->addBasicBlockLiveVariable(B, V);
-        if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
-            FEle->addLocalVar(B, strTy, V, I, P, vinfo);
+//     void Analyzer::addLocalStruct(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
+//         ValueInformation *vinfo = FEle->addVariable(V);
+//         FEle->addBasicBlockLiveVariable(B, V);
+//         if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
+//             FEle->addLocalVar(B, strTy, V, I, P, vinfo);
 
-            P.push_back(T);
-            for (Type * ele: strTy->elements()) {
-                if(ele->isStructTy())
-                    this->addLocalStruct(B, ele, V, I, P);
-            }
-		}
-        return;
-    }
+//             P.push_back(T);
+//             for (Type * ele: strTy->elements()) {
+//                 if(ele->isStructTy())
+//                     this->addLocalStruct(B, ele, V, I, P);
+//             }
+// 		}
+//         return;
+//     }
 
     void Analyzer::addLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
         ValueInformation *vinfo = FEle->addVariable(V);
@@ -189,7 +197,7 @@ namespace ST_free{
     }
 
     void Analyzer::analyzeDifferentFunc(Function &F) {
-        Analyzer called_function(&F);
+        Analyzer called_function(&F, stManage);
         called_function.analyze();
         return;
     }
@@ -249,24 +257,23 @@ namespace ST_free{
         if(isStructEleAlloc(CI)){
             GetElementPtrInst *inst = getAllocStructEleInfo(CI);
 
-            // if(inst != NULL) {
-            //     if (FEle->isArgValue(getLoadeeValue(inst->getPointerOperand())))
-            //         FEle->setArgAlloc(getLoadeeValue(inst->getPointerOperand()));
+            if(inst != NULL) {
+                if (FEle->isArgValue(getLoadeeValue(inst->getPointerOperand())))
+                    FEle->setArgAlloc(getLoadeeValue(inst->getPointerOperand()));
 
-            //     FEle->addAllocValue(
-            //             B,
-            //             getLoadeeValue(inst->getPointerOperand()),
-            //             inst->getResultElementType(),
-            //             inst->getSourceElementType(),
-            //             getValueIndices(inst));
-            //     generateWarning(CI, "Struct element malloc");
-            // }
+                // FEle->addAllocValue(
+                //         B,
+                //         getLoadeeValue(inst->getPointerOperand()),
+                //         inst->getResultElementType()
+                //         );
+                generateWarning(CI, "Struct element malloc");
+            }
         } else {
             Value * val = getAllocatedValue(CI);
             if (FEle->isArgValue(val))
                 FEle->setArgAlloc(val);
             this->addPointerLocalVariable(B, val->getType(), val, CI, ParentList());
-            // FEle->addAllocValue(B, val);
+            // FEle->addAllocValue(B, val, val->getType());
             generateWarning(CI, "Value malloc");
         }
         return;

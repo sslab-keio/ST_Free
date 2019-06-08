@@ -26,7 +26,7 @@ int main()
     t->str = "test\0";
     printf("%d, %s",t->x, t->str);
 
-    // freeElement((unsigned long) t->str);
+    freeElement((unsigned long) t->str);
     return 0;
 }
 

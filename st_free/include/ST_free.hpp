@@ -33,8 +33,6 @@
 #define UNANALYZED 1
 #define IN_PROGRESS 2
 #define ANALYZED 3
-// #define ALLOC 1
-// #define FREE 2
 
 using namespace llvm;
 using namespace std;

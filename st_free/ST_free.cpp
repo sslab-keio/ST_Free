@@ -1,10 +1,11 @@
-#include "ST_free.hpp"
-#include "statList.hpp"
-#include "determinator.hpp"
-#include "support_funcs.hpp"
-#include "functionManager.hpp"
+#include "include/ST_free.hpp"
+#include "include/statList.hpp"
+#include "include/determinator.hpp"
+#include "include/support_funcs.hpp"
+#include "include/functionManager.hpp"
+#include "include/StructInformation.hpp"
 // #include "inter_analysis.hpp"
-#include "analyzer.hpp"
+#include "include/analyzer.hpp"
 
 using namespace ST_free;
 
@@ -17,11 +18,15 @@ namespace{
 
         /*** Main Modular ***/
         bool runOnModule(Module &M) override {
+            StructManager StManage(M.getIdentifiedStructTypes());
+
             for(Function &F: M){
-                // outs() << F.getName() << "\n";
-                Analyzer analyze(&F);
+                Analyzer analyze(&F, &StManage);
                 analyze.analyze();
             }
+            StManage.BuildCandidateCount();
+            // StManage.print();
+            StManage.checkCorrectness();
             return false;
         }
     }; // end of struct
