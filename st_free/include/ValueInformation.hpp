@@ -91,6 +91,7 @@ namespace ST_free{
     class ValueManager{
         private:
             map<uniqueKey, ValueInformation *> vinfos;
+            map<ValueInformation *, ValueInformation *> alias;
         public:
             bool exists(Value *val, Type * ty, long num);
             bool exists(Value *val);
@@ -99,6 +100,7 @@ namespace ST_free{
             void addValueInfo(Value * val, Type * ty, long num);
             void addValueInfo(Value * val);
             void addValueInfo(Value * val, Type * memType, Type * parType, long num);
+            void addAlias(Value * srcVal, Value * tgtVal); // tgtVal <- srcVal;
             void print();
     };
 }

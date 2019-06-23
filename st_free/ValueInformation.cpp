@@ -74,4 +74,7 @@ namespace ST_free{
             vmap.first.print();
         }
     }
+    void ValueManager::addAlias(Value *srcVal, Value * tgtVal){
+        return;
+    }
 }

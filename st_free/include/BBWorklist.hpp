@@ -19,12 +19,15 @@ namespace ST_free {
     using LiveVariableList = vector<Value *>;
     class BasicBlockInformation {
         private:
+            /*** BasicBlock Lists ***/
             BasicBlockWorkList freeList;
             BasicBlockWorkList allocList;
             BasicBlockWorkList correctlyFreed;
             LiveVariableList liveVariables;
+            /*** BasicBlock Status ***/
             bool correctlyBranched;
             bool predCorrectlyBranched;
+            bool loopBlock;
         public:
             BasicBlockInformation();
             BasicBlockInformation(const BasicBlockInformation &);
@@ -45,6 +48,8 @@ namespace ST_free {
             /*** Correct Branch Freed Methods ***/
             void setCorrectlyBranched();
             bool isCorrectlyBranched();
+            void setLoopBlock();
+            bool isLoopBlock();
             void addCorrectlyFreedValue(Value * V, Type * T, long mem);
             bool CorrectlyFreedValueExists(Value * V, Type * T, long mem);
             BasicBlockWorkList getCorrectlyFreedValues() const;
@@ -74,6 +79,8 @@ namespace ST_free {
             bool existsInLiveVariableList(BasicBlock * B, Value *val);
             void setCorrectlyBranched(BasicBlock * B);
             bool isCorrectlyBranched(BasicBlock * B);
+            void setLoopBlock(BasicBlock *B);
+            bool isLoopBlock(BasicBlock *B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
             void addCorrectlyFreedValue(BasicBlock *, Value *, Type *, long mem);
             bool correctlyFreedValueExists(BasicBlock *, Value *, Type *, long mem);

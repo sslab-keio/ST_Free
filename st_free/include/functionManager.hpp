@@ -91,12 +91,15 @@ namespace ST_free{
             vector<uniqueKey> isCorrectlyBranchedFreeValues;
             BasicBlockManager BBManage;
             ValueManager VManage;
+            LoopInfo * LoopI;
             int getStat();
             void setStat(int);
         public:
             /*** Costructor ***/
             FunctionInformation();
             FunctionInformation(Function *F);
+            /*** Function ***/
+            Function & getFunction();
             /*** EndPoints ***/
             void addEndPoint(BasicBlock *B);
             vector<BasicBlock *> getEndPoint() const;
@@ -118,8 +121,7 @@ namespace ST_free{
             bool isInProgress();
             void setAnalyzed();
             void setInProgress();
-            /*** Function/BasicBlock Related ***/
-            Function & getFunction();
+            /*** BasicBlock Related ***/
             void BBCollectInfo(BasicBlock& B, bool isEntryPoint);
             BasicBlockList getFreeList(BasicBlock *B);
             BasicBlockList getAllocList(BasicBlock *B);
@@ -127,6 +129,13 @@ namespace ST_free{
             bool isAllocatedInBasicBlock(BasicBlock *B, Value * val, Type * ty, long mem);
             void addCorrectlyFreedValue(BasicBlock *, Value *, Type *, long mem);
             bool isCorrectlyBranchedFreeValue(BasicBlock *, Value *, Type *, long mem);
+            void setCorrectlyBranched(BasicBlock *B);
+            bool isCorrectlyBranched(BasicBlock *B);
+            bool isPredBlockCorrectlyBranched(BasicBlock *B);
+            /*** Loop Related ***/
+            void setLoopInfo(LoopInfo * li);
+            void setLoopBlock(BasicBlock &B);
+            bool isLoopBlock(BasicBlock &B);
             /*** Argument Values ***/
             bool isArgValue(Value *V);
             void setArgFree(Value *V);
@@ -134,13 +143,13 @@ namespace ST_free{
             void setStructMemberFreed(FreedStruct * fstruct, int64_t num);
             vector<bool> getStructMemberFreed(Type * T);
             void copyStructMemberFreed(Type * T, vector<bool> members);
-            // void setStructMemberllocated(Type *T, Value *V, Instruction *I, int64_t num);
             void setStructArgFree(Value *V, int64_t num);
             void setStructArgAlloc(Value *V, int64_t num);
             void setStructMemberArgFreed(Value *V, int64_t num);
             void setStructMemberArgAllocated(Value *V, int64_t num);
             bool isArgFreed(int64_t num);
             bool isArgAllocated(int64_t num);
+            /*** Individual Variable Informations ***/
             ValueInformation * addVariable(Value * val);
             ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
 			ValueInformation * getValueInfo(Value * val);
@@ -153,9 +162,7 @@ namespace ST_free{
             bool localVarExists(Type *);
             void incrementRefCount(Value *V, Type *T, long mem, Value *ref);
             bool isLiveInBasicBlock(BasicBlock *B, Value *val);
-            void setCorrectlyBranched(BasicBlock *B);
-            bool isCorrectlyBranched(BasicBlock *B);
-            bool isPredBlockCorrectlyBranched(BasicBlock *B);
+            /*** Debugging ***/
             void printVal(){VManage.print();}
     };
 

@@ -42,6 +42,7 @@ namespace ST_free {
 
     BasicBlockInformation::BasicBlockInformation(){
         correctlyBranched = false;
+        loopBlock = false;
     }
 
     BasicBlockInformation::BasicBlockInformation(const BasicBlockInformation& BStat){
@@ -50,6 +51,7 @@ namespace ST_free {
         liveVariables = LiveVariableList(BStat.getLiveVariables());
         correctlyFreed = BasicBlockWorkList(BStat.getCorrectlyFreedValues());
         correctlyBranched = false;
+        loopBlock = false;
     }
 
     BasicBlockWorkList BasicBlockInformation::getWorkList(int mode) const {
@@ -68,6 +70,14 @@ namespace ST_free {
 
     void BasicBlockInformation::setCorrectlyBranched(){
         correctlyBranched = true;
+    }
+
+    void BasicBlockInformation::setLoopBlock(){
+        loopBlock = true;
+    }
+
+    bool BasicBlockInformation::isLoopBlock(){
+        return loopBlock;
     }
 
     bool BasicBlockInformation::isCorrectlyBranched(){
@@ -255,6 +265,12 @@ namespace ST_free {
     }
     bool BasicBlockManager::isCorrectlyBranched(BasicBlock *B){
         return BBMap[B].isCorrectlyBranched();
+    }
+    void BasicBlockManager::setLoopBlock(BasicBlock *B){
+        BBMap[B].setLoopBlock();
+    }
+    bool BasicBlockManager::isLoopBlock(BasicBlock *B){
+        return BBMap[B].isLoopBlock();
     }
     bool BasicBlockManager::isPredBlockCorrectlyBranched(BasicBlock *B){
         if(pred_size(B) == 1){

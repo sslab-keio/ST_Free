@@ -23,23 +23,31 @@ namespace ST_free{
     }
 
     void Analyzer::analyzeInstructions(BasicBlock &B) {
+        FEle->setLoopBlock(B);
+
         for (Instruction &I: B){
             if(this->isReturnFunc(&I))
                 FEle->addEndPoint(&B);
 
-            if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I))
-                this->addLocalVariable(
-                        &B,
-                        ainst->getAllocatedType(),
-                        ainst,
-                        cast<Instruction>(getFirstUser(&I)),
-                        ParentList()
-                    );
+            if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I)){
+            //     this->addLocalVariable(
+            //             &B,
+            //             ainst->getAllocatedType(),
+            //             ainst,
+            //             cast<Instruction>(getFirstUser(&I)),
+            //             ParentList()
+            //         );
+            }
 
             if (auto* CI = dyn_cast<CallInst>(&I)) {
                 /*** get Called Function ***/
                 if (Function* called_function = CI->getCalledFunction()) {
                     if (isAllocFunction(called_function)) {
+                        Value * val = getAllocatedValue(CI);
+                        if(val != NULL) 
+                            if(StructType * strTy = dyn_cast<StructType>(get_type(val->getType()))) {
+                                stManage->addAlloc(strTy);
+                            }
                         // this->addAlloc(CI, &B);
                     } else if (isFreeFunction(called_function)) {
                         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end(); arguments++) {
@@ -53,26 +61,34 @@ namespace ST_free{
             }
 
             if (auto *SI = dyn_cast<StoreInst>(&I)) {
+                // TODO: Add Alias Information to list
                 if(isStoreToStruct(SI)){
                     generateWarning(SI, "is Store to struct");
+                    GetElementPtrInst * GEle = getStoredStruct(SI);
+                    stManage->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
+
+                    if(isa<GlobalValue>(SI->getValueOperand())){
+                        stManage->addGlobalVarStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
+                        // TODO: Add global variable assignment as information
+                    }
                 }
                 if(isStoreFromStruct(SI)){
                     generateWarning(SI, "is Store from struct");
-                    GetElementPtrInst * GEle = getStoredStructEle(SI);
-                    if(GEle != NULL){
-                        FEle->addVariable(
-                                getLoadeeValue(GEle->getPointerOperand()),
-                                GEle->getResultElementType(),
-                                GEle->getSourceElementType(),
-                                getValueIndices(GEle)
-                            );
-                        FEle->incrementRefCount(
-                                getLoadeeValue(GEle->getPointerOperand()),
-                                GEle->getResultElementType(),
-                                getValueIndices(GEle),
-                                SI->getPointerOperand()
-                            );
-                    }
+                    // GetElementPtrInst * GEle = getStoredStructEle(SI);
+                    // if(GEle != NULL){
+                    //     FEle->addVariable(
+                    //             getLoadeeValue(GEle->getPointerOperand()),
+                    //             GEle->getResultElementType(),
+                    //             GEle->getSourceElementType(),
+                    //             getValueIndices(GEle)
+                    //         );
+                    //     FEle->incrementRefCount(
+                    //             getLoadeeValue(GEle->getPointerOperand()),
+                    //             GEle->getResultElementType(),
+                    //             getValueIndices(GEle),
+                    //             SI->getPointerOperand()
+                    //         );
+                    // }
                 }
             }
 
@@ -88,14 +104,14 @@ namespace ST_free{
     void Analyzer::checkAvailability() {
         FreedStructList fsl = FEle->getFreedStruct();
 
-        for(FreedStruct * localVar: FEle->getLocalVar()) {
-            if(!FEle->isArgValue(localVar->getValue())){
-                uniqueKey uk(localVar->getValue(), localVar->getType(), -1);
-                if(find_if(fsl.begin(), fsl.end(), 
-                            [uk](FreedStruct *f){return *f == uk;}) == fsl.end())
-                    fsl.push_back(localVar);
-            }
-        }
+        // for(FreedStruct * localVar: FEle->getLocalVar()) {
+        //     if(!FEle->isArgValue(localVar->getValue())){
+        //         uniqueKey uk(localVar->getValue(), localVar->getType(), -1);
+        //         if(find_if(fsl.begin(), fsl.end(), 
+        //                     [uk](FreedStruct *f){return *f == uk;}) == fsl.end())
+        //             fsl.push_back(localVar);
+        //     }
+        // }
 
         for(FreedStruct * freedStruct: fsl) {
             StructType * strTy = cast<StructType>(freedStruct->getType());
@@ -147,9 +163,19 @@ namespace ST_free{
                 if(auto *LI = dyn_cast<LoadInst>(CmpI->getOperand(0)))
                     if(string(LI->getPointerOperand()->getName()).find("ref") != string::npos)
                         return true;
+                if(isa<ConstantPointerNull>(CmpI->getOperand(1))){
+                    return true;
+                }
             }
         }
         return false;
+    }
+
+    bool Analyzer::isLoopBlock(BasicBlock& B){
+        if(string(B.getName()).find("for.body") != string::npos)
+            return true;
+        if(string(B.getName()).find("while.body") != string::npos)
+            return true;
     }
 
 //     void Analyzer::addLocalStruct(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
@@ -197,7 +223,7 @@ namespace ST_free{
     }
 
     void Analyzer::analyzeDifferentFunc(Function &F) {
-        Analyzer called_function(&F, stManage);
+        Analyzer called_function(&F, stManage, loopmap);
         called_function.analyze();
         return;
     }

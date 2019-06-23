@@ -164,8 +164,17 @@ namespace ST_free {
     }
 
     bool isStoreToStruct(StoreInst * SI){
-        if(auto GEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand()))
-            return true;
+        if(GetElementPtrInst * gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())){
+            if(isa<StructType>(gEle->getSourceElementType())){
+                return true;
+            }
+        }
         return false;
+    }
+
+    GetElementPtrInst * getStoredStruct(StoreInst *SI){
+        if(GetElementPtrInst * gepi = dyn_cast<GetElementPtrInst>(SI->getPointerOperand()))
+            return gepi;
+        return NULL;
     }
 }

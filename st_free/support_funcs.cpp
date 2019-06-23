@@ -60,21 +60,19 @@ namespace ST_free {
         }
         return val_type;
     }
-#define DEBUG_TYPE "warning"
     void generateWarning(Instruction * Inst, string warn){
         if(const DebugLoc &Loc = Inst->getDebugLoc()){
             unsigned line = Loc.getLine();
             unsigned col = Loc.getCol();
-            LLVM_DEBUG(outs() << "\033[1;34m[ST_free]\033[0m ");
-            LLVM_DEBUG(outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ");
-            LLVM_DEBUG(outs() << warn << "\n");
+            DEBUG_WITH_TYPE("st_free", outs() << "\033[1;34m[ST_free]\033[0m ");
+            DEBUG_WITH_TYPE("st_free", outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ");
+            DEBUG_WITH_TYPE("st_free", outs() << warn << "\n");
         }
     }
     void generateWarning(string warn){
-            LLVM_DEBUG(outs() << "\033[1;34m[ST_free]\033[0m: ");
-            LLVM_DEBUG(outs() << warn << "\n");
+            DEBUG_WITH_TYPE("st_free", outs() << "\033[1;34m[ST_free]\033[0m: ");
+            DEBUG_WITH_TYPE("st_free", outs() << warn << "\n");
     }
-#undef DEBUG_TYPE
 
     void generateError(Instruction * Inst, string warn){
         if(const DebugLoc &Loc = Inst->getDebugLoc()){

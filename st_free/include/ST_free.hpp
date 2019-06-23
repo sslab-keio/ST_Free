@@ -17,6 +17,9 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/ValueSymbolTable.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/PassAnalysisSupport.h"
+#include "llvm/IR/Dominators.h"
 
 // include STL
 #include <iostream>
@@ -33,6 +36,8 @@
 #define UNANALYZED 1
 #define IN_PROGRESS 2
 #define ANALYZED 3
+
+#define DEBUG_TYPE "st_free"
 
 using namespace llvm;
 using namespace std;

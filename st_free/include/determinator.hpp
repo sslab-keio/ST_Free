@@ -15,6 +15,7 @@ namespace ST_free{
     GetElementPtrInst * getAllocStructEleInfo(Instruction *);
     GetElementPtrInst* getFreeStructEleInfo(Instruction *);
     GetElementPtrInst *  getStoredStructEle(StoreInst * SI);
+    GetElementPtrInst *  getStoredStruct(StoreInst * SI);
     Type * getStructType(Instruction * val);
     Value * getFreedValue(Instruction * val);
     Value * getAllocatedValue(Instruction *I) ;

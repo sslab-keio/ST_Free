@@ -4,8 +4,8 @@
 #include "include/support_funcs.hpp"
 #include "include/functionManager.hpp"
 #include "include/StructInformation.hpp"
-// #include "inter_analysis.hpp"
 #include "include/analyzer.hpp"
+#include "include/LoopManager.hpp"
 
 using namespace ST_free;
 
@@ -16,14 +16,33 @@ namespace{
         st_free() : ModulePass(ID){
         }
 
+        virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
+            AU.setPreservesAll();
+            AU.addRequired<LoopInfoWrapperPass>();
+            AU.addRequired<DominatorTreeWrapperPass>();
+        }
+
         /*** Main Modular ***/
         bool runOnModule(Module &M) override {
             StructManager StManage(M.getIdentifiedStructTypes());
-
+            
+            /*** Generate LoopInformation ***/
+            LoopManager * loopmap = new LoopManager();
             for(Function &F: M){
-                Analyzer analyze(&F, &StManage);
-                analyze.analyze();
+                if(!(F.isDeclaration())) {
+                    loopmap->add(&F, &(getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo()));
+                }
             }
+
+            /*** Main analysis module ***/
+            for(Function &F: M){
+                if(!(F.isDeclaration())){
+                    Analyzer analyze(&F, &StManage, loopmap);
+                    analyze.analyze();
+                }
+            }
+
+            /*** Main Warning Generator ***/
             StManage.BuildCandidateCount();
             // StManage.print();
             StManage.checkCorrectness();
@@ -48,4 +67,4 @@ static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_ModuleOptimi
                                                 registerSTFreePass);
 
 static RegisterStandardPasses RegisterMyPass1(PassManagerBuilder::EP_EnabledOnOptLevel0,
-                                                registerSTFreePass);
+                                               registerSTFreePass);

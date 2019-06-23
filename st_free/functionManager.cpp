@@ -12,7 +12,7 @@ namespace ST_free{
         for(int ind = 0; ind < FreedMembers.size(); ind++){
             outs() << "\t  [" << ind << "] ";
             if(FreedMembers[ind])
-                outs() << "Freed\n";
+                outs() << "IsFreed\n";
             else
                 outs() << "NotFreed\n";
         }
@@ -64,7 +64,8 @@ namespace ST_free{
         else
             varinfo->addStructParams(stTy, num);
         BBManage.add(B, V, memTy, num, FREED);
-        if(BBManage.isPredBlockCorrectlyBranched(B)){
+        if(BBManage.isPredBlockCorrectlyBranched(B) 
+                || BBManage.isLoopBlock(B)){
             // outs() << *varinfo->getValue() << " " << *varinfo->getMemberType() << "\n";
             this->addCorrectlyFreedValue(B, V, memTy, num);
         }
@@ -255,5 +256,16 @@ namespace ST_free{
     }
     bool FunctionInformation::isCorrectlyBranchedFreeValue(BasicBlock *B, Value *V, Type *T, long mem){
         return BBManage.correctlyFreedValueExists(B, V, T, mem);
+    }
+    void FunctionInformation::setLoopBlock(BasicBlock &B){
+        if(LoopI->getLoopFor(&B)){
+            BBManage.setLoopBlock(&B);
+        }
+    }
+    bool FunctionInformation::isLoopBlock(BasicBlock &B){
+            return BBManage.isLoopBlock(&B);
+    }
+    void FunctionInformation::setLoopInfo(LoopInfo *li){
+        LoopI = li;
     }
 }
