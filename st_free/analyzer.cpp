@@ -30,74 +30,86 @@ namespace ST_free{
                 FEle->addEndPoint(&B);
 
             if(AllocaInst * ainst = dyn_cast<AllocaInst>(&I)){
-            //     this->addLocalVariable(
-            //             &B,
-            //             ainst->getAllocatedType(),
-            //             ainst,
-            //             cast<Instruction>(getFirstUser(&I)),
-            //             ParentList()
+                this->analyzeAllocaInst(ainst, B);
+            }
+            else if (CallInst *CI = dyn_cast<CallInst>(&I)) {
+                this->analyzeCallInst(CI, B);
+            }
+            else if (StoreInst *SI = dyn_cast<StoreInst>(&I)) {
+                this->analyzeStoreInst(SI, B);
+            }
+            else if (BranchInst *BI = dyn_cast<BranchInst>(&I)) {
+                this->analyzeBranchInst(BI, B);
+            }
+        }
+    }
+
+    void Analyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B){
+        // this->addLocalVariable(
+        //         &B,
+        //         ainst->getAllocatedType(),
+        //         ainst,
+        //         cast<Instruction>(getFirstUser(&I)),
+        //         ParentList()
+        //     );
+    }
+
+    void Analyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
+        if(isStoreToStruct(SI)){
+            generateWarning(SI, "is Store to struct");
+            GetElementPtrInst * GEle = getStoredStruct(SI);
+            stManage->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
+
+            if(isa<GlobalValue>(SI->getValueOperand())){
+                stManage->addGlobalVarStore(
+                        cast<StructType>(GEle->getSourceElementType()), 
+                        getValueIndices(GEle)
+                    );
+            }
+        }
+        if(isStoreFromStruct(SI)){
+            generateWarning(SI, "is Store from struct");
+            GetElementPtrInst * GEle = getStoredStructEle(SI);
+            if(GEle != NULL){
+            //     FEle->addVariable(
+            //             getLoadeeValue(GEle->getPointerOperand()),
+            //             GEle->getResultElementType(),
+            //             GEle->getSourceElementType(),
+            //             getValueIndices(GEle)
+            //         );
+            //     FEle->incrementRefCount(
+            //             getLoadeeValue(GEle->getPointerOperand()),
+            //             GEle->getResultElementType(),
+            //             getValueIndices(GEle),
+            //             SI->getPointerOperand()
             //         );
             }
-
-            if (auto* CI = dyn_cast<CallInst>(&I)) {
-                /*** get Called Function ***/
-                if (Function* called_function = CI->getCalledFunction()) {
-                    if (isAllocFunction(called_function)) {
-                        Value * val = getAllocatedValue(CI);
-                        if(val != NULL) 
-                            if(StructType * strTy = dyn_cast<StructType>(get_type(val->getType()))) {
-                                stManage->addAlloc(strTy);
-                            }
-                        // this->addAlloc(CI, &B);
-                    } else if (isFreeFunction(called_function)) {
-                        for (auto arguments = CI->arg_begin(); arguments != CI->arg_end(); arguments++) {
-                            this->addFree(cast<Value>(arguments), CI, &B);
-                        }
-                    } else {
-                        this->analyzeDifferentFunc((Function &)(*called_function));
-                        this->copyArgStatus((Function &)(*called_function), CI, B);
+        }
+    }
+     
+    void Analyzer::analyzeCallInst(CallInst *CI, BasicBlock &B){
+        if (Function* called_function = CI->getCalledFunction()) {
+            if (isAllocFunction(called_function)) {
+                Value * val = getAllocatedValue(CI);
+                if(val != NULL) 
+                    if(StructType * strTy = dyn_cast<StructType>(get_type(val->getType()))) {
+                        stManage->addAlloc(strTy);
                     }
+                // this->addAlloc(CI, &B);
+            } else if (isFreeFunction(called_function)) {
+                for (auto arguments = CI->arg_begin(); arguments != CI->arg_end(); arguments++) {
+                    this->addFree(cast<Value>(arguments), CI, &B);
                 }
+            } else {
+                this->analyzeDifferentFunc((Function &)(*called_function));
+                this->copyArgStatus((Function &)(*called_function), CI, B);
             }
-
-            if (auto *SI = dyn_cast<StoreInst>(&I)) {
-                // TODO: Add Alias Information to list
-                if(isStoreToStruct(SI)){
-                    generateWarning(SI, "is Store to struct");
-                    GetElementPtrInst * GEle = getStoredStruct(SI);
-                    stManage->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
-
-                    if(isa<GlobalValue>(SI->getValueOperand())){
-                        stManage->addGlobalVarStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
-                        // TODO: Add global variable assignment as information
-                    }
-                }
-                if(isStoreFromStruct(SI)){
-                    generateWarning(SI, "is Store from struct");
-                    // GetElementPtrInst * GEle = getStoredStructEle(SI);
-                    // if(GEle != NULL){
-                    //     FEle->addVariable(
-                    //             getLoadeeValue(GEle->getPointerOperand()),
-                    //             GEle->getResultElementType(),
-                    //             GEle->getSourceElementType(),
-                    //             getValueIndices(GEle)
-                    //         );
-                    //     FEle->incrementRefCount(
-                    //             getLoadeeValue(GEle->getPointerOperand()),
-                    //             GEle->getResultElementType(),
-                    //             getValueIndices(GEle),
-                    //             SI->getPointerOperand()
-                    //         );
-                    // }
-                }
-            }
-
-            if(auto *BI = dyn_cast<BranchInst>(&I)) {
-                if(this->isCorrectlyBranched(BI)) {
-                    generateWarning(BI, "Correctly Branched");
-                    FEle->setCorrectlyBranched(&B);
-                }
-            }
+        }
+    }
+    void Analyzer::analyzeBranchInst(BranchInst * BI, BasicBlock &B){
+        if(this->isCorrectlyBranched(BI)) {
+            generateWarning(BI, "Correctly Branched");
+            FEle->setCorrectlyBranched(&B);
         }
     }
     
