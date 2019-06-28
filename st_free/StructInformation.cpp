@@ -61,6 +61,7 @@ namespace ST_free{
         }
         return;
     }
+
     bool StructInformation::judgeResponsibility(int ind){
         int threashold = candidateNum / 2;
         // outs() << ind << " " << threashold << " " << freedCounts[ind] << "\n";
@@ -120,7 +121,7 @@ namespace ST_free{
         // }
         outs() << "[Elements]\n";
         for(int ind = 0; ind < strTy->getNumElements(); ind++){
-            outs() << "\t[Type]: " << *strTy->getElementType(ind) << " ";
+            outs() << "\t[" << ind << "]: " << *strTy->getElementType(ind) << " ";
             switch(memberStats[ind]){
                 case ISRESPONSIBLE:
                     outs() << "ISRESPONSIBLE";
@@ -144,7 +145,7 @@ namespace ST_free{
                 default:
                     outs() << "DEFAULT";
             }
-            outs() << "[" << stc[ind].globalVar << "/" << stc[ind].total << "]\n";
+            outs() << " [" << stc[ind].globalVar << "/" << stc[ind].total << "]\n";
         }
         outs() << "[CandidateNum]: " << candidateNum << "\n";
         outs() << "[BugCandidates]\n";

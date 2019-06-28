@@ -22,23 +22,28 @@ namespace ST_free{
                 return v < uk.getValue();
             }
     };
-    // struct keyCompare {
-    //    bool operator() (const uniqueKey& lhs, const uniqueKey& rhs) const
-    //    {
-    //        return (lhs.v < rhs.v || lhs.t < rhs.t || lhs.memberNum < rhs.memberNum);
-    //    }
-    // };
-
-    // using uniqueKey = pair<Value *, pair<Type *, long >>;
     class ValueInformation {
         private:
+            struct aliases{
+                Value * alias;
+                StoreInst * SI;
+                bool inLoopBlock;
+                aliases(Value *a, StoreInst *s, bool loop){
+                    this->alias = a;
+                    this->SI = s;
+                    this->inLoopBlock = loop;
+                }
+                bool isInLoop(){return inLoopBlock;}
+                Value * aliasValue(){return alias;}
+            };
             Value * V;
             long memberNum;
             Type * memberType;
             Type * structType;
+            bool freed;
             bool parentFreed;
             int refCount;
-            vector<Value *> referees;
+            vector<aliases *> aliasList;
         public:
             ValueInformation(Value * val){
                 V = val;
@@ -46,6 +51,7 @@ namespace ST_free{
                 memberType = val->getType();
                 structType = NULL;
                 refCount = 0;
+                freed = false;
             }
             ValueInformation(Value * val, Type * ty){
                 V = val;
@@ -53,6 +59,7 @@ namespace ST_free{
                 memberType = ty;
                 structType = NULL;
                 refCount = 0;
+                freed = false;
             }
             ValueInformation(Value * val, Type * memType, Type * parType, long num){
                 V = val;
@@ -60,6 +67,7 @@ namespace ST_free{
                 memberType = memType;
                 structType = parType;
                 refCount = 0;
+                freed = false;
             }
             bool operator == (const Value * val){
                 return V == val;
@@ -79,14 +87,20 @@ namespace ST_free{
             Type * getMemberType() const;
             long getMemberNum() const;
             bool isStructMember();
-            void incrementRefCount(Value * v){refCount++; referees.push_back(v);};
+            void incrementRefCount(Value * v){refCount++;};
             void decrementRefCount(){if(refCount > 0)refCount--;};
             bool noRefCount(){return refCount == 0;};
-            void addRefereeValue(Value *);
+            void addAlias(Value *val, StoreInst *SI, bool isLoopBlock);
+            vector<Value *> getAliasList();
             void setStructType(Type *T){structType = T;};
             void setMemberNum(long num){memberNum = num;};
-            void addStructParams(Type *T, long num){setStructType(T);setMemberNum(num);}; 
-            vector<Value *> getReferees() const {return referees;};
+            void addStructParams(Type *T, long num){
+                if(T) setStructType(T);
+                if(num >= 0) setMemberNum(num);
+            }
+            bool storeInLoopExists();
+            void setFreed(){freed = true;}
+            bool isFreed(){return freed;}
     };
     class ValueManager{
         private:

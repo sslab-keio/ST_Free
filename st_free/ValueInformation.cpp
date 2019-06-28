@@ -28,9 +28,28 @@ namespace ST_free{
         return true;
     }
 
+    void ValueInformation::addAlias(Value *val, StoreInst *SI, bool isLoopBlock){
+        aliasList.push_back(new aliases(val, SI, isLoopBlock));
+    }
+
+    bool ValueInformation::storeInLoopExists(){
+        for(aliases * alias:aliasList){
+            if(alias->isInLoop())
+                return true;
+        }
+        return false;
+    }
+    vector<Value *> ValueInformation::getAliasList() {
+        vector<Value *> vals;
+        for (aliases * alias: aliasList) {
+            if(alias->isInLoop())
+                vals.push_back(alias->aliasValue());
+        }
+        return vals;
+    }
+
     bool ValueManager::exists(Value * val, Type * ty, long num){
         if(vinfos.find(uniqueKey(val, ty, num)) != vinfos.end()){
-
             return true;
         }
         return false;

@@ -9,16 +9,14 @@ namespace ST_free{
     bool isStructEleAlloc(Instruction *);
     bool isStructEleFree(Instruction *);
     bool isStructFree(Instruction *);
-    Value * getStructFreedValue(Instruction * val);
+    Value* getStructFreedValue(Instruction * val);
     bool isHeapValue(Value *);
     bool isFuncPointer(Type * t);
-    GetElementPtrInst * getAllocStructEleInfo(Instruction *);
+    GetElementPtrInst* getAllocStructEleInfo(Instruction *);
     GetElementPtrInst* getFreeStructEleInfo(Instruction *);
-    GetElementPtrInst *  getStoredStructEle(StoreInst * SI);
-    GetElementPtrInst *  getStoredStruct(StoreInst * SI);
+    GetElementPtrInst*  getStoredStructEle(StoreInst * SI);
+    GetElementPtrInst*  getStoredStruct(StoreInst * SI);
     Type * getStructType(Instruction * val);
     Value * getFreedValue(Instruction * val);
     Value * getAllocatedValue(Instruction *I) ;
-    bool isStoreFromStruct(StoreInst * SI);
-    bool isStoreToStruct(StoreInst * SI);
 }

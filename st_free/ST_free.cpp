@@ -24,10 +24,11 @@ namespace{
 
         /*** Main Modular ***/
         bool runOnModule(Module &M) override {
-            StructManager StManage(M.getIdentifiedStructTypes());
+            /*** Collect Struct Information ***/
+            StructManager* StManage = new StructManager(M.getIdentifiedStructTypes());
             
             /*** Generate LoopInformation ***/
-            LoopManager * loopmap = new LoopManager();
+            LoopManager* loopmap = new LoopManager();
             for(Function &F: M){
                 if(!(F.isDeclaration())) {
                     loopmap->add(&F, &(getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo()));
@@ -37,15 +38,15 @@ namespace{
             /*** Main analysis module ***/
             for(Function &F: M){
                 if(!(F.isDeclaration())){
-                    Analyzer analyze(&F, &StManage, loopmap);
+                    Analyzer analyze(&F, StManage, loopmap);
                     analyze.analyze();
                 }
             }
 
             /*** Main Warning Generator ***/
-            StManage.BuildCandidateCount();
+            StManage->BuildCandidateCount();
             // StManage.print();
-            StManage.checkCorrectness();
+            StManage->checkCorrectness();
             return false;
         }
     }; // end of struct

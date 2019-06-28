@@ -21,6 +21,7 @@ namespace ST_free{
             Function * getFunction(){return F;};
             unsigned getMemberSize(){return fst->memberSize();};
             bool memberIsFreed(unsigned ind){return fst->memberIsFreed(ind);};
+            bool memberIsStoredInLoop(unsigned ind){return fst->isStoredInLoop(ind);};
             Instruction * getInstruction(){return fst->getInst();}
             void print(){fst->print();};
     };
@@ -51,7 +52,17 @@ namespace ST_free{
             bool isUnknown(int ind){return memberStats[ind] == ISUNKNOWN;};
             bool judgeResponsibility(int ind);
             unsigned int getAllocNum(){return allocNum;};
-            bool isAllStoreGlobalVar(int ind){return ((stc[ind].total > 0) && stc[ind].total - stc[ind].globalVar) == 0;}
+            bool isAllStoreGlobalVar(int ind){
+                if(stc[ind].total > 0)
+                    if((stc[ind].total - stc[ind].globalVar) == 0)
+                        return true;
+                return false;
+            }
+            bool memberTypeMatchesStructType(int ind){
+                if(strTy == strTy->getStructElementType(ind))
+                    return true;
+                return false;
+            }
         public:
             StructInformation(){};
             StructInformation(StructType * st);
@@ -70,6 +81,10 @@ namespace ST_free{
             bool hasNoAlloc(){return allocNum == 0;}
             void incrementStoreTotal(int ind);
             void incrementStoreGlobalVar(int ind);
+            void printStoreGlobalVar(int ind){
+                outs() << "\tTotal: " << stc[ind].total << "\n";
+                outs() << "\tGV: " << stc[ind].globalVar << "\n";
+            }
     };
     /* Class
      * [Struct Manager]

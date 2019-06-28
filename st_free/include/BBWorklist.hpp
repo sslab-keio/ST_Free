@@ -17,6 +17,7 @@ namespace ST_free {
     };
 
     using LiveVariableList = vector<Value *>;
+    using Aliases = map<uniqueKey *, uniqueKey *>;
     class BasicBlockInformation {
         private:
             /*** BasicBlock Lists ***/
@@ -24,6 +25,7 @@ namespace ST_free {
             BasicBlockWorkList allocList;
             BasicBlockWorkList correctlyFreed;
             LiveVariableList liveVariables;
+            Aliases aliasMap;
             /*** BasicBlock Status ***/
             bool correctlyBranched;
             bool predCorrectlyBranched;
@@ -56,33 +58,26 @@ namespace ST_free {
             /*** Utilities ***/
             BasicBlockWorkList getWorkList(int mode) const;
             LiveVariableList getLiveVariables() const;
+            bool aliasExists(uniqueKey *);
+            uniqueKey* getAlias(uniqueKey *);
+            void setAlias(uniqueKey* src, uniqueKey* dest); //dest <- src
     };
     class BasicBlockManager {
         private:
             map<BasicBlock *,BasicBlockInformation> BBMap;
-            bool exists(BasicBlock *B);
-            BasicBlockInformation * get(BasicBlock *B);
             BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
             LiveVariableList intersectLiveVariables(LiveVariableList src, LiveVariableList tgt);
+            bool exists(BasicBlock *B);
         public:
+            BasicBlockInformation * get(BasicBlock *B);
             void CollectInInfo(BasicBlock *B, bool isEntryPoint);
-            void add(BasicBlock * B, Value *v, int mode);
-            void add(BasicBlock * B, Value *v, Type * memTy, long mem, int mode);
+            // void add(BasicBlock * B, Value *v, int mode);
+            // void add(BasicBlock * B, Value *v, Type * memTy, long mem, int mode);
             void copy(BasicBlock *src, BasicBlock *tgt);
             void intersect(BasicBlock *src, BasicBlock *tgt);
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);
             BasicBlockList getBasicBlockAllocList(BasicBlock *src);
-            void addLiveVariable(BasicBlock *B, Value *val);
             LiveVariableList getLiveVariables(BasicBlock *B);
-            bool existsInFreedList(BasicBlock *B, Value *val, Type *ty, long mem);
-            bool existsInAllocatedList(BasicBlock *B, Value *val, Type *ty, long mem);
-            bool existsInLiveVariableList(BasicBlock * B, Value *val);
-            void setCorrectlyBranched(BasicBlock * B);
-            bool isCorrectlyBranched(BasicBlock * B);
-            void setLoopBlock(BasicBlock *B);
-            bool isLoopBlock(BasicBlock *B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
-            void addCorrectlyFreedValue(BasicBlock *, Value *, Type *, long mem);
-            bool correctlyFreedValueExists(BasicBlock *, Value *, Type *, long mem);
     };
 }

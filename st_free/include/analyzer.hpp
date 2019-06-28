@@ -35,13 +35,13 @@ namespace ST_free {
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
             /*** Branch Instruction(Correctly Branched) ***/
             bool isCorrectlyBranched(BranchInst * BI);
-            bool isLoopBlock(BasicBlock& B);
+            /*** Store Instruction related funtions ***/
+            bool isStoreToStructMember(StoreInst * SI);
+            bool isStoreFromStructMember(StoreInst * SI);
+            bool isStoreToStruct(StoreInst *SI);
         public:
             Analyzer(){
             }
-            // explicit Analyzer(Function *func) {
-            //     FEle = identifier.getElement(func);
-            // }
             Analyzer(Function *func, StructManager *stm, LoopManager *lmap) {
                 FEle = identifier.getElement(func);
                 loopmap = lmap;

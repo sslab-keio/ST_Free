@@ -137,6 +137,24 @@ namespace ST_free {
         liveVariables = LiveVariableList(lvl);
     }
 
+    bool BasicBlockInformation::aliasExists(uniqueKey *vinfo){
+        if(aliasMap.find(vinfo) != aliasMap.end())
+            return true;
+        return false;
+    }
+
+    uniqueKey* BasicBlockInformation::getAlias(uniqueKey *vinfo){
+        if(this->aliasExists(vinfo)){
+            return aliasMap[vinfo];
+        }
+        return NULL;
+    }
+
+    void BasicBlockInformation::setAlias(uniqueKey *src, uniqueKey *tgt){
+        if(!this->aliasExists(tgt))
+            aliasMap[tgt] = src;
+    }
+
     bool BasicBlockManager::exists(BasicBlock *B){
         if(BBMap.find(B) != BBMap.end())
             return true;
@@ -158,21 +176,21 @@ namespace ST_free {
         return;
     }
 
-    void BasicBlockManager::add(BasicBlock *B, Value *v, int mode){
-        if (mode == FREED)
-            BBMap[B].addFree(v, v->getType(), -1);
-        else if (mode == ALLOCATED)
-            BBMap[B].addAlloc(v, v->getType(), -1);
-        return;
-    }
+    // void BasicBlockManager::add(BasicBlock *B, Value *v, int mode){
+    //     if (mode == FREED)
+    //         BBMap[B].addFree(v, v->getType(), -1);
+    //     else if (mode == ALLOCATED)
+    //         BBMap[B].addAlloc(v, v->getType(), -1);
+    //     return;
+    // }
 
-    void BasicBlockManager::add(BasicBlock *B, Value *v, Type * memTy, long mem, int mode){
-        if (mode == FREED)
-            BBMap[B].addFree(v, memTy, mem);
-        else if (mode == ALLOCATED)
-            BBMap[B].addAlloc(v, memTy, mem);
-        return;
-    }
+    // void BasicBlockManager::add(BasicBlock *B, Value *v, Type * memTy, long mem, int mode){
+    //     if (mode == FREED)
+    //         BBMap[B].addFree(v, memTy, mem);
+    //     else if (mode == ALLOCATED)
+    //         BBMap[B].addAlloc(v, memTy, mem);
+    //     return;
+    // }
 
     void BasicBlockManager::copy(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt] = BasicBlockInformation(BBMap[src]);
@@ -244,47 +262,47 @@ namespace ST_free {
             return &BBMap[B];
         return NULL;
     }
-    void BasicBlockManager::addLiveVariable(BasicBlock *B,Value *val){
-        BBMap[B].addLiveVariable(val);
-    }
+    // void BasicBlockManager::addLiveVariable(BasicBlock *B,Value *val){
+    //     BBMap[B].addLiveVariable(val);
+    // }
     LiveVariableList BasicBlockManager::getLiveVariables(BasicBlock *B){
         return BBMap[B].getLiveVariables();
     }
-    bool BasicBlockManager::existsInFreedList(BasicBlock *B, Value *val, Type *ty, long mem){
-        return BBMap[B].FreeExists(val, ty, mem);
-    }
-    bool BasicBlockManager::existsInAllocatedList(BasicBlock *B, Value *val, Type *ty, long mem){
-        return BBMap[B].AllocExists(val, ty, mem);
-    }
-    bool BasicBlockManager::existsInLiveVariableList(BasicBlock * B, Value *val){
-        return BBMap[B].LiveVariableExists(val);
-    }
+    // bool BasicBlockManager::existsInFreedList(BasicBlock *B, Value *val, Type *ty, long mem){
+    //     return BBMap[B].FreeExists(val, ty, mem);
+    // }
+    // bool BasicBlockManager::existsInAllocatedList(BasicBlock *B, Value *val, Type *ty, long mem){
+    //     return BBMap[B].AllocExists(val, ty, mem);
+    // }
+    // bool BasicBlockManager::existsInLiveVariableList(BasicBlock * B, Value *val){
+    //     return BBMap[B].LiveVariableExists(val);
+    // }
 
-    void BasicBlockManager::setCorrectlyBranched(BasicBlock *B){
-        BBMap[B].setCorrectlyBranched();
-    }
-    bool BasicBlockManager::isCorrectlyBranched(BasicBlock *B){
-        return BBMap[B].isCorrectlyBranched();
-    }
-    void BasicBlockManager::setLoopBlock(BasicBlock *B){
-        BBMap[B].setLoopBlock();
-    }
-    bool BasicBlockManager::isLoopBlock(BasicBlock *B){
-        return BBMap[B].isLoopBlock();
-    }
+    // void BasicBlockManager::setCorrectlyBranched(BasicBlock *B){
+    //     BBMap[B].setCorrectlyBranched();
+    // }
+    // bool BasicBlockManager::isCorrectlyBranched(BasicBlock *B){
+    //     return BBMap[B].isCorrectlyBranched();
+    // }
+    // void BasicBlockManager::setLoopBlock(BasicBlock *B){
+    //     BBMap[B].setLoopBlock();
+    // }
+    // bool BasicBlockManager::isLoopBlock(BasicBlock *B){
+    //     return BBMap[B].isLoopBlock();
+    // }
     bool BasicBlockManager::isPredBlockCorrectlyBranched(BasicBlock *B){
         if(pred_size(B) == 1){
             for (BasicBlock* PredBB: predecessors(B)) {
-                if(this->isCorrectlyBranched(PredBB))
+                if(BBMap[PredBB].isCorrectlyBranched())
                     return true;
             }
         }
         return false;
     }
-    void BasicBlockManager::addCorrectlyFreedValue(BasicBlock *B, Value * V, Type * T, long mem){
-        BBMap[B].addCorrectlyFreedValue(V, T, mem);
-    }
-    bool BasicBlockManager::correctlyFreedValueExists(BasicBlock *B, Value * V, Type * T, long mem){
-        return BBMap[B].CorrectlyFreedValueExists(V, T, mem);
-    }
+    // void BasicBlockManager::addCorrectlyFreedValue(BasicBlock *B, Value * V, Type * T, long mem){
+    //     BBMap[B].addCorrectlyFreedValue(V, T, mem);
+    // }
+    // bool BasicBlockManager::correctlyFreedValueExists(BasicBlock *B, Value * V, Type * T, long mem){
+    //     return BBMap[B].CorrectlyFreedValueExists(V, T, mem);
+    // }
 }

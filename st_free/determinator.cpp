@@ -4,7 +4,7 @@
 using namespace ST_free;
 
 const vector<string> alloc_funcs = {"malloc", "calloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
-const vector<string> free_funcs = {"free", "kfree"};
+const vector<string> free_funcs = {"free", "kfree", "kzfree"};
 
 namespace ST_free {
     bool isAllocFunction(Function *F) {
@@ -155,21 +155,6 @@ namespace ST_free {
             if(auto GEle = dyn_cast<GetElementPtrInst>(LInst->getPointerOperand()))
                 return GEle;
         return NULL;
-    }
-
-    bool isStoreFromStruct(StoreInst * SI){
-        if(getStoredStructEle(SI))
-            return true;
-        return false;
-    }
-
-    bool isStoreToStruct(StoreInst * SI){
-        if(GetElementPtrInst * gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())){
-            if(isa<StructType>(gEle->getSourceElementType())){
-                return true;
-            }
-        }
-        return false;
     }
 
     GetElementPtrInst * getStoredStruct(StoreInst *SI){

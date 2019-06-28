@@ -19,6 +19,16 @@ namespace ST_free{
         return;
     }
 
+    void FreedStruct::setStoredInLoop(int ind) {
+        if(ind < storedInLoop.size())
+            storedInLoop[ind] = true;
+    }
+    bool FreedStruct::isStoredInLoop(int ind) {
+        if(ind < storedInLoop.size())
+            return storedInLoop[ind];
+        return false;
+    }
+
     FunctionInformation* FunctionManager::getElement(Function *F){
         if(!this->exists(F))
             func_map[F] = new FunctionInformation(F);
@@ -54,25 +64,37 @@ namespace ST_free{
         endPoint.push_back(B);
     }
     void FunctionInformation::addFreeValue(BasicBlock *B, Value *V) {
-        BBManage.add(B, V, FREED);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addFree(V, V->getType(), -1);
+        // BBManage.add(B, V, FREED);
     }
 
     void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
         ValueInformation * varinfo = this->getValueInfo(V, memTy, num);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+
         if(varinfo == NULL)
             varinfo = this->addVariable(V, memTy, stTy, num);
         else
             varinfo->addStructParams(stTy, num);
-        BBManage.add(B, V, memTy, num, FREED);
-        if(BBManage.isPredBlockCorrectlyBranched(B) 
-                || BBManage.isLoopBlock(B)){
-            // outs() << *varinfo->getValue() << " " << *varinfo->getMemberType() << "\n";
-            this->addCorrectlyFreedValue(B, V, memTy, num);
+        varinfo->setFreed();
+
+        if(BInfo){
+            BInfo->addFree(V, memTy, num);
+            if(BBManage.isPredBlockCorrectlyBranched(B) 
+                    || BInfo->isLoopBlock()){
+                // outs() << *varinfo->getValue() << " " << *varinfo->getMemberType() << "\n";
+                this->addCorrectlyFreedValue(B, V, memTy, num);
+            }
         }
     }
 
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type * T, long mem) {
-        BBManage.add(B, V, T, mem, ALLOCATED);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addAlloc(V, T, mem);
+        // BBManage.add(B, V, T, mem, ALLOCATED);
     }
 
     bool FunctionInformation::isUnanalyzed(){
@@ -106,6 +128,13 @@ namespace ST_free{
     void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I){
         freedStruct.push_back(new FreedStruct(T, V, I, B, NULL));
     }
+    void FunctionInformation::addParentType(Type *T, Value *V, Instruction *I, StructType * parentTy){
+        FreedStruct fst(T, V, I);
+        auto fVal = find(freedStruct.begin(), freedStruct.end(), &fst);
+        if(fVal != freedStruct.end() && parentTy != NULL)
+            (*fVal)->addParent(parentTy);
+    }
+
     vector<BasicBlock *> FunctionInformation::getEndPoint() const{
         return endPoint;
     }
@@ -113,6 +142,7 @@ namespace ST_free{
     FreedStructList FunctionInformation::getFreedStruct() const{
         return freedStruct;
     }
+
     BasicBlockList FunctionInformation::getFreeList(BasicBlock *B) {
         return BBManage.getBasicBlockFreeList(B);
     }
@@ -176,6 +206,7 @@ namespace ST_free{
     void FunctionInformation::addLocalVar(BasicBlock *B, Type *T, Value * V, Instruction * I, ParentList P, ValueInformation *vinfo) {
         localVariables.push_back(new FreedStruct(T, V, I, P, B, vinfo));
     }
+
     void FunctionInformation::incrementRefCount(Value *V, Type *T, long mem, Value *ref){
         ValueInformation * vinfo = VManage.getValueInfo(V, T, mem);
         if(vinfo == NULL){
@@ -231,41 +262,81 @@ namespace ST_free{
             }
     }
     void FunctionInformation::addBasicBlockLiveVariable(BasicBlock * B, Value *V){
-        BBManage.addLiveVariable(B, V);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addLiveVariable(V);
     }
     bool FunctionInformation::isFreedInBasicBlock(BasicBlock *B, Value *val, Type* ty, long mem){
-        return BBManage.existsInFreedList(B, val, ty, mem);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            return BInfo->FreeExists(val, ty, mem);
+        return false;
     }
     bool FunctionInformation::isAllocatedInBasicBlock(BasicBlock *B, Value *val, Type* ty, long mem){
-        return BBManage.existsInAllocatedList(B, val, ty, mem);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            return BInfo->AllocExists(val, ty, mem);
+        return false;
     }
     bool FunctionInformation::isLiveInBasicBlock(BasicBlock *B, Value *val){
-       BBManage.existsInLiveVariableList(B, val);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            return BInfo->LiveVariableExists(val);
     }
     void FunctionInformation::setCorrectlyBranched(BasicBlock *B){
-        BBManage.setCorrectlyBranched(B);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->setCorrectlyBranched();
     }
     bool FunctionInformation::isCorrectlyBranched(BasicBlock *B){
-        return BBManage.isCorrectlyBranched(B);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            return BInfo->isCorrectlyBranched();
+        return false;
     }
+
     bool FunctionInformation::isPredBlockCorrectlyBranched(BasicBlock *B){
         return BBManage.isPredBlockCorrectlyBranched(B);
     }
     void FunctionInformation::addCorrectlyFreedValue(BasicBlock * B, Value * V,Type * T, long mem){
-        BBManage.addCorrectlyFreedValue(B, V, T, mem);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addCorrectlyFreedValue(V, T, mem);
     }
     bool FunctionInformation::isCorrectlyBranchedFreeValue(BasicBlock *B, Value *V, Type *T, long mem){
-        return BBManage.correctlyFreedValueExists(B, V, T, mem);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            return BInfo->CorrectlyFreedValueExists(V, T, mem);
+        return false;
     }
     void FunctionInformation::setLoopBlock(BasicBlock &B){
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(&B);
         if(LoopI->getLoopFor(&B)){
-            BBManage.setLoopBlock(&B);
+            if(BInfo)
+                BInfo->setLoopBlock();
         }
     }
     bool FunctionInformation::isLoopBlock(BasicBlock &B){
-            return BBManage.isLoopBlock(&B);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(&B);
+        if(BInfo)
+            return BInfo->isLoopBlock();
+        return false;
     }
     void FunctionInformation::setLoopInfo(LoopInfo *li){
         LoopI = li;
+    }
+
+    void FunctionInformation::setAliasInBasicBlock(BasicBlock *B, uniqueKey *srcinfo, uniqueKey *tgtinfo){
+        BasicBlockInformation * BInfo = this->getBasicBlockInformation(B);
+        BInfo->setAlias(srcinfo, tgtinfo);
+    }
+
+    bool FunctionInformation::aliasExists(BasicBlock *B, uniqueKey *src){
+        BasicBlockInformation * BInfo = this->getBasicBlockInformation(B);
+        return BInfo->aliasExists(src);
+    }
+
+    BasicBlockInformation* FunctionInformation::getBasicBlockInformation(BasicBlock *B){
+        return BBManage.get(B);
     }
 }

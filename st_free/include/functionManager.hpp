@@ -11,6 +11,7 @@ namespace ST_free{
             ParentList ParentType;
             Value *V;
             Instruction *I;
+            vector<bool> storedInLoop;
             vector<bool> FreedMembers; 
             ValueInformation * valInfo;
             BasicBlock * freedBlock;
@@ -21,12 +22,14 @@ namespace ST_free{
                 V=val;
                 I=Inst;
                 FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
             };
             FreedStruct(Type *Ty, Value *val, Instruction *Inst, ParentList P){
                 T=Ty;
                 V=val;
                 I=Inst;
                 FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
                 ParentType = ParentList(P);
                 valInfo = NULL;
             };
@@ -35,6 +38,7 @@ namespace ST_free{
                 V=val;
                 I=Inst;
                 FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
                 valInfo = vinfo;
                 freedBlock = freedB;
             };
@@ -43,6 +47,7 @@ namespace ST_free{
                 V=val;
                 I=Inst;
                 FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
                 valInfo = vinfo;
                 freedBlock = freedB;
             };
@@ -61,6 +66,12 @@ namespace ST_free{
             bool operator !=(FreedStruct *v){
                 return V != v->getValue() && T != v->getType() && I != v->getInst();
             }
+            bool operator ==(FreedStruct v){
+                return V == v.getValue() && T == v.getType() && I == v.getInst();
+            }
+            bool operator !=(FreedStruct v){
+                return V != v.getValue() && T != v.getType() && I != v.getInst();
+            }
             bool operator ==(uniqueKey uk){
                 return T == uk.getType() && V == uk.getValue();
             }
@@ -76,6 +87,10 @@ namespace ST_free{
             bool memberIsFreed(int ind) {return ind < FreedMembers.size() ? FreedMembers[ind]:false;};
             unsigned memberSize() {return FreedMembers.size();};
             BasicBlock * getFreedBlock() const{return freedBlock;};
+            void addParent(StructType *st){ParentType.push_back(st);}
+            StructType * getParent(){return NULL;}
+            void setStoredInLoop(int ind);
+            bool isStoredInLoop(int ind);
             void print();
     };
     using FreedStructList = vector<FreedStruct *>;
@@ -110,6 +125,7 @@ namespace ST_free{
             void decrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void addFreedStruct(Type *T, Value *V, Instruction *I);
             void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I);
+            void addParentType(Type *T, Value *V,Instruction *I, StructType *parentTy);
             FreedStructList getFreedStruct() const;
             /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
@@ -122,6 +138,7 @@ namespace ST_free{
             void setAnalyzed();
             void setInProgress();
             /*** BasicBlock Related ***/
+            BasicBlockInformation * getBasicBlockInformation(BasicBlock *B);
             void BBCollectInfo(BasicBlock& B, bool isEntryPoint);
             BasicBlockList getFreeList(BasicBlock *B);
             BasicBlockList getAllocList(BasicBlock *B);
@@ -132,6 +149,8 @@ namespace ST_free{
             void setCorrectlyBranched(BasicBlock *B);
             bool isCorrectlyBranched(BasicBlock *B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
+            void setAliasInBasicBlock(BasicBlock *B, uniqueKey *srcinfo, uniqueKey *tgtinfo);
+            bool aliasExists(BasicBlock *B, uniqueKey * src);
             /*** Loop Related ***/
             void setLoopInfo(LoopInfo * li);
             void setLoopBlock(BasicBlock &B);
