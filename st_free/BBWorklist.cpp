@@ -137,20 +137,20 @@ namespace ST_free {
         liveVariables = LiveVariableList(lvl);
     }
 
-    bool BasicBlockInformation::aliasExists(uniqueKey *vinfo){
+    bool BasicBlockInformation::aliasExists(Value *vinfo){
         if(aliasMap.find(vinfo) != aliasMap.end())
             return true;
         return false;
     }
 
-    uniqueKey* BasicBlockInformation::getAlias(uniqueKey *vinfo){
+    Value* BasicBlockInformation::getAlias(Value *vinfo){
         if(this->aliasExists(vinfo)){
             return aliasMap[vinfo];
         }
         return NULL;
     }
 
-    void BasicBlockInformation::setAlias(uniqueKey *src, uniqueKey *tgt){
+    void BasicBlockInformation::setAlias(Value *src, Value *tgt){
         if(!this->aliasExists(tgt))
             aliasMap[tgt] = src;
     }

@@ -23,6 +23,7 @@ namespace ST_free{
             bool memberIsFreed(unsigned ind){return fst->memberIsFreed(ind);};
             bool memberIsStoredInLoop(unsigned ind){return fst->isStoredInLoop(ind);};
             Instruction * getInstruction(){return fst->getInst();}
+            Type *getTopParent(){return fst->getTopParent();}
             void print(){fst->print();};
     };
     /* Class [StructInformation]
@@ -51,6 +52,7 @@ namespace ST_free{
             bool isResponsible(int ind){return memberStats[ind] == ISRESPONSIBLE;};
             bool isUnknown(int ind){return memberStats[ind] == ISUNKNOWN;};
             bool judgeResponsibility(int ind);
+            bool isBidirectionalReferencing(CandidateValue *cand, int ind);
             unsigned int getAllocNum(){return allocNum;};
             bool isAllStoreGlobalVar(int ind){
                 if(stc[ind].total > 0)

@@ -78,6 +78,7 @@ namespace ST_free{
             varinfo = this->addVariable(V, memTy, stTy, num);
         else
             varinfo->addStructParams(stTy, num);
+        
         varinfo->setFreed();
 
         if(BInfo){
@@ -126,8 +127,26 @@ namespace ST_free{
     }
 
     void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I){
-        freedStruct.push_back(new FreedStruct(T, V, I, B, NULL));
+        FreedStruct * fst = new FreedStruct(T, V, I, B, NULL);
+        if(!this->freedStructExists(fst)){
+            freedStruct.push_back(fst);
+        }
     }
+
+    void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent){
+        FreedStruct * fst = new FreedStruct(T, V, I, B, NULL);
+        if(!this->freedStructExists(fst)){
+            fst->addParent(parent);
+            freedStruct.push_back(fst);
+        }
+    }
+
+    bool FunctionInformation::freedStructExists(FreedStruct *fst){
+        if(find(freedStruct.begin(), freedStruct.end(), fst) != freedStruct.end())
+            return true;
+        return false;
+    }
+
     void FunctionInformation::addParentType(Type *T, Value *V, Instruction *I, StructType * parentTy){
         FreedStruct fst(T, V, I);
         auto fVal = find(freedStruct.begin(), freedStruct.end(), &fst);
@@ -216,22 +235,12 @@ namespace ST_free{
         vinfo->incrementRefCount(ref);
     }
     
-    void FunctionInformation::incrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
-        ValueInformation * vinfo = VManage.getValueInfo(V);
-        if(vinfo != NULL)
-            vinfo->incrementRefCount(ref);
-    }
+    // void FunctionInformation::incrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
+    //     ValueInformation * vinfo = VManage.getValueInfo(V);
+    //     if(vinfo != NULL)
+    //         vinfo->incrementRefCount(ref);
+    // }
 
-    void FunctionInformation::incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref) {
-        // BBManage.incrementRefCount(B, V, ref, ALLOCATED);
-    }
-
-    void FunctionInformation::decrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
-        // BBManage.decrementRefCount(B, V, ref, FREED);
-    }
-    void FunctionInformation::decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *ref){
-        // BBManage.decrementRefCount(B, V, ref, ALLOCATED);
-    }
     LocalVarList FunctionInformation::getLocalVar() const{
         return localVariables;
     }
@@ -241,6 +250,7 @@ namespace ST_free{
             return false;
         return true;
     }
+
     void FunctionInformation::setStructMemberFreed(FreedStruct *fstruct, int64_t num){
         auto fs = find(freedStruct.begin(), freedStruct.end(), fstruct);
         if(fs != freedStruct.end()){
@@ -326,14 +336,24 @@ namespace ST_free{
         LoopI = li;
     }
 
-    void FunctionInformation::setAliasInBasicBlock(BasicBlock *B, uniqueKey *srcinfo, uniqueKey *tgtinfo){
+    void FunctionInformation::setAliasInBasicBlock(BasicBlock *B, Value *srcinfo, Value *tgtinfo){
         BasicBlockInformation * BInfo = this->getBasicBlockInformation(B);
-        BInfo->setAlias(srcinfo, tgtinfo);
+        if(BInfo)
+            BInfo->setAlias(srcinfo, tgtinfo);
     }
 
-    bool FunctionInformation::aliasExists(BasicBlock *B, uniqueKey *src){
+    bool FunctionInformation::aliasExists(BasicBlock *B, Value *src){
         BasicBlockInformation * BInfo = this->getBasicBlockInformation(B);
-        return BInfo->aliasExists(src);
+        if(BInfo)
+            return BInfo->aliasExists(src);
+        return false;
+    }
+
+    Value * FunctionInformation::getAlias(BasicBlock *B, Value *src){
+        BasicBlockInformation * BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            return BInfo->getAlias(src);
+        return NULL;
     }
 
     BasicBlockInformation* FunctionInformation::getBasicBlockInformation(BasicBlock *B){

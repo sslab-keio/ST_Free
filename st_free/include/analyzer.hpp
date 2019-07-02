@@ -13,9 +13,9 @@ namespace ST_free {
     class Analyzer {
         private:
             static FunctionManager identifier;
-            LoopManager * loopmap;
-            FunctionInformation * FEle;
-            StructManager * stManage;
+            LoopManager *loopmap;
+            FunctionInformation *FEle;
+            StructManager *stManage;
             /*** Availability Analysis ***/
             void checkAvailability();
             /*** Instruction Analysis ***/
@@ -39,6 +39,7 @@ namespace ST_free {
             bool isStoreToStructMember(StoreInst * SI);
             bool isStoreFromStructMember(StoreInst * SI);
             bool isStoreToStruct(StoreInst *SI);
+            uniqueKey decodeGEPInst(GetElementPtrInst *GEle);
         public:
             Analyzer(){
             }

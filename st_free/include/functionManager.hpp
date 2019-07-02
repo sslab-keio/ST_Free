@@ -88,7 +88,7 @@ namespace ST_free{
             unsigned memberSize() {return FreedMembers.size();};
             BasicBlock * getFreedBlock() const{return freedBlock;};
             void addParent(StructType *st){ParentType.push_back(st);}
-            StructType * getParent(){return NULL;}
+            Type *getTopParent(){return ParentType.size() >= 1 ? ParentType[0]:NULL;}
             void setStoredInLoop(int ind);
             bool isStoredInLoop(int ind);
             void print();
@@ -122,15 +122,14 @@ namespace ST_free{
             void addFreeValue(BasicBlock *B, Value *V);
             void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
             void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
-            void decrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void addFreedStruct(Type *T, Value *V, Instruction *I);
             void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I);
+            void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent);
             void addParentType(Type *T, Value *V,Instruction *I, StructType *parentTy);
             FreedStructList getFreedStruct() const;
+            bool freedStructExists(FreedStruct *fst);
             /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
-            void incrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
-            void decrementAllocatedRefCount(BasicBlock *B, Value *V, Value *refVal);
             /*** Status Related ***/
             bool isUnanalyzed();
             bool isAnalyzed();
@@ -149,8 +148,9 @@ namespace ST_free{
             void setCorrectlyBranched(BasicBlock *B);
             bool isCorrectlyBranched(BasicBlock *B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
-            void setAliasInBasicBlock(BasicBlock *B, uniqueKey *srcinfo, uniqueKey *tgtinfo);
-            bool aliasExists(BasicBlock *B, uniqueKey * src);
+            void setAliasInBasicBlock(BasicBlock *B, Value *srcinfo, Value *tgtinfo);
+            bool aliasExists(BasicBlock *B, Value * src);
+            Value * getAlias(BasicBlock *B, Value *src);
             /*** Loop Related ***/
             void setLoopInfo(LoopInfo * li);
             void setLoopBlock(BasicBlock &B);
@@ -184,7 +184,6 @@ namespace ST_free{
             /*** Debugging ***/
             void printVal(){VManage.print();}
     };
-
     class FunctionManager {
         private:
             map<Function *, FunctionInformation *> func_map;

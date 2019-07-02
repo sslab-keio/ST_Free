@@ -17,7 +17,7 @@ namespace ST_free {
     };
 
     using LiveVariableList = vector<Value *>;
-    using Aliases = map<uniqueKey *, uniqueKey *>;
+    using Aliases = map<Value *, Value *>;
     class BasicBlockInformation {
         private:
             /*** BasicBlock Lists ***/
@@ -58,9 +58,9 @@ namespace ST_free {
             /*** Utilities ***/
             BasicBlockWorkList getWorkList(int mode) const;
             LiveVariableList getLiveVariables() const;
-            bool aliasExists(uniqueKey *);
-            uniqueKey* getAlias(uniqueKey *);
-            void setAlias(uniqueKey* src, uniqueKey* dest); //dest <- src
+            bool aliasExists(Value *);
+            Value* getAlias(Value *);
+            void setAlias(Value* src, Value* dest); //dest <- src
     };
     class BasicBlockManager {
         private:

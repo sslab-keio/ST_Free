@@ -85,6 +85,9 @@ namespace ST_free {
     }
 
     bool isStructEleFree(Instruction * val){
+        if(isa<GetElementPtrInst>(val))
+            return true;
+
         LoadInst * l_inst = find_load(val);
         if(l_inst != NULL && l_inst->getOperandList() != NULL){
             // generateError(val , "Found load inst operandlist");
@@ -98,6 +101,8 @@ namespace ST_free {
     }
 
     GetElementPtrInst* getFreeStructEleInfo(Instruction * val){
+        if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(val))
+            return GEle;
         LoadInst * l_inst = find_load(val);
         if(l_inst != NULL && l_inst->getOperandList() != NULL){
             for(Use &U : l_inst->operands()){
