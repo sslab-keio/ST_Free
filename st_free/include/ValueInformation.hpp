@@ -24,18 +24,6 @@ namespace ST_free{
     };
     class ValueInformation {
         private:
-            struct aliases{
-                Value * alias;
-                StoreInst * SI;
-                bool inLoopBlock;
-                aliases(Value *a, StoreInst *s, bool loop){
-                    this->alias = a;
-                    this->SI = s;
-                    this->inLoopBlock = loop;
-                }
-                bool isInLoop(){return inLoopBlock;}
-                Value * aliasValue(){return alias;}
-            };
             Value * V;
             long memberNum;
             Type * memberType;
@@ -43,7 +31,6 @@ namespace ST_free{
             bool freed;
             bool parentFreed;
             int refCount;
-            vector<aliases *> aliasList;
         public:
             ValueInformation(Value * val){
                 V = val;
@@ -90,22 +77,18 @@ namespace ST_free{
             void incrementRefCount(Value * v){refCount++;};
             void decrementRefCount(){if(refCount > 0)refCount--;};
             bool noRefCount(){return refCount == 0;};
-            void addAlias(Value *val, StoreInst *SI, bool isLoopBlock);
-            vector<Value *> getAliasList();
             void setStructType(Type *T){structType = T;};
             void setMemberNum(long num){memberNum = num;};
             void addStructParams(Type *T, long num){
                 if(T) setStructType(T);
                 if(num >= 0) setMemberNum(num);
             }
-            bool storeInLoopExists();
             void setFreed(){freed = true;}
             bool isFreed(){return freed;}
     };
     class ValueManager{
         private:
             map<uniqueKey, ValueInformation *> vinfos;
-            map<ValueInformation *, ValueInformation *> alias;
         public:
             bool exists(Value *val, Type * ty, long num);
             bool exists(Value *val);
@@ -114,7 +97,6 @@ namespace ST_free{
             void addValueInfo(Value * val, Type * ty, long num);
             void addValueInfo(Value * val);
             void addValueInfo(Value * val, Type * memType, Type * parType, long num);
-            void addAlias(Value * srcVal, Value * tgtVal); // tgtVal <- srcVal;
             void print();
     };
 }

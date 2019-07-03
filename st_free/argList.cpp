@@ -94,7 +94,7 @@ namespace ST_free{
     }
     void ArgList::setFreedStructNumber(Value * val, int64_t num){
         int64_t arg = getOperandNum(val);
-        if(arg >= 0)
+        if(arg >= 0 && arg < argNum)
             freedStructList[arg] = vector<bool>(num, false);
     }
 
@@ -106,7 +106,7 @@ namespace ST_free{
 
     void ArgList::setStructMemberFree(Value * val, int64_t num){
         int64_t arg = getOperandNum(val);
-        if(arg >= 0)
+        if(arg >= 0 && arg <argNum)
             freedStructList[arg][num] = true;
     }
     void ArgList::setStructMemberAllocated(Value * val, int64_t num){

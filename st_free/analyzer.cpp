@@ -171,7 +171,6 @@ namespace ST_free{
                                 || FEle->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind))
                             cPointers--;
                         else if (!vinfo->noRefCount()) {
-                            if(vinfo->storeInLoopExists()) {
                                 // bool storedValueFreed = false;
                                 // for(Value * val : vinfo->getAliasList()){
                                 //     if(FEle->isFreedInBasicBlock(freedStruct->getFreedBlock(), val, val->getType(), -1)
@@ -185,7 +184,6 @@ namespace ST_free{
                                 //     freedStruct->setStoredInLoop(ind);
                                 //     cPointers--;
                                 // }
-                            }
                         }
 
                         // if(vinfo->isFreed()){
@@ -274,6 +272,7 @@ namespace ST_free{
     }
 
     void Analyzer::addFree(Value * V, CallInst *CI, BasicBlock *B) {
+        bool isStructRelated = false;
         if (Instruction * val = dyn_cast<Instruction>(V)) {
             if(isStructEleFree(val)) {
                 GetElementPtrInst * inst = getFreeStructEleInfo(val);
@@ -287,15 +286,16 @@ namespace ST_free{
                             inst->getSourceElementType(),
                             getValueIndices(inst)
                         );
-
                     generateWarning(val, "Struct element free");
                 }
                 if(isStructFree(val)) {
                     if(StructType * strty = dyn_cast<StructType>(inst->getSourceElementType())){
-                        FEle->addFreedStruct(B, getStructType(val), getLoadeeValue(inst->getPointerOperand()), val, strty);
+                        // FEle->addFreedStruct(B, getStructType(val), getLoadeeValue(inst->getPointerOperand()), val, strty);
                     }
                 }
-            } else if (isStructFree(val)) {
+                isStructRelated = true;
+            }
+            if (isStructFree(val)) {
                 Value * loaded_value = getStructFreedValue(val);
                 if(loaded_value != NULL) {
                     if(FEle->aliasExists(B, loaded_value)){
@@ -318,7 +318,9 @@ namespace ST_free{
                         generateWarning(val, "Struct Free");
                     }
                 }
-            } else {
+                isStructRelated = true;
+            }
+            if(!isStructRelated){
                 Value * loaded_value = getFreedValue(val);
                 if(FEle->aliasExists(B, loaded_value)){
                     Value * aliasVal = FEle->getAlias(B, loaded_value);
@@ -392,8 +394,8 @@ namespace ST_free{
     }
 
     bool Analyzer::isStoreToStructMember(StoreInst * SI){
-        if(GetElementPtrInst * gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())){
-            if(isa<StructType>(gEle->getSourceElementType())){
+        if(GetElementPtrInst * gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())) {
+            if(isa<StructType>(gEle->getSourceElementType())) {
                 return true;
             }
         }

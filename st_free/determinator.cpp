@@ -5,6 +5,7 @@ using namespace ST_free;
 
 const vector<string> alloc_funcs = {"malloc", "calloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc"};
 const vector<string> free_funcs = {"free", "kfree", "kzfree"};
+// const vector<string> free_funcs = {"free", "kfree", "kzfree", "kmem_cache_free"};
 
 namespace ST_free {
     bool isAllocFunction(Function *F) {

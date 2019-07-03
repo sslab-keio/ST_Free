@@ -69,15 +69,15 @@ namespace ST_free {
             LiveVariableList intersectLiveVariables(LiveVariableList src, LiveVariableList tgt);
             bool exists(BasicBlock *B);
         public:
+            /*** getter ***/
             BasicBlockInformation * get(BasicBlock *B);
-            void CollectInInfo(BasicBlock *B, bool isEntryPoint);
-            // void add(BasicBlock * B, Value *v, int mode);
-            // void add(BasicBlock * B, Value *v, Type * memTy, long mem, int mode);
-            void copy(BasicBlock *src, BasicBlock *tgt);
-            void intersect(BasicBlock *src, BasicBlock *tgt);
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);
             BasicBlockList getBasicBlockAllocList(BasicBlock *src);
             LiveVariableList getLiveVariables(BasicBlock *B);
+            /*** Mediator ***/
+            void CollectInInfo(BasicBlock *B, bool isEntryPoint);
+            void copy(BasicBlock *src, BasicBlock *tgt);
+            void intersect(BasicBlock *src, BasicBlock *tgt);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
     };
 }
