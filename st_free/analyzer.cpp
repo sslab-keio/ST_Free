@@ -1,6 +1,8 @@
 #include "include/analyzer.hpp"
 
 #define isEntryPoint(F, B) &(F.getEntryBlock()) == &B ? true:false
+#define storeIfNull(tgt, cand) (tgt) == NULL ? (cand):(tgt)
+#define UpdateIfNull(tgt, cand) (tgt) = ((tgt) == NULL ? (cand):(tgt))
 
 namespace ST_free{
     FunctionManager Analyzer::identifier;
@@ -56,27 +58,6 @@ namespace ST_free{
 
     void Analyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
         // if(this->isStoreToStruct(SI)){
-        //     if(FEle->isLoopBlock(B)){
-        //         int storecount = 0;
-        //         if(isa<AllocaInst>(SI->getPointerOperand())){
-        //             for(User *usr: SI->getPointerOperand()->users()){
-        //                 if(isa<StoreInst>(usr))
-        //                     storecount++;
-        //             }
-        //             if(storecount == 1){
-        //                 uniqueKey* srcinfo = new uniqueKey(SI->getPointerOperand(), get_type(SI->getPointerOperandType()), -1);
-        //                 uniqueKey* tgtinfo;
-        //                 generateWarning(SI, "Only StoreInst in loop");
-        //                 if(isa<GetElementPtrInst>(SI->getValueOperand())){
-        //                     outs() << "GetElementPrtInst\n";
-        //                 }
-        //                 else if(LoadInst *LI = dyn_cast<LoadInst>(SI->getValueOperand())){
-        //                     tgtinfo = new uniqueKey(LI->getPointerOperand(), get_type(LI->getPointerOperandType()), -1);
-        //                     FEle->setAliasInBasicBlock(&B, srcinfo, tgtinfo);
-        //                 }
-        //             }
-        //         }
-        //     }
         // }
         if(this->isStoreToStructMember(SI)){
             generateWarning(SI, "is Store to struct");
@@ -90,7 +71,7 @@ namespace ST_free{
                         getValueIndices(GEle)
                     );
             }
-            // FEle->setAliasInBasicBlock(SI->getPointerOperand(), SI->getValueOperand());
+            // FEle->setAliasInBasicBlock(&B, SI->getPointerOperand(), SI->getValueOperand());
         }
 
         if(this->isStoreFromStructMember(SI)){
@@ -271,7 +252,7 @@ namespace ST_free{
         return;
     }
 
-    void Analyzer::addFree(Value * V, CallInst *CI, BasicBlock *B) {
+    void Analyzer::addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias) {
         bool isStructRelated = false;
         long index = -1;
         Value* freeValue = NULL;
@@ -282,8 +263,8 @@ namespace ST_free{
             if(isStructEleFree(val)) {
                 GetElementPtrInst * GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
-                    freeValue = getLoadeeValue(GEle->getPointerOperand());
-                    memType = GEle->getResultElementType();
+                    UpdateIfNull(freeValue, getLoadeeValue(GEle->getPointerOperand()));
+                    UpdateIfNull(memType, GEle->getResultElementType());
                     if(GEle->getSourceElementType()->isStructTy())
                         parentType = cast<StructType>(GEle->getSourceElementType());
                     index = getValueIndices(GEle);
@@ -295,9 +276,10 @@ namespace ST_free{
             if(isStructFree(val)) {
                 Value * loaded_value = getStructFreedValue(val);
                 if(loaded_value != NULL) {
-                    freeValue = loaded_value;
-                    memType = getStructType(val);
-                    FEle->addFreedStruct(B, getStructType(val), freeValue, val, parentType);
+                    UpdateIfNull(freeValue, loaded_value);
+                    UpdateIfNull(memType, getStructType(val));
+                    if(!isAlias && !FEle->aliasExists(B, freeValue))
+                        FEle->addFreedStruct(B, getStructType(val), freeValue, val, parentType);
                 }
                 isStructRelated = true;
                 generateWarning(val, "Struct Free");
@@ -314,7 +296,8 @@ namespace ST_free{
                 if(FEle->aliasExists(B, freeValue)){
                     Value * aliasVal = FEle->getAlias(B, freeValue);
                     if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)){
-                        this->addFree(GEle, CI, B);
+                        generateWarning(CI, "Alias Free found");
+                        this->addFree(GEle, CI, B, true);
                     }
                 }
                 if (FEle->isArgValue(freeValue)){

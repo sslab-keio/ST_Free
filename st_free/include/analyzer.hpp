@@ -26,7 +26,7 @@ namespace ST_free {
             void analyzeBranchInst(BranchInst * BI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
-            void addFree(Value * V, CallInst *CI, BasicBlock *B);
+            void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false);
             void addAlloc(CallInst *CI, BasicBlock *B);
             void addLocalStruct(BasicBlock * B, Type * T, Value * V, Instruction * I, ParentList P);
             void addLocalVariable(BasicBlock * B, Type * T, Value * V, Instruction * I, ParentList P);
