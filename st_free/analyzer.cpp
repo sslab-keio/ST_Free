@@ -284,7 +284,8 @@ namespace ST_free{
                 if (GEle != NULL) {
                     freeValue = getLoadeeValue(GEle->getPointerOperand());
                     memType = GEle->getResultElementType();
-                    parentType = cast<StructType>(GEle->getSourceElementType());
+                    if(GEle->getSourceElementType()->isStructTy())
+                        parentType = cast<StructType>(GEle->getSourceElementType());
                     index = getValueIndices(GEle);
                 }
                 isStructRelated = true;
@@ -321,7 +322,6 @@ namespace ST_free{
                     if(memType->isStructTy())
                         FEle->setStructArgFree(freeValue, get_type(freeValue)->getStructNumElements());
                 }
-
                 FEle->addFreeValue(B,freeValue, memType, parentType, index);
             }
         }
