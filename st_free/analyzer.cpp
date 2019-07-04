@@ -273,70 +273,56 @@ namespace ST_free{
 
     void Analyzer::addFree(Value * V, CallInst *CI, BasicBlock *B) {
         bool isStructRelated = false;
+        long index = -1;
+        Value* freeValue = NULL;
+        Type* memType = NULL;
+        StructType* parentType = NULL;
+
         if (Instruction * val = dyn_cast<Instruction>(V)) {
             if(isStructEleFree(val)) {
-                GetElementPtrInst * inst = getFreeStructEleInfo(val);
-                if (inst != NULL) {
-                    if (FEle->isArgValue(getLoadeeValue(inst->getPointerOperand())))
-                        FEle->setArgFree(getLoadeeValue(inst->getPointerOperand()));
-                    FEle->addFreeValue(
-                            B,
-                            getLoadeeValue(inst->getPointerOperand()),
-                            inst->getResultElementType(),
-                            inst->getSourceElementType(),
-                            getValueIndices(inst)
-                        );
-                    generateWarning(val, "Struct element free");
-                }
-                if(isStructFree(val)) {
-                    if(StructType * strty = dyn_cast<StructType>(inst->getSourceElementType())){
-                        // FEle->addFreedStruct(B, getStructType(val), getLoadeeValue(inst->getPointerOperand()), val, strty);
-                    }
+                GetElementPtrInst * GEle = getFreeStructEleInfo(val);
+                if (GEle != NULL) {
+                    freeValue = getLoadeeValue(GEle->getPointerOperand());
+                    memType = GEle->getResultElementType();
+                    parentType = cast<StructType>(GEle->getSourceElementType());
+                    index = getValueIndices(GEle);
                 }
                 isStructRelated = true;
+                generateWarning(val, "Struct element free");
             }
-            if (isStructFree(val)) {
+
+            if(isStructFree(val)) {
                 Value * loaded_value = getStructFreedValue(val);
                 if(loaded_value != NULL) {
-                    if(FEle->aliasExists(B, loaded_value)){
-                        Value * aliasVal = FEle->getAlias(B, loaded_value);
-                        if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)){
-                            this->addFree(GEle, CI, B);
-                        }
-                    }else{
-                        if (FEle->isArgValue(loaded_value)) {
-                            FEle->setArgFree(loaded_value);
-                            FEle->setStructArgFree(loaded_value, get_type(loaded_value)->getStructNumElements());
-                        }
-                        FEle->addFreeValue(
-                                B,
-                                loaded_value,
-                                getStructType(val),
-                                NULL,
-                                -1);
-                        FEle->addFreedStruct(B, getStructType(val), loaded_value, val);
-                        generateWarning(val, "Struct Free");
-                    }
+                    freeValue = loaded_value;
+                    memType = getStructType(val);
+                    FEle->addFreedStruct(B, getStructType(val), freeValue, val, parentType);
                 }
                 isStructRelated = true;
+                generateWarning(val, "Struct Free");
             }
+
             if(!isStructRelated){
-                Value * loaded_value = getFreedValue(val);
-                if(FEle->aliasExists(B, loaded_value)){
-                    Value * aliasVal = FEle->getAlias(B, loaded_value);
+                freeValue = getFreedValue(val);
+                if(freeValue != NULL)
+                    memType = freeValue->getType();
+                generateWarning(val, "Value Free");
+            }
+
+            if(freeValue){
+                if(FEle->aliasExists(B, freeValue)){
+                    Value * aliasVal = FEle->getAlias(B, freeValue);
                     if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)){
                         this->addFree(GEle, CI, B);
                     }
-                }else{
-                    if(loaded_value != NULL) {
-                        if (FEle->isArgValue(loaded_value))
-                            FEle->setArgFree(loaded_value);
-
-                        FEle->addFreeValue(B, loaded_value);
-                        generateWarning(val, "Value Free");
-                    }
                 }
-                
+                if (FEle->isArgValue(freeValue)){
+                    FEle->setArgFree(freeValue);
+                    if(memType->isStructTy())
+                        FEle->setStructArgFree(freeValue, get_type(freeValue)->getStructNumElements());
+                }
+
+                FEle->addFreeValue(B,freeValue, memType, parentType, index);
             }
         }
     }
