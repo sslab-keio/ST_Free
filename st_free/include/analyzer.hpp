@@ -28,7 +28,6 @@ namespace ST_free {
             /*** add Value ***/
             void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false);
             void addAlloc(CallInst *CI, BasicBlock *B);
-            void addLocalStruct(BasicBlock * B, Type * T, Value * V, Instruction * I, ParentList P);
             void addLocalVariable(BasicBlock * B, Type * T, Value * V, Instruction * I, ParentList P);
             void addPointerLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P);
             /*** Argument Status ***/

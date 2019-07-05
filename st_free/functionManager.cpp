@@ -265,11 +265,14 @@ namespace ST_free{
     }
     void FunctionInformation::copyStructMemberFreed(Type * T,vector<bool> members){
         auto fs = find_if(freedStruct.begin(), freedStruct.end(), [T](FreedStruct *f){return *f == T; });
-        if(fs != freedStruct.end())
+        if(fs != freedStruct.end()){
             for(int ind = 0; ind != members.size(); ind++){
-                if(members[ind])
+                if(members[ind]){
                     (*fs)->setFreedMember(ind);
+                }
             }
+        }
+            
     }
     void FunctionInformation::addBasicBlockLiveVariable(BasicBlock * B, Value *V){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);

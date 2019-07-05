@@ -36,8 +36,8 @@ namespace{
             }
 
             /*** Main analysis module ***/
-            for(Function &F: M){
-                if(!(F.isDeclaration())){
+            for(Function &F: M) {
+                if(!(F.isDeclaration())) {
                     Analyzer analyze(&F, StManage, loopmap);
                     analyze.analyze();
                 }

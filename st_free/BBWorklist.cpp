@@ -145,6 +145,9 @@ namespace ST_free {
         bool isFirst = true;
         if(this->exists(B))
             return;
+        if(isEntryPoint)
+            this->set(B);
+
         for (BasicBlock* PredBB: predecessors(B)) {
             if(isFirst) {
                 this->copy(PredBB, B);
@@ -214,8 +217,7 @@ namespace ST_free {
         return NULL;
     }
     LiveVariableList BasicBlockManager::getLiveVariables(BasicBlock *B){
-        return BBMap[B].getLiveVariables();
-    }
+        return BBMap[B].getLiveVariables(); }
     bool BasicBlockManager::isPredBlockCorrectlyBranched(BasicBlock *B){
         if(pred_size(B) == 1){
             for (BasicBlock* PredBB: predecessors(B)) {
@@ -224,5 +226,9 @@ namespace ST_free {
             }
         }
         return false;
+    }
+    void BasicBlockManager::set(BasicBlock *B){
+        if (!this->exists(B))
+            BBMap[B] = BasicBlockInformation();
     }
 }

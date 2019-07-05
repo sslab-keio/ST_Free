@@ -70,6 +70,7 @@ namespace ST_free {
             bool exists(BasicBlock *B);
         public:
             /*** getter ***/
+            void set(BasicBlock *B);
             BasicBlockInformation * get(BasicBlock *B);
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);
             BasicBlockList getBasicBlockAllocList(BasicBlock *src);
