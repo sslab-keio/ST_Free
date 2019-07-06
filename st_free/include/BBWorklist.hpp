@@ -52,6 +52,7 @@ namespace ST_free {
             bool isCorrectlyBranched();
             void setLoopBlock();
             bool isLoopBlock();
+            /*** CorrectlyFreed ***/
             void addCorrectlyFreedValue(Value * V, Type * T, long mem);
             bool CorrectlyFreedValueExists(Value * V, Type * T, long mem);
             BasicBlockWorkList getCorrectlyFreedValues() const;
@@ -78,6 +79,9 @@ namespace ST_free {
             /*** Mediator ***/
             void CollectInInfo(BasicBlock *B, bool isEntryPoint);
             void copy(BasicBlock *src, BasicBlock *tgt);
+            void copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt);
+            void copyCorrectlyFreedToPrev(BasicBlock *src);
+            void updateSuccessorBlock(BasicBlock *src);
             void intersect(BasicBlock *src, BasicBlock *tgt);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
     };

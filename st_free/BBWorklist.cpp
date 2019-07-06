@@ -11,7 +11,8 @@ namespace ST_free {
     }
 
     void BasicBlockWorkList::add(Value *v, Type * ty, long mem){
-        MarkedValues.push_back(uniqueKey(v, ty, mem));
+        uniqueKey uk(v, ty, mem);
+        MarkedValues.push_back(uk);
     }
 
     bool BasicBlockWorkList::exists(Value * v, Type * ty, long mem){
@@ -145,6 +146,7 @@ namespace ST_free {
         bool isFirst = true;
         if(this->exists(B))
             return;
+
         if(isEntryPoint)
             this->set(B);
 
@@ -154,6 +156,7 @@ namespace ST_free {
                 isFirst = false;
             } else {
                 this->intersect(PredBB, B);
+                this->copyCorrectlyFreed(PredBB, B);
             }
         }
         return;
@@ -169,6 +172,20 @@ namespace ST_free {
         BBMap[src].setAllocList(intersectList(this->getBasicBlockAllocList(src), this->getBasicBlockAllocList(tgt)));
         BBMap[src].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src), this->getLiveVariables(tgt)));
         return;
+    }
+
+    void BasicBlockManager::copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt){
+        for(uniqueKey uk : BBMap[src].getCorrectlyFreedValues().getList()){
+            BBMap[tgt].addCorrectlyFreedValue(uk.getValue(), uk.getType(), uk.getNum());
+        }
+    }
+
+    void BasicBlockManager::copyCorrectlyFreedToPrev(BasicBlock *src){
+        for (BasicBlock* PredBB: predecessors(src)) {
+            BasicBlockInformation* BInfo = this->get(PredBB);
+            if(BInfo && BInfo->isLoopBlock())
+                this->copyCorrectlyFreed(src, PredBB);
+        }
     }
 
     BasicBlockList BasicBlockManager::intersectList(BasicBlockList src, BasicBlockList tgt){
@@ -216,8 +233,11 @@ namespace ST_free {
             return &BBMap[B];
         return NULL;
     }
+
     LiveVariableList BasicBlockManager::getLiveVariables(BasicBlock *B){
-        return BBMap[B].getLiveVariables(); }
+        return BBMap[B].getLiveVariables();
+    }
+
     bool BasicBlockManager::isPredBlockCorrectlyBranched(BasicBlock *B){
         if(pred_size(B) == 1){
             for (BasicBlock* PredBB: predecessors(B)) {
@@ -230,5 +250,13 @@ namespace ST_free {
     void BasicBlockManager::set(BasicBlock *B){
         if (!this->exists(B))
             BBMap[B] = BasicBlockInformation();
+    }
+    void BasicBlockManager::updateSuccessorBlock(BasicBlock *src){
+        for(BasicBlock * SucBB : successors(src)){
+            if(this->exists(SucBB)){
+                // this->intersect(src, SucBB);
+                this->copyCorrectlyFreed(src, SucBB);
+            }
+        }
     }
 }

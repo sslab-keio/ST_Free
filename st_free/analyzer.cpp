@@ -15,7 +15,9 @@ namespace ST_free {
 
         for (BasicBlock &B: F){
             FEle->BBCollectInfo(B, isEntryPoint(F, B));
+            FEle->setLoopBlock(B);
             this->analyzeInstructions(B);
+            FEle->updateSuccessorBlock(B);
         }
 
         this->checkAvailability();
@@ -24,8 +26,6 @@ namespace ST_free {
     }
 
     void Analyzer::analyzeInstructions(BasicBlock &B) {
-        FEle->setLoopBlock(B);
-
         for (Instruction &I: B){
             if(this->isReturnFunc(&I))
                 FEle->addEndPoint(&B);
@@ -145,10 +145,10 @@ namespace ST_free {
                 if(vinfo != NULL){
                     bool isFreed = false;
                     if(FEle->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
-                            || FEle->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)){
+                            || FEle->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)) {
                         isFreed = true;
-                    }
-                    else if (!vinfo->noRefCount()) {
+                    // }
+                    // else if (!vinfo->noRefCount()) {
                         // bool storedValueFreed = false;
                         // for(Value * val : vinfo->getAliasList()){
                         //     if(FEle->isFreedInBasicBlock(freedStruct->getFreedBlock(), val, val->getType(), -1)
@@ -283,7 +283,7 @@ namespace ST_free {
                     if(memType->isStructTy())
                         FEle->setStructArgFree(freeValue, get_type(freeValue)->getStructNumElements());
                 }
-                FEle->addFreeValue(B,freeValue, memType, parentType, index);
+                FEle->addFreeValue(B, freeValue, memType, parentType, index);
             }
         }
     }

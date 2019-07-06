@@ -37,8 +37,9 @@ namespace ST_free{
             for(unsigned ind = 0; ind < cand->getMemberSize(); ind++){
                 if(!cand->memberIsFreed(ind)) {
                     if(this->isResponsible(ind)) {
-                        if(this->judgeResponsibility(ind)
+                        if(this->judgeResponsibility(ind) 
                                 && !this->isAllStoreGlobalVar(ind)
+                                // if(!this->isAllStoreGlobalVar(ind)
                                 && !this->isBidirectionalReferencing(cand, ind)){
                             // generateError(cand->getInstruction(), "Struct element is NOT Freed");
                             warningStr += to_string(ind);

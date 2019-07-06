@@ -151,6 +151,8 @@ namespace ST_free{
             void setAliasInBasicBlock(BasicBlock *B, Value *srcinfo, Value *tgtinfo);
             bool aliasExists(BasicBlock *B, Value * src);
             Value * getAlias(BasicBlock *B, Value *src);
+            void copyCorrectlyFreedValueInLoop(BasicBlock &B);
+            void updateSuccessorBlock(BasicBlock &B);
             /*** Loop Related ***/
             void setLoopInfo(LoopInfo * li);
             void setLoopBlock(BasicBlock &B);

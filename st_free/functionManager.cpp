@@ -85,7 +85,6 @@ namespace ST_free{
             BInfo->addFree(V, memTy, num);
             if(BBManage.isPredBlockCorrectlyBranched(B) 
                     || BInfo->isLoopBlock()){
-                // outs() << *varinfo->getValue() << " " << *varinfo->getMemberType() << "\n";
                 this->addCorrectlyFreedValue(B, V, memTy, num);
             }
         }
@@ -313,8 +312,9 @@ namespace ST_free{
     }
     void FunctionInformation::addCorrectlyFreedValue(BasicBlock * B, Value * V,Type * T, long mem){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-        if(BInfo)
+        if(BInfo){
             BInfo->addCorrectlyFreedValue(V, T, mem);
+        }
     }
     bool FunctionInformation::isCorrectlyBranchedFreeValue(BasicBlock *B, Value *V, Type *T, long mem){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
@@ -322,6 +322,7 @@ namespace ST_free{
             return BInfo->CorrectlyFreedValueExists(V, T, mem);
         return false;
     }
+
     void FunctionInformation::setLoopBlock(BasicBlock &B){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(&B);
         if(LoopI->getLoopFor(&B)){
@@ -329,11 +330,21 @@ namespace ST_free{
                 BInfo->setLoopBlock();
         }
     }
+
     bool FunctionInformation::isLoopBlock(BasicBlock &B){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(&B);
         if(BInfo)
             return BInfo->isLoopBlock();
         return false;
+    }
+    void FunctionInformation::copyCorrectlyFreedValueInLoop(BasicBlock &B){
+        if(this->isLoopBlock(B)){
+            BBManage.copyCorrectlyFreedToPrev(&B);
+        }
+    }
+
+    void FunctionInformation::updateSuccessorBlock(BasicBlock &B){
+        BBManage.updateSuccessorBlock(&B);
     }
     void FunctionInformation::setLoopInfo(LoopInfo *li){
         LoopI = li;
