@@ -39,8 +39,8 @@ namespace ST_free{
                     if(this->isResponsible(ind)) {
                         if(this->judgeResponsibility(ind) 
                                 && !this->isAllStoreGlobalVar(ind)
-                                // if(!this->isAllStoreGlobalVar(ind)
                                 && !this->isBidirectionalReferencing(cand, ind)){
+                        // if(!this->isAllStoreGlobalVar(ind)){
                             // generateError(cand->getInstruction(), "Struct element is NOT Freed");
                             warningStr += to_string(ind);
                             warningStr += ' ';
@@ -48,8 +48,8 @@ namespace ST_free{
                         }
                         // cand->print();
                         // break;
-                    } else if(this->isUnknown(ind)){
-                        if(this->judgeResponsibility(ind)){
+                    } else if(this->isUnknown(ind)) {
+                        if(this->judgeResponsibility(ind)) {
                             // generateError(cand->getInstruction(), "Struct element is NOT Freed");
                             // break;
                         }
@@ -57,7 +57,7 @@ namespace ST_free{
                 }
             }
             warningStr += ')';
-            if(hasWarning){
+            if(hasWarning) {
                 generateError(cand->getInstruction(), warningStr);
                 // this->print();
             }
@@ -81,6 +81,7 @@ namespace ST_free{
             return true;
         return false;
     }
+
     void StructInformation::incrementFreedCount(int ind){
         freedCounts[ind]++;
     }
@@ -126,7 +127,7 @@ namespace ST_free{
     void StructInformation::print(){
         outs() << "=== StructInfo: Debug Info===\n";
         outs() << "[Struct]: " << strTy->getName() << "\n";
-        outs() << "[AllocNum]: " << allocNum << "\n";
+        // outs() << "[AllocNum]: " << allocNum << "\n";
         outs() << "[Referees] (TTL: " << referees.size() << ") \n";
         // for (StructType* ty : referees){
         //     outs() << "\t" << *ty << "\n";
@@ -157,7 +158,7 @@ namespace ST_free{
                 default:
                     outs() << "DEFAULT";
             }
-            outs() << " [" << stc[ind].globalVar << "/" << stc[ind].total << "]\n";
+            outs() << " [" << stc[ind].globalVar << "/" << stc[ind].total << "], " << freedCounts[ind] << "\n";
         }
         outs() << "[CandidateNum]: " << candidateNum << "\n";
         outs() << "[BugCandidates]\n";

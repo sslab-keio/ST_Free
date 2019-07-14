@@ -11,7 +11,7 @@
 #define UNALLOCATED 5
 
 namespace ST_free{
-    class CandidateValue{
+    class CandidateValue {
         private:
             Function *F;
             FreedStruct *fst;

@@ -337,11 +337,12 @@ namespace ST_free{
             return BInfo->isLoopBlock();
         return false;
     }
-    void FunctionInformation::copyCorrectlyFreedValueInLoop(BasicBlock &B){
-        if(this->isLoopBlock(B)){
-            BBManage.copyCorrectlyFreedToPrev(&B);
-        }
-    }
+
+    // void FunctionInformation::copyCorrectlyFreedValueInLoop(BasicBlock &B){
+    //     if(this->isLoopBlock(B)){
+    //         BBManage.copyCorrectlyFreedToPrev(&B);
+    //     }
+    // }
 
     void FunctionInformation::updateSuccessorBlock(BasicBlock &B){
         BBManage.updateSuccessorBlock(&B);

@@ -16,6 +16,14 @@ namespace ST_free {
             LoopManager *loopmap;
             FunctionInformation *FEle;
             StructManager *stManage;
+        protected:
+            /*** getter/setter ***/
+            FunctionManager* getFunctionManager(){return &identifier;};
+            LoopManager* getLoopManager(){return loopmap;};
+            FunctionInformation* getFunctionInforamtion(){return FEle;};
+            void setFunctionInformation(FunctionInformation * FInfo){FEle = FInfo;};
+            StructManager* getStructManager(){return stManage;};
+            void setStructManager(StructManager *stManager){stManage = stManager;};
             /*** Availability Analysis ***/
             void checkAvailability();
             /*** Instruction Analysis ***/

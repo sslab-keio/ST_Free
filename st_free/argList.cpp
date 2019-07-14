@@ -19,8 +19,9 @@ namespace ST_free{
         int i = 0;
         for(auto args = F->arg_begin(); args != F->arg_end(); args++, i++){
             Value * v = getArgAlloca(args);
-            if(v != NULL)
+            if(v != NULL){
                 this->setArg(i, v);
+            }
         }
         return;
     }

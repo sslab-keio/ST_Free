@@ -80,7 +80,7 @@ namespace ST_free {
             void CollectInInfo(BasicBlock *B, bool isEntryPoint);
             void copy(BasicBlock *src, BasicBlock *tgt);
             void copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt);
-            void copyCorrectlyFreedToPrev(BasicBlock *src);
+            // void copyCorrectlyFreedToPrev(BasicBlock *src);
             void updateSuccessorBlock(BasicBlock *src);
             void intersect(BasicBlock *src, BasicBlock *tgt);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);

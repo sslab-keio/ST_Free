@@ -180,13 +180,13 @@ namespace ST_free {
         }
     }
 
-    void BasicBlockManager::copyCorrectlyFreedToPrev(BasicBlock *src){
-        for (BasicBlock* PredBB: predecessors(src)) {
-            BasicBlockInformation* BInfo = this->get(PredBB);
-            if(BInfo && BInfo->isLoopBlock())
-                this->copyCorrectlyFreed(src, PredBB);
-        }
-    }
+    // void BasicBlockManager::copyCorrectlyFreedToPrev(BasicBlock *src){
+        // for (BasicBlock* PredBB: predecessors(src)) {
+        //     BasicBlockInformation* BInfo = this->get(PredBB);
+        //     if(BInfo && BInfo->isLoopBlock())
+        //         this->copyCorrectlyFreed(src, PredBB);
+        // }
+    // }
 
     BasicBlockList BasicBlockManager::intersectList(BasicBlockList src, BasicBlockList tgt){
         BasicBlockList tmp;
@@ -214,6 +214,7 @@ namespace ST_free {
 
         return tmp;
     }
+
     BasicBlockList BasicBlockManager::getBasicBlockFreeList(BasicBlock *src) {
         if(this->exists(src)){
             return BBMap[src].getWorkList(FREED).getList();
@@ -247,10 +248,12 @@ namespace ST_free {
         }
         return false;
     }
+
     void BasicBlockManager::set(BasicBlock *B){
         if (!this->exists(B))
             BBMap[B] = BasicBlockInformation();
     }
+
     void BasicBlockManager::updateSuccessorBlock(BasicBlock *src){
         for(BasicBlock * SucBB : successors(src)){
             if(this->exists(SucBB)){

@@ -22,6 +22,7 @@ namespace ST_free {
 
         this->checkAvailability();
         FEle->setAnalyzed();
+
         return;
     }
 
@@ -75,23 +76,16 @@ namespace ST_free {
             // }
         }
 
-        if(this->isStoreFromStructMember(SI)){
+        if(this->isStoreFromStructMember(SI)) {
             generateWarning(SI, "is Store from struct");
             GetElementPtrInst * GEle = getStoredStructEle(SI);
-            // ValueInformation * vinfo = FEle->addVariable(
-            //         getLoadeeValue(GEle->getPointerOperand()),
-            //         GEle->getResultElementType(),
-            //         GEle->getSourceElementType(),
-            //         getValueIndices(GEle)
-            //     );
-            // vinfo->incrementRefCount(SI->getPointerOperand());
-            if(isa<AllocaInst>(SI->getPointerOperand())){
+            if(isa<AllocaInst>(SI->getPointerOperand())) {
                 FEle->setAliasInBasicBlock(&B, GEle, SI->getPointerOperand());
             }
         }
     }
      
-    void Analyzer::analyzeCallInst(CallInst *CI, BasicBlock &B){
+    void Analyzer::analyzeCallInst(CallInst *CI, BasicBlock &B) {
         if (Function* called_function = CI->getCalledFunction()) {
             if (isAllocFunction(called_function)) {
                 Value * val = getAllocatedValue(CI);
@@ -244,7 +238,6 @@ namespace ST_free {
                     UpdateIfNull(memType, GEle->getResultElementType());
                     if(GEle->getSourceElementType()->isStructTy())
                         UpdateIfNull(parentType, cast<StructType>(GEle->getSourceElementType()));
-                        // parentType = cast<StructType>(GEle->getSourceElementType());
                     index = getValueIndices(GEle);
                 }
                 isStructRelated = true;
@@ -253,35 +246,39 @@ namespace ST_free {
 
             if(isStructFree(val)) {
                 Value * loaded_value = getStructFreedValue(val);
-                if(loaded_value != NULL) {
+                if(loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
                     UpdateIfNull(memType, getStructType(val));
                     if(!isAlias && !FEle->aliasExists(B, freeValue))
-                        FEle->addFreedStruct(B, getStructType(val), freeValue, val, parentType);
+                        FEle->addFreedStruct(B, getStructType(val), freeValue, CI, parentType);
                 }
                 isStructRelated = true;
                 generateWarning(val, "Struct Free");
             }
 
-            if(!isStructRelated){
+            if(!isStructRelated) {
                 UpdateIfNull(freeValue, getFreedValue(val));
                 if(freeValue != NULL)
                     UpdateIfNull(memType, freeValue->getType());
                 generateWarning(val, "Value Free");
             }
 
-            if(freeValue){
-                if(FEle->aliasExists(B, freeValue)){
+            if(freeValue) {
+                if(FEle->aliasExists(B, freeValue)) {
                     Value * aliasVal = FEle->getAlias(B, freeValue);
                     if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)){
                         generateWarning(CI, "Alias Free found");
                         this->addFree(GEle, CI, B, true);
                     }
                 }
-                if (FEle->isArgValue(freeValue)){
+                if (FEle->isArgValue(freeValue)) {
                     FEle->setArgFree(freeValue);
                     if(memType->isStructTy())
                         FEle->setStructArgFree(freeValue, get_type(freeValue)->getStructNumElements());
+                    if(parentType && index >= 0){
+                        // FEle->setStructMemberArgFreed(freeValue, index);
+                        outs() << "struct member arg freed\n";
+                    }
                 }
                 FEle->addFreeValue(B, freeValue, memType, parentType, index);
             }
@@ -322,8 +319,8 @@ namespace ST_free {
     }
 
     void Analyzer::copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B) {
-        int ind = 0;
         FunctionInformation * DF = identifier.getElement(&Func);
+        int ind = 0;
 
         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++, ind++) {
             if(DF->isArgFreed(ind)) {
