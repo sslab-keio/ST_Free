@@ -4,9 +4,9 @@
 #define UpdateIfNull(tgt, cand) (tgt) = ((tgt) == NULL ? (cand):(tgt))
 
 namespace ST_free {
-    FunctionManager Analyzer::identifier;
+    FunctionManager BaseAnalyzer::identifier;
 
-    void Analyzer::analyze(){
+    void BaseAnalyzer::analyze(){
         Function & F = getFunctionInformation()->getFunction();
 
         if(!getFunctionInformation()->isUnanalyzed())
@@ -26,7 +26,7 @@ namespace ST_free {
         return;
     }
 
-    void Analyzer::analyzeInstructions(BasicBlock &B) {
+    void BaseAnalyzer::analyzeInstructions(BasicBlock &B) {
         for (Instruction &I: B){
             if(this->isReturnFunc(&I))
                 getFunctionInformation()->addEndPoint(&B);
@@ -46,7 +46,7 @@ namespace ST_free {
         }
     }
 
-    void Analyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B){
+    void BaseAnalyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B){
         // this->addLocalVariable(
         //         &B,
         //         ainst->getAllocatedType(),
@@ -56,7 +56,7 @@ namespace ST_free {
         //     );
     }
 
-    void Analyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
+    void BaseAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
         // if(this->isStoreToStruct(SI)){
         // }
         if(this->isStoreToStructMember(SI)){
@@ -85,7 +85,7 @@ namespace ST_free {
         }
     }
      
-    void Analyzer::analyzeCallInst(CallInst *CI, BasicBlock &B) {
+    void BaseAnalyzer::analyzeCallInst(CallInst *CI, BasicBlock &B) {
         if (Function* called_function = CI->getCalledFunction()) {
             if (isAllocFunction(called_function)) {
                 Value * val = getAllocatedValue(CI);
@@ -105,14 +105,14 @@ namespace ST_free {
         }
     }
 
-    void Analyzer::analyzeBranchInst(BranchInst * BI, BasicBlock &B){
+    void BaseAnalyzer::analyzeBranchInst(BranchInst * BI, BasicBlock &B){
         if(this->isCorrectlyBranched(BI)) {
             generateWarning(BI, "Correctly Branched");
             getFunctionInformation()->setCorrectlyBranched(&B);
         }
     }
     
-    void Analyzer::checkAvailability() {
+    void BaseAnalyzer::checkAvailability() {
         FreedStructList fsl = getFunctionInformation()->getFreedStruct();
 
         // for(FreedStruct * localVar: getFunctionInformation()->getLocalVar()) {
@@ -174,7 +174,7 @@ namespace ST_free {
         return;
     }
 
-    bool Analyzer::isCorrectlyBranched(BranchInst * BI){
+    bool BaseAnalyzer::isCorrectlyBranched(BranchInst * BI){
         if(BI->isConditional() && BI->getCondition() != NULL){
             if(auto * CmpI = dyn_cast<CmpInst>(BI->getCondition())){
                 if(auto *LI = dyn_cast<LoadInst>(CmpI->getOperand(0)))
@@ -188,7 +188,7 @@ namespace ST_free {
         return false;
     }
 
-    void Analyzer::addLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
+    void BaseAnalyzer::addLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
         ValueInformation *vinfo = getFunctionInformation()->addVariable(V);
         getFunctionInformation()->addBasicBlockLiveVariable(B, V);
         if (StructType * strTy = dyn_cast<StructType>(T)) {
@@ -203,7 +203,7 @@ namespace ST_free {
         return;
     }
 
-    void Analyzer::addPointerLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
+    void BaseAnalyzer::addPointerLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P){
         ValueInformation *vinfo = getFunctionInformation()->addVariable(V);
         if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
             getFunctionInformation()->addLocalVar(B, strTy, V, I, P, vinfo);
@@ -217,13 +217,13 @@ namespace ST_free {
         return;
     }
 
-    void Analyzer::analyzeDifferentFunc(Function &F) {
-        Analyzer called_function(&F, stManage, loopmap);
+    void BaseAnalyzer::analyzeDifferentFunc(Function &F) {
+        BaseAnalyzer called_function(&F, stManage, loopmap);
         called_function.analyze();
         return;
     }
 
-    void Analyzer::addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias) {
+    void BaseAnalyzer::addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias) {
         bool isStructRelated = false;
         long index = -1;
         Value* freeValue = NULL;
@@ -285,7 +285,7 @@ namespace ST_free {
         }
     }
 
-    void Analyzer::addAlloc(CallInst *CI, BasicBlock *B) {
+    void BaseAnalyzer::addAlloc(CallInst *CI, BasicBlock *B) {
         if(isStructEleAlloc(CI)){
             GetElementPtrInst *inst = getAllocStructEleInfo(CI);
 
@@ -311,14 +311,14 @@ namespace ST_free {
         return;
     }
 
-    bool Analyzer::isReturnFunc(Instruction *I) {
+    bool BaseAnalyzer::isReturnFunc(Instruction *I) {
         //TODO: add terminating funcs
         if(isa<ReturnInst>(I))
             return true;
         return false;
     }
 
-    void Analyzer::copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B) {
+    void BaseAnalyzer::copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B) {
         FunctionInformation * DF = identifier.getElement(&Func);
         int ind = 0;
 
@@ -337,7 +337,7 @@ namespace ST_free {
         return;
     }
 
-    bool Analyzer::isStoreToStructMember(StoreInst * SI){
+    bool BaseAnalyzer::isStoreToStructMember(StoreInst * SI){
         if(GetElementPtrInst * gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())) {
             if(isa<StructType>(gEle->getSourceElementType())) {
                 return true;
@@ -346,20 +346,20 @@ namespace ST_free {
         return false;
     }
 
-    bool Analyzer::isStoreFromStructMember(StoreInst * SI){
+    bool BaseAnalyzer::isStoreFromStructMember(StoreInst * SI){
         if(getStoredStructEle(SI))
             return true;
         return false;
     }
 
-    bool Analyzer::isStoreToStruct(StoreInst *SI){
+    bool BaseAnalyzer::isStoreToStruct(StoreInst *SI){
         if(SI->getPointerOperandType()->isPointerTy())
             if(get_type(SI->getPointerOperandType())->isStructTy())
                 return true;
             return false;
     }
 
-    uniqueKey Analyzer::decodeGEPInst(GetElementPtrInst *GEle){
+    uniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){
         return uniqueKey(getLoadeeValue(GEle->getPointerOperand()), GEle->getResultElementType(), getValueIndices(GEle));
     }
 }

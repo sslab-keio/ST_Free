@@ -11,7 +11,7 @@
 #include "LoopManager.hpp"
 
 namespace ST_free {
-    class Analyzer {
+    class BaseAnalyzer {
         private:
             static FunctionManager identifier;
             LoopManager *loopmap;
@@ -49,9 +49,9 @@ namespace ST_free {
             bool isStoreToStruct(StoreInst *SI);
             uniqueKey decodeGEPInst(GetElementPtrInst *GEle);
         public:
-            Analyzer(){
+            BaseAnalyzer(){
             }
-            Analyzer(Function *func, StructManager *stm, LoopManager *lmap) {
+            BaseAnalyzer(Function *func, StructManager *stm, LoopManager *lmap) {
                 FEle = identifier.getElement(func);
                 loopmap = lmap;
                 stManage = stm;

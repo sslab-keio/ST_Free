@@ -2,7 +2,9 @@
 #include "analyzer.hpp"
 
 namespace ST_free {
-    class StageOneAnalyzer : public Analyzer {
+    class StageOneAnalyzer : public BaseAnalyzer {
+        public:
+            StageOneAnalyzer(Function *func, StructManager *stm, LoopManager *lmap) : BaseAnalyzer(func, stm, lmap){};
         protected:
             /*** Availability Analysis ***/
             void checkAvailability();
@@ -12,7 +14,5 @@ namespace ST_free {
             void analyzeStoreInst(StoreInst * SI, BasicBlock &B);
             void analyzeCallInst(CallInst *CI, BasicBlock &B);
             void analyzeBranchInst(BranchInst * BI, BasicBlock &B);
-        public:
-            StageOneAnalyzer(Function *func, StructManager *stm, LoopManager *lmap) : Analyzer(func, stm, lmap){};
     };
 }
