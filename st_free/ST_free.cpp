@@ -31,7 +31,7 @@ namespace{
             
             /*** Generate LoopInformation ***/
             LoopManager* loopmap = new LoopManager();
-            for(Function &F: M){
+            for(Function &F: M) {
                 if(!(F.isDeclaration())) {
                     loopmap->add(&F, &(getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo()));
                 }
@@ -40,7 +40,11 @@ namespace{
             /*** Main analysis module ***/
             for(Function &F: M) {
                 if(!(F.isDeclaration())) {
+#ifdef STAGE_ONE
+                    StageOneAnalyzer analyze(&F, StManage, loopmap);
+#else
                     BaseAnalyzer analyze(&F, StManage, loopmap);
+#endif
                     analyze.analyze();
                 }
             }

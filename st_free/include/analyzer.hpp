@@ -12,11 +12,17 @@
 
 namespace ST_free {
     class BaseAnalyzer {
-        private:
-            static FunctionManager identifier;
-            LoopManager *loopmap;
-            FunctionInformation *FEle;
-            StructManager *stManage;
+        public:
+            BaseAnalyzer(){
+            }
+            BaseAnalyzer(Function *func, StructManager *stm, LoopManager *lmap) {
+                FEle = identifier.getElement(func);
+                loopmap = lmap;
+                stManage = stm;
+                FEle->setLoopInfo(loopmap->get(func));
+            }
+            void analyze();
+            void analyzeDifferentFunc(Function &);
         protected:
             /*** getter/setter ***/
             FunctionManager* getFunctionManager(){return &identifier;};
@@ -48,16 +54,10 @@ namespace ST_free {
             bool isStoreFromStructMember(StoreInst * SI);
             bool isStoreToStruct(StoreInst *SI);
             uniqueKey decodeGEPInst(GetElementPtrInst *GEle);
-        public:
-            BaseAnalyzer(){
-            }
-            BaseAnalyzer(Function *func, StructManager *stm, LoopManager *lmap) {
-                FEle = identifier.getElement(func);
-                loopmap = lmap;
-                stManage = stm;
-                FEle->setLoopInfo(loopmap->get(func));
-            }
-            void analyze();
-            void analyzeDifferentFunc(Function &);
+        private:
+            static FunctionManager identifier;
+            LoopManager *loopmap;
+            FunctionInformation *FEle;
+            StructManager *stManage;
     };
 }
