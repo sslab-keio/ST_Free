@@ -1,3 +1,4 @@
+#pragma once
 #include "ST_free.hpp"
 #include "functionManager.hpp"
 #include "statList.hpp"
@@ -20,18 +21,18 @@ namespace ST_free {
             /*** getter/setter ***/
             FunctionManager* getFunctionManager(){return &identifier;};
             LoopManager* getLoopManager(){return loopmap;};
-            FunctionInformation* getFunctionInforamtion(){return FEle;};
+            FunctionInformation* getFunctionInformation(){return FEle;};
             void setFunctionInformation(FunctionInformation * FInfo){FEle = FInfo;};
             StructManager* getStructManager(){return stManage;};
             void setStructManager(StructManager *stManager){stManage = stManager;};
             /*** Availability Analysis ***/
-            void checkAvailability();
+            virtual void checkAvailability();
             /*** Instruction Analysis ***/
-            void analyzeInstructions(BasicBlock &B);
-            void analyzeAllocaInst(AllocaInst * AI, BasicBlock &B);
-            void analyzeStoreInst(StoreInst * SI, BasicBlock &B);
-            void analyzeCallInst(CallInst *CI, BasicBlock &B);
-            void analyzeBranchInst(BranchInst * BI, BasicBlock &B);
+            virtual void analyzeInstructions(BasicBlock &B);
+            virtual void analyzeAllocaInst(AllocaInst * AI, BasicBlock &B);
+            virtual void analyzeStoreInst(StoreInst * SI, BasicBlock &B);
+            virtual void analyzeCallInst(CallInst *CI, BasicBlock &B);
+            virtual void analyzeBranchInst(BranchInst * BI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
             void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false);

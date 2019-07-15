@@ -5,6 +5,7 @@
 #include "include/functionManager.hpp"
 #include "include/StructInformation.hpp"
 #include "include/analyzer.hpp"
+#include "include/StageOneAnalyzer.hpp"
 #include "include/LoopManager.hpp"
 
 using namespace ST_free;
@@ -38,7 +39,11 @@ namespace{
             /*** Main analysis module ***/
             for(Function &F: M) {
                 if(!(F.isDeclaration())) {
+#ifdef STAGE_ONE
+                    StageOneAnalyzer analyze(&F, StManage, loopmap);
+#else
                     Analyzer analyze(&F, StManage, loopmap);
+#endif
                     analyze.analyze();
                 }
             }
