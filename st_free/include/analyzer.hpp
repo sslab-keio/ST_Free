@@ -59,5 +59,6 @@ namespace ST_free {
             LoopManager *loopmap;
             FunctionInformation *FEle;
             StructManager *stManage;
+            stack<Function *> functionStack;
     };
 }

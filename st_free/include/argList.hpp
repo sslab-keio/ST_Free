@@ -2,8 +2,23 @@
 #include "ST_free.hpp"
 #include "support_funcs.hpp"
 
-namespace ST_free{
-    class ArgList{
+namespace ST_free {
+    class ArgElement {
+        private:
+            Value * val;
+            bool freed;
+            bool allocated;
+            vector<ArgElement> structElements;
+        public:
+            ArgElement(Value * v){
+                val = v;
+                freed = false;
+                allocated = false;
+            }
+            bool isFreed(){return freed;}
+            void setFreed(){freed = true;}
+    };
+    class ArgList {
         private:
             uint64_t argNum;
             vector<Value *> arg_list;

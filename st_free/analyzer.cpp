@@ -273,11 +273,11 @@ namespace ST_free {
                 }
                 if (getFunctionInformation()->isArgValue(freeValue)) {
                     getFunctionInformation()->setArgFree(freeValue);
-                    if(memType->isStructTy())
+                    if(get_type(memType)->isStructTy()){
                         getFunctionInformation()->setStructArgFree(freeValue, get_type(freeValue)->getStructNumElements());
-                    if(parentType && index >= 0){
-                        // getFunctionInformation()->setStructMemberArgFreed(freeValue, index);
-                        outs() << "struct member arg freed\n";
+                    }
+                    if(parentType && index >= 0) {
+                        getFunctionInformation()->setStructMemberArgFreed(freeValue, index);
                     }
                 }
                 getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index);
