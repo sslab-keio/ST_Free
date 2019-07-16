@@ -4,8 +4,6 @@
 #define UpdateIfNull(tgt, cand) (tgt) = ((tgt) == NULL ? (cand):(tgt))
 
 namespace ST_free {
-    FunctionManager BaseAnalyzer::identifier;
-
     void BaseAnalyzer::analyze(Function &F){
         setFunctionInformation(identifier.getElement(&F));
         getFunctionInformation()->setLoopInfo(loopmap->get(&F));

@@ -59,7 +59,7 @@ namespace ST_free {
             bool isStoreToStruct(StoreInst *SI);
             uniqueKey decodeGEPInst(GetElementPtrInst *GEle);
         private:
-            static FunctionManager identifier;
+            FunctionManager identifier;
             LoopManager *loopmap;
             FunctionInformation *FEle;
             StructManager *stManage;
