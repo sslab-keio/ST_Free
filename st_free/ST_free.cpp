@@ -37,16 +37,15 @@ namespace{
                 }
             }
 
+#ifdef STAGE_ONE
+            StageOneAnalyzer analyze(StManage, loopmap);
+#else
+            BaseAnalyzer analyze(StManage, loopmap);
+#endif
             /*** Main analysis module ***/
             for(Function &F: M) {
-                if(!(F.isDeclaration())) {
-#ifdef STAGE_ONE
-                    StageOneAnalyzer analyze(&F, StManage, loopmap);
-#else
-                    BaseAnalyzer analyze(&F, StManage, loopmap);
-#endif
-                    analyze.analyze();
-                }
+                if(!(F.isDeclaration()))
+                    analyze.analyze(F);
             }
 
             /*** Main Warning Generator ***/

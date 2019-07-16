@@ -21,7 +21,11 @@ namespace ST_free {
                 stManage = stm;
                 FEle->setLoopInfo(loopmap->get(func));
             }
-            void analyze();
+            BaseAnalyzer(StructManager *stm, LoopManager *lmap){
+                loopmap = lmap;
+                stManage = stm;
+            }
+            void analyze(Function &F);
             void analyzeDifferentFunc(Function &);
         protected:
             /*** getter/setter ***/

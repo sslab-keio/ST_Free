@@ -6,8 +6,9 @@
 namespace ST_free {
     FunctionManager BaseAnalyzer::identifier;
 
-    void BaseAnalyzer::analyze(){
-        Function & F = getFunctionInformation()->getFunction();
+    void BaseAnalyzer::analyze(Function &F){
+        setFunctionInformation(identifier.getElement(&F));
+        getFunctionInformation()->setLoopInfo(loopmap->get(&F));
 
         if(!getFunctionInformation()->isUnanalyzed())
             return;
@@ -218,8 +219,18 @@ namespace ST_free {
     }
 
     void BaseAnalyzer::analyzeDifferentFunc(Function &F) {
-        BaseAnalyzer called_function(&F, stManage, loopmap);
-        called_function.analyze();
+        /*** Push current FunctionInformation ***/
+        functionStack.push(&getFunctionInformation()->getFunction());
+
+        /*** Analyze new Function ***/
+        this->analyze(F);
+        // BaseAnalyzer called_function(&F, stManage, loopmap);
+        // called_function.analyze();
+
+        /*** Recover FunctionInformation ***/
+        Function* tempFunc = functionStack.top();
+        setFunctionInformation(identifier.getElement(tempFunc));
+        functionStack.pop();
         return;
     }
 

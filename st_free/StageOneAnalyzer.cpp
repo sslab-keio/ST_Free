@@ -125,10 +125,4 @@ namespace ST_free{
         }
         return;
     }
-
-    void StageOneAnalyzer::analyzeDifferentFunc(Function &F) {
-        StageOneAnalyzer called_function(&F, getStructManager(), getLoopManager());
-        called_function.analyze();
-        return;
-    }
 }
