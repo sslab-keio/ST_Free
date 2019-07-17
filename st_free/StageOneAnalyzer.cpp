@@ -33,12 +33,14 @@ namespace ST_free{
     }
 
     void StageOneAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
-        // if(this->isStoreToStruct(SI)){
-        // }
+        AliasElement valueEle, pointerEle;
+
+        /*** Check the Pointer of StoreInst ***/
         if(this->isStoreToStructMember(SI)){
             generateWarning(SI, "is Store to struct");
             GetElementPtrInst * GEle = getStoredStruct(SI);
             getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
+            pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
 
             if(isa<GlobalValue>(SI->getValueOperand())) {
                 generateWarning(SI, "GolbalVariable Store");
@@ -50,14 +52,23 @@ namespace ST_free{
             // if(isa<AllocaInst>(SI->getValueOperand())){
             //     getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getValueOperand());
             // }
+        } else if(this->isStoreToStruct(SI)) {
         }
 
+        /*** Check the Value of the StoreInst ***/
         if(this->isStoreFromStructMember(SI)) {
             generateWarning(SI, "is Store from struct");
             GetElementPtrInst * GEle = getStoredStructEle(SI);
             if(isa<AllocaInst>(SI->getPointerOperand())) {
                 getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getPointerOperand());
             }
+        } else if(this->isStoreFromStruct(SI)) {
+            valueEle.set(cast<StructType>(get_type(SI->getValueOperand()->getType())), ROOT_INDEX);
+        }
+
+        if(valueEle.stTy != NULL && pointerEle.stTy != NULL) {
+            getTypeRelationManager()->add(valueEle, pointerEle);
+            //Add To Relationship Map
         }
     }
      

@@ -9,6 +9,7 @@
 #include "determinator.hpp"
 #include "support_funcs.hpp"
 #include "LoopManager.hpp"
+#include "relationshipInformation.hpp"
 
 namespace ST_free {
     class BaseAnalyzer {
@@ -35,6 +36,7 @@ namespace ST_free {
             void setFunctionInformation(FunctionInformation * FInfo){FEle = FInfo;};
             StructManager* getStructManager(){return stManage;};
             void setStructManager(StructManager *stManager){stManage = stManager;};
+            TypeRelationManager* getTypeRelationManager(){return &typeRelation;};
             /*** Availability Analysis ***/
             virtual void checkAvailability();
             /*** Instruction Analysis ***/
@@ -57,9 +59,11 @@ namespace ST_free {
             bool isStoreToStructMember(StoreInst * SI);
             bool isStoreFromStructMember(StoreInst * SI);
             bool isStoreToStruct(StoreInst *SI);
+            bool isStoreFromStruct(StoreInst *SI);
             uniqueKey decodeGEPInst(GetElementPtrInst *GEle);
         private:
             FunctionManager identifier;
+            TypeRelationManager typeRelation;
             LoopManager *loopmap;
             FunctionInformation *FEle;
             StructManager *stManage;

@@ -40,5 +40,7 @@
 
 #define DEBUG_TYPE "st_free"
 
+#define ROOT_INDEX -1
+
 using namespace llvm;
 using namespace std;

@@ -21,6 +21,7 @@ namespace ST_free {
 
         this->checkAvailability();
         getFunctionInformation()->setAnalyzed();
+        typeRelation.print();
 
         return;
     }
@@ -366,6 +367,12 @@ namespace ST_free {
             if(get_type(SI->getPointerOperandType())->isStructTy())
                 return true;
             return false;
+    }
+    
+    bool BaseAnalyzer::isStoreFromStruct(StoreInst *SI){
+        if(get_type(SI->getValueOperand()->getType())->isStructTy())
+            return true;
+        return false;
     }
 
     uniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){

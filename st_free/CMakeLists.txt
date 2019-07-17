@@ -11,6 +11,7 @@ add_library( StructFreeMod MODULE
     StructInformation.cpp
     LoopManager.cpp
     StageOneAnalyzer.cpp
+    relationshipInformation.cpp
 )
 # Use C++11 to compile our pass (i.e., supply -std=c++11).
 target_compile_features(StructFreeMod PRIVATE cxx_range_for cxx_auto_type)
