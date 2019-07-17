@@ -21,7 +21,6 @@ namespace ST_free {
 
         this->checkAvailability();
         getFunctionInformation()->setAnalyzed();
-        typeRelation.print();
 
         return;
     }

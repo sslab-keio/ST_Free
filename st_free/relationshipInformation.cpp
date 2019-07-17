@@ -28,6 +28,7 @@ namespace ST_free {
 
     void TypeRelationManager::add(AliasElement src, AliasElement tgt){
         typeMap[src].push_back(tgt);
+        typeMap[tgt].push_back(src);
     }
 
     vector<AliasElement> TypeRelationManager::getRelationshipList(AliasElement src){

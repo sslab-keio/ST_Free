@@ -1,6 +1,6 @@
 #include "include/StageOneAnalyzer.hpp"
 
-namespace ST_free{
+namespace ST_free {
     
     void StageOneAnalyzer::analyzeInstructions(BasicBlock &B) {
         for (Instruction &I: B){
@@ -37,7 +37,7 @@ namespace ST_free{
 
         /*** Check the Pointer of StoreInst ***/
         if(this->isStoreToStructMember(SI)){
-            generateWarning(SI, "is Store to struct");
+            generateWarning(SI, "is Store to struct member");
             GetElementPtrInst * GEle = getStoredStruct(SI);
             getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
             pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
@@ -53,22 +53,24 @@ namespace ST_free{
             //     getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getValueOperand());
             // }
         } else if(this->isStoreToStruct(SI)) {
+            generateWarning(SI, "is Store To Struct");
         }
 
         /*** Check the Value of the StoreInst ***/
         if(this->isStoreFromStructMember(SI)) {
-            generateWarning(SI, "is Store from struct");
+            generateWarning(SI, "is Store from struct member");
             GetElementPtrInst * GEle = getStoredStructEle(SI);
             if(isa<AllocaInst>(SI->getPointerOperand())) {
                 getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getPointerOperand());
             }
         } else if(this->isStoreFromStruct(SI)) {
+            generateWarning(SI, "is Store from struct");
             valueEle.set(cast<StructType>(get_type(SI->getValueOperand()->getType())), ROOT_INDEX);
         }
 
         if(valueEle.stTy != NULL && pointerEle.stTy != NULL) {
+            generateWarning(SI, "Add to Relationship Manager");
             getTypeRelationManager()->add(valueEle, pointerEle);
-            //Add To Relationship Map
         }
     }
      
@@ -104,8 +106,8 @@ namespace ST_free{
 
         for(FreedStruct * freedStruct: fsl) {
             StructType * strTy = cast<StructType>(freedStruct->getType());
-            int cPointers = strTy->getNumElements();
             vector<bool> alreadyFreed = freedStruct->getFreedMember();
+
             for (int ind = 0; ind < strTy->getNumElements(); ind++) {
                 Type *t = strTy->getElementType(ind);
                 if (!t->isPointerTy() 

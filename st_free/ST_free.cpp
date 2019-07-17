@@ -28,20 +28,20 @@ namespace{
         bool runOnModule(Module &M) override {
             /*** Collect Struct Information ***/
             StructManager* StManage = new StructManager(M.getIdentifiedStructTypes());
-            
-            /*** Generate LoopInformation ***/
             LoopManager* loopmap = new LoopManager();
+#ifdef STAGE_ONE
+            StageOneAnalyzer analyze(StManage, loopmap);
+#else
+            BaseAnalyzer analyze(StManage, loopmap);
+#endif
+
+            /*** Generate LoopInformation ***/
             for(Function &F: M) {
                 if(!(F.isDeclaration())) {
                     loopmap->add(&F, &(getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo()));
                 }
             }
 
-#ifdef STAGE_ONE
-            StageOneAnalyzer analyze(StManage, loopmap);
-#else
-            BaseAnalyzer analyze(StManage, loopmap);
-#endif
             /*** Main analysis module ***/
             for(Function &F: M) {
                 if(!(F.isDeclaration()))

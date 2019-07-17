@@ -36,7 +36,7 @@ namespace ST_free {
             void setFunctionInformation(FunctionInformation * FInfo){FEle = FInfo;};
             StructManager* getStructManager(){return stManage;};
             void setStructManager(StructManager *stManager){stManage = stManager;};
-            TypeRelationManager* getTypeRelationManager(){return &typeRelation;};
+            TypeRelationManager* getTypeRelationManager(){return stManage->getTypeRelationManager();};
             /*** Availability Analysis ***/
             virtual void checkAvailability();
             /*** Instruction Analysis ***/
@@ -63,10 +63,9 @@ namespace ST_free {
             uniqueKey decodeGEPInst(GetElementPtrInst *GEle);
         private:
             FunctionManager identifier;
-            TypeRelationManager typeRelation;
             LoopManager *loopmap;
-            FunctionInformation *FEle;
             StructManager *stManage;
+            FunctionInformation *FEle;
             stack<Function *> functionStack;
     };
 }

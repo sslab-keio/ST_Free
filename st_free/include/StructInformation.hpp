@@ -3,6 +3,7 @@
 #include "determinator.hpp"
 #include "support_funcs.hpp"
 #include "functionManager.hpp"
+#include "relationshipInformation.hpp"
 
 #define ISRESPONSIBLE 1
 #define ISNOTRESPONSIBLE 2
@@ -95,14 +96,7 @@ namespace ST_free{
      * The constructor generates the map of the struct, and also
      * stores the referees of each StructType. 
      * */
-    class StructManager{
-        private:
-            map<StructType *, StructInformation *> StructInfo;
-            void addReferee(StructType *referee, StructType *tgt);
-            void createDependencies();
-            void changeStats();
-            bool exists(StructType *);
-            void checkNonAllocs();
+    class StructManager {
         public:
             StructManager(){};
             StructManager(vector<StructType *> st);
@@ -114,5 +108,14 @@ namespace ST_free{
             void print();
             void BuildCandidateCount();
             void checkCorrectness();
+            TypeRelationManager* getTypeRelationManager(){return &tyRel;};
+        private:
+            map<StructType *, StructInformation *> StructInfo;
+            TypeRelationManager tyRel;
+            void addReferee(StructType *referee, StructType *tgt);
+            void createDependencies();
+            void changeStats();
+            bool exists(StructType *);
+            void checkNonAllocs();
     };
 }
