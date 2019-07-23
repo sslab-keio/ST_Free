@@ -374,4 +374,11 @@ namespace ST_free{
     BasicBlockInformation* FunctionInformation::getBasicBlockInformation(BasicBlock *B){
         return BBManage.get(B);
     }
+
+    void FunctionInformation::addFunctionPointerInfo(Value *val, Function *func){
+        funcPtr[val].push_back(func);
+    }
+    vector<Function *> FunctionInformation::getPointedFunctions(Value *val){
+        return funcPtr[val];
+    }
 }

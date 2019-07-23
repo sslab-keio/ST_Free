@@ -7,6 +7,7 @@ namespace ST_free{
         memberStats = vector<int>(st->getNumElements(), ISUNKNOWN);
         freedCounts = vector<int>(st->getNumElements(), 0);
         stc = vector<storeCount>(st->getNumElements());
+        funcPtr = vector<vector<Function *>>(st->getNumElements());
         candidateNum = 0;
         allocNum = 0;
         for(Type * ty: st->elements()){
@@ -175,6 +176,13 @@ namespace ST_free{
         outs() << "=============================\n";
     }
     
+    void StructInformation::addFunctionPtr(int ind, Function *func){
+        funcPtr[ind].push_back(func);
+    }
+
+    vector<Function *> StructInformation::getFunctionPtr(int ind) {
+        return funcPtr[ind];
+    }
 
     /*** [Struct Manager] ***/
     StructManager::StructManager(vector<StructType *> st){
@@ -276,6 +284,19 @@ namespace ST_free{
                         }
                     }
                 ind++;
+            }
+        }
+    }
+    void StructManager::addGlobalVariableInitInfo(Module &M){
+        for(GlobalVariable &GV: M.globals()){
+            if(GV.getValueType()->isStructTy() && GV.hasInitializer()){
+                Constant *cnst = GV.getInitializer();
+                for(int i = 0; i < GV.getValueType()->getStructNumElements(); i++) {
+                    if(get_type(GV.getValueType()->getStructElementType(i))->isFunctionTy() && cnst->getAggregateElement(i)){
+                        this->get(cast<StructType>(GV.getValueType()))->addFunctionPtr(i, cast<Function>(cnst->getAggregateElement(i)));
+                        // outs() << *cnst->getAggregateElement(i) << "\n";
+                    }
+                }
             }
         }
     }

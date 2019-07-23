@@ -107,6 +107,7 @@ namespace ST_free{
             BasicBlockManager BBManage;
             ValueManager VManage;
             LoopInfo * LoopI;
+            map<Value *, vector<Function *>> funcPtr;
             int getStat();
             void setStat(int);
         public:
@@ -185,12 +186,15 @@ namespace ST_free{
             bool isLiveInBasicBlock(BasicBlock *B, Value *val);
             /*** Debugging ***/
             void printVal(){VManage.print();}
+            /*** Func Ptr related ***/
+            void addFunctionPointerInfo(Value *val, Function *func);
+            vector<Function *> getPointedFunctions(Value *val);
     };
     class FunctionManager {
-        private:
-            map<Function *, FunctionInformation *> func_map;
         public:
             bool exists(Function *);
             FunctionInformation * getElement(Function *F);
+        private:
+            map<Function *, FunctionInformation *> func_map;
     };
 }

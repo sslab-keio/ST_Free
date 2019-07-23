@@ -47,6 +47,7 @@ namespace ST_free{
             vector<int> memberStats;
             vector<int> freedCounts;
             vector<storeCount> stc;
+            vector<vector<Function *>> funcPtr;
             int candidateNum;
             unsigned int allocNum;
             vector<CandidateValue *> candidates;
@@ -84,6 +85,8 @@ namespace ST_free{
             bool hasNoAlloc(){return allocNum == 0;}
             void incrementStoreTotal(int ind);
             void incrementStoreGlobalVar(int ind);
+            void addFunctionPtr(int ind, Function *func);
+            vector<Function *> getFunctionPtr(int ind);
             void printStoreGlobalVar(int ind){
                 outs() << "\tTotal: " << stc[ind].total << "\n";
                 outs() << "\tGV: " << stc[ind].globalVar << "\n";
@@ -109,6 +112,7 @@ namespace ST_free{
             void print();
             void BuildCandidateCount();
             void checkCorrectness();
+            void addGlobalVariableInitInfo(Module &M);
         private:
             map<StructType *, StructInformation *> StructInfo;
             TypeRelationManager tyRel;

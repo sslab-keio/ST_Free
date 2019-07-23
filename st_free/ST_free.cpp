@@ -29,6 +29,8 @@ namespace{
             /*** Collect Struct Information ***/
             StructManager* StManage = new StructManager(M.getIdentifiedStructTypes());
             LoopManager* loopmap = new LoopManager();
+
+            StManage->addGlobalVariableInitInfo(M);
 #ifdef STAGE_ONE
             StageOneAnalyzer analyze(StManage, loopmap);
 #else

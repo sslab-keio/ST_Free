@@ -75,10 +75,26 @@ namespace ST_free {
             generateWarning(SI, "Add to Relationship Manager");
             getTypeRelationManager()->add(valueEle, pointerEle);
         }
+
+        if(get_type(SI->getValueOperand()->getType())->isFunctionTy()) {
+            generateWarning(SI, "is Function Type");
+            getFunctionInformation()->addFunctionPointerInfo(SI->getPointerOperand(), cast<Function>(SI->getValueOperand()));
+        }
     }
      
     void StageOneAnalyzer::analyzeCallInst(CallInst *CI, BasicBlock &B) {
+        vector<Function *> funcLists;
+        if(CI->isIndirectCall()){
+            if(LoadInst *LI = dyn_cast<LoadInst>(CI->getCalledValue())){
+                funcLists = getFunctionInformation()->getPointedFunctions(LI->getPointerOperand());
+            }
+        }
+
         if (Function* called_function = CI->getCalledFunction()) {
+            funcLists.push_back(called_function);
+        }
+
+        for(Function* called_function: funcLists) {
             if (isAllocFunction(called_function)) {
                 Value * val = getAllocatedValue(CI);
                 if(val != NULL) 
