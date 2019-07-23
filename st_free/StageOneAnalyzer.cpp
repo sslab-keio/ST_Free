@@ -49,9 +49,12 @@ namespace ST_free {
                         getValueIndices(GEle)
                     );
             }
-            // if(isa<AllocaInst>(SI->getValueOperand())){
-            //     getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getValueOperand());
-            // }
+
+            if(LoadInst *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
+                if(isa<AllocaInst>(LI->getPointerOperand())) {
+                    getFunctionInformation()->setAliasInBasicBlock(&B, GEle, LI->getPointerOperand());
+                }
+            }
         } else if(this->isStoreToStruct(SI)) {
             generateWarning(SI, "is Store To Struct");
         }

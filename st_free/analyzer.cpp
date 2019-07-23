@@ -70,9 +70,9 @@ namespace ST_free {
                         getValueIndices(GEle)
                     );
             }
-            // if(isa<AllocaInst>(SI->getValueOperand())){
-            //     getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getValueOperand());
-            // }
+            if(isa<AllocaInst>(SI->getValueOperand())){
+                getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getValueOperand());
+            }
         }
 
         if(this->isStoreFromStructMember(SI)) {

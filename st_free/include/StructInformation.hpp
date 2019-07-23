@@ -101,6 +101,7 @@ namespace ST_free{
             StructManager(){};
             StructManager(vector<StructType *> st);
             StructInformation * get(StructType * strTy){return StructInfo[strTy];}
+            TypeRelationManager* getTypeRelationManager(){return &tyRel;};
             void addCandidateValue(Function *F, StructType *strTy, FreedStruct * fs);
             void addAlloc(StructType *strTy);
             void addStore(StructType *strTy, int ind);
@@ -108,7 +109,6 @@ namespace ST_free{
             void print();
             void BuildCandidateCount();
             void checkCorrectness();
-            TypeRelationManager* getTypeRelationManager(){return &tyRel;};
         private:
             map<StructType *, StructInformation *> StructInfo;
             TypeRelationManager tyRel;
