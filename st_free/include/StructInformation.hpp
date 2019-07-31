@@ -12,6 +12,8 @@
 #define UNALLOCATED 5
 
 namespace ST_free{
+    /* class [CandidateValue]
+     * */
     class CandidateValue {
         private:
             Function *F;
@@ -26,6 +28,21 @@ namespace ST_free{
             Instruction * getInstruction(){return fst->getInst();}
             Type *getTopParent(){return fst->getTopParent();}
             void print(){fst->print();};
+    };
+    // class FunctionPtrInfo {
+    //     private:
+    //         Function * Func;
+    //         vector<string> DirectoryPath;
+    //     public:
+    //         FunctionPtrInfo(Function *Func, Value *V);
+    // }
+    struct globalVarInfo {
+        vector<string> dirs;
+        GlobalVariable *GV;
+        globalVarInfo(vector<string> d, GlobalVariable *G){
+            dirs= d;
+            GV = G;
+        }
     };
     /* Class [StructInformation]
      * keeps track of each structure information,
@@ -42,12 +59,14 @@ namespace ST_free{
                     globalVar = 0;
                 }
             };
+
             StructType * strTy;
             vector<StructType *> referees;
             vector<int> memberStats;
             vector<int> freedCounts;
             vector<storeCount> stc;
             vector<vector<Function *>> funcPtr;
+            vector<vector<globalVarInfo>> gvinfo;
             int candidateNum;
             unsigned int allocNum;
             vector<CandidateValue *> candidates;
@@ -87,6 +106,8 @@ namespace ST_free{
             void incrementStoreGlobalVar(int ind);
             void addFunctionPtr(int ind, Function *func);
             vector<Function *> getFunctionPtr(int ind);
+            void addGVInfo(int ind, vector<string> dirs, GlobalVariable *gv);
+            vector<globalVarInfo> getGVInfo(int ind);
             void printStoreGlobalVar(int ind){
                 outs() << "\tTotal: " << stc[ind].total << "\n";
                 outs() << "\tGV: " << stc[ind].globalVar << "\n";

@@ -8,6 +8,7 @@ namespace ST_free{
         freedCounts = vector<int>(st->getNumElements(), 0);
         stc = vector<storeCount>(st->getNumElements());
         funcPtr = vector<vector<Function *>>(st->getNumElements());
+        gvinfo = vector<vector<globalVarInfo>>(st->getNumElements());
         candidateNum = 0;
         allocNum = 0;
         for(Type * ty: st->elements()){
@@ -182,6 +183,15 @@ namespace ST_free{
 
     vector<Function *> StructInformation::getFunctionPtr(int ind) {
         return funcPtr[ind];
+    }
+
+    void StructInformation::addGVInfo(int ind, vector<string> dirs, GlobalVariable *gv){
+        gvinfo[ind].push_back(globalVarInfo(dirs, gv));
+        return;
+    }
+
+    vector<globalVarInfo> StructInformation::getGVInfo(int ind){
+        return gvinfo[ind];
     }
 
     /*** [Struct Manager] ***/

@@ -377,4 +377,31 @@ namespace ST_free {
     uniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){
         return uniqueKey(getLoadeeValue(GEle->getPointerOperand()), GEle->getResultElementType(), getValueIndices(GEle));
     }
+
+    vector<string> BaseAnalyzer::decodeDirectoryName(string fname){
+        vector<string> dirs;
+        size_t pos;
+
+        while ((pos = fname.find("/")) != string::npos) {
+            string token = fname.substr(0, pos);
+            dirs.push_back(token);
+            fname.erase(0, pos + 1);
+        }
+        dirs.push_back(fname);
+
+        return dirs;
+    }
+
+    void BaseAnalyzer::getStructParents(Instruction *I, vector<pair<Type *, int>> &typeList) {
+        if(LoadInst *LI = dyn_cast<LoadInst>(I)) {
+            if(Instruction *Inst = dyn_cast<Instruction>(LI->getPointerOperand()))
+                this->getStructParents(Inst, typeList);
+        } else if(GetElementPtrInst * GI = dyn_cast<GetElementPtrInst>(I)){
+            // outs() << *GI->getSourceElementType() << " " << getValueIndices(GI) << "\n";
+            if(Instruction *Inst = dyn_cast<Instruction>(GI->getPointerOperand()))
+                this->getStructParents(Inst, typeList);
+            typeList.push_back(pair<Type *, int>(GI->getSourceElementType(), getValueIndices(GI)));
+        }
+        return;
+    }
 }

@@ -42,12 +42,18 @@ namespace ST_free {
             getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
             pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
 
-            if(isa<GlobalValue>(SI->getValueOperand())) {
+            if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
                 generateWarning(SI, "GolbalVariable Store");
                 getStructManager()->addGlobalVarStore(
                         cast<StructType>(GEle->getSourceElementType()), 
                         getValueIndices(GEle)
                     );
+                if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
+                    if(const DebugLoc &Loc = SI->getDebugLoc()){
+                        vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
+                        getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
+                    }
+                }
             }
 
             if(LoadInst *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
@@ -84,9 +90,22 @@ namespace ST_free {
      
     void StageOneAnalyzer::analyzeCallInst(CallInst *CI, BasicBlock &B) {
         vector<Function *> funcLists;
-        if(CI->isIndirectCall()){
-            if(LoadInst *LI = dyn_cast<LoadInst>(CI->getCalledValue())){
+        if (CI->isIndirectCall()) {
+            if (LoadInst *LI = dyn_cast<LoadInst>(CI->getCalledValue())) {
+                vector<pair<Type *, int>> typeList;
+
                 funcLists = getFunctionInformation()->getPointedFunctions(LI->getPointerOperand());
+                if(const DebugLoc &Loc = CI->getDebugLoc()){
+                    vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
+                    this->getStructParents(LI, typeList);
+                    if(typeList.size() > 0){
+                        cast<StructType>(typeList[0].first);
+                        vector<globalVarInfo> gvi = getStructManager()->get(cast<StructType>(typeList[0].first))->getGVInfo(typeList[0].second);
+                        for(globalVarInfo gv: gvi){
+                            // Do something
+                        }
+                    }
+                }
             }
         }
 
