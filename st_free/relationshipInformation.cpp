@@ -41,6 +41,7 @@ namespace ST_free {
                 return true;
         return false;
     }
+
     ostream& TypeRelationManager::operator<< (ostream &out){
         out << "<RelationManager>\n";
         for (auto element : typeMap){

@@ -1,7 +1,6 @@
 #pragma once
 #include "ST_free.hpp"
 
-
 namespace ST_free {
     using aliasList = vector<Value *>;
     struct AliasElement {

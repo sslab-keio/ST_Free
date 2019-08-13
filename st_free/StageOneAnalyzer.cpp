@@ -98,13 +98,13 @@ namespace ST_free {
                 if(const DebugLoc &Loc = CI->getDebugLoc()){
                     vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
                     this->getStructParents(LI, typeList);
-                    if(typeList.size() > 0){
-                        cast<StructType>(typeList[0].first);
-                        vector<globalVarInfo> gvi = getStructManager()->get(cast<StructType>(typeList[0].first))->getGVInfo(typeList[0].second);
-                        for(globalVarInfo gv: gvi){
-                            // Do something
-                        }
-                    }
+                    // if(typeList.size() > 0){
+                    //     cast<StructType>(typeList[0].first);
+                    //     vector<globalVarInfo> gvi = getStructManager()->get(cast<StructType>(typeList[0].first))->getGVInfo(typeList[0].second);
+                    //     for(globalVarInfo gv: gvi) {
+                    //         // Do something
+                    //     }
+                    // }
                 }
             }
         }
