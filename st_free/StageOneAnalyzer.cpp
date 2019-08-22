@@ -39,26 +39,28 @@ namespace ST_free {
         if(this->isStoreToStructMember(SI)){
             generateWarning(SI, "is Store to struct member");
             GetElementPtrInst * GEle = getStoredStruct(SI);
-            getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
-            pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
+            if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
+                getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
+                pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
 
-            if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
-                generateWarning(SI, "GolbalVariable Store");
-                getStructManager()->addGlobalVarStore(
-                        cast<StructType>(GEle->getSourceElementType()), 
-                        getValueIndices(GEle)
-                    );
-                if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
-                    if(const DebugLoc &Loc = SI->getDebugLoc()){
-                        vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
-                        getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
+                if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
+                    generateWarning(SI, "GolbalVariable Store");
+                    getStructManager()->addGlobalVarStore(
+                            cast<StructType>(GEle->getSourceElementType()), 
+                            getValueIndices(GEle)
+                        );
+                    if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
+                        if(const DebugLoc &Loc = SI->getDebugLoc()){
+                            vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
+                            getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
+                        }
                     }
                 }
-            }
 
-            if(LoadInst *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
-                if(isa<AllocaInst>(LI->getPointerOperand())) {
-                    getFunctionInformation()->setAliasInBasicBlock(&B, GEle, LI->getPointerOperand());
+                if(LoadInst *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
+                    if(isa<AllocaInst>(LI->getPointerOperand())) {
+                        getFunctionInformation()->setAliasInBasicBlock(&B, GEle, LI->getPointerOperand());
+                    }
                 }
             }
         } else if(this->isStoreToStruct(SI)) {
@@ -69,7 +71,7 @@ namespace ST_free {
         if(this->isStoreFromStructMember(SI)) {
             generateWarning(SI, "is Store from struct member");
             GetElementPtrInst * GEle = getStoredStructEle(SI);
-            if(isa<AllocaInst>(SI->getPointerOperand())) {
+            if(GEle != NULL && isa<AllocaInst>(SI->getPointerOperand())) {
                 getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getPointerOperand());
             }
         } else if(this->isStoreFromStruct(SI)) {
@@ -82,10 +84,10 @@ namespace ST_free {
             getTypeRelationManager()->add(valueEle, pointerEle);
         }
 
-        if(get_type(SI->getValueOperand()->getType())->isFunctionTy()) {
-            generateWarning(SI, "is Function Type");
-            getFunctionInformation()->addFunctionPointerInfo(SI->getPointerOperand(), cast<Function>(SI->getValueOperand()));
-        }
+        // if(get_type(SI->getValueOperand()->getType())->isFunctionTy()) {
+        //     generateWarning(SI, "is Function Type");
+        //     getFunctionInformation()->addFunctionPointerInfo(SI->getPointerOperand(), cast<Function>(SI->getValueOperand()));
+        // }
     }
      
     void StageOneAnalyzer::analyzeCallInst(CallInst *CI, BasicBlock &B) {
