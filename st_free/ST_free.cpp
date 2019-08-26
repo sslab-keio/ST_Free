@@ -44,8 +44,10 @@ namespace{
                 }
             }
 
+            int i = 0;
             /*** Main analysis module ***/
             for(Function &F: M) {
+                // errs() << i++ << "/" << M.size() << "\n";
                 if(!(F.isDeclaration()))
                     analyze.analyze(F);
             }

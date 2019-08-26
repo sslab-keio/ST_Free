@@ -49,12 +49,12 @@ namespace ST_free {
                             cast<StructType>(GEle->getSourceElementType()), 
                             getValueIndices(GEle)
                         );
-                    if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
-                        if(const DebugLoc &Loc = SI->getDebugLoc()){
-                            vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
-                            getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
-                        }
-                    }
+                    // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
+                    //     if(const DebugLoc &Loc = SI->getDebugLoc()){
+                    //         vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
+                    //         getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
+                    //     }
+                    // }
                 }
 
                 if(LoadInst *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
