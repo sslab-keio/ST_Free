@@ -1,4 +1,5 @@
 #include "ST_free.hpp"
+#pragma once
 
 using namespace std;
 using namespace llvm;

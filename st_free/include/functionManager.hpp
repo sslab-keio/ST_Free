@@ -72,10 +72,10 @@ namespace ST_free{
             bool operator !=(FreedStruct v){
                 return V != v.getValue() && T != v.getType() && I != v.getInst();
             }
-            bool operator ==(uniqueKey uk){
+            bool operator ==(UniqueKey uk){
                 return T == uk.getType() && V == uk.getValue();
             }
-            bool operator !=(uniqueKey uk){
+            bool operator !=(UniqueKey uk){
                 return T != uk.getType() && V != uk.getValue();
             }
 
@@ -103,7 +103,7 @@ namespace ST_free{
             vector<BasicBlock *> endPoint;
             LocalVarList localVariables;
             FreedStructList freedStruct;
-            vector<uniqueKey> isCorrectlyBranchedFreeValues;
+            vector<UniqueKey> isCorrectlyBranchedFreeValues;
             BasicBlockManager BBManage;
             ValueManager VManage;
             LoopInfo * LoopI;

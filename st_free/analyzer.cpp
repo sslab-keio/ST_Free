@@ -116,7 +116,7 @@ namespace ST_free {
 
         // for(FreedStruct * localVar: getFunctionInformation()->getLocalVar()) {
         //     if(!getFunctionInformation()->isArgValue(localVar->getValue())){
-        //         uniqueKey uk(localVar->getValue(), localVar->getType(), -1);
+        //         UniqueKey uk(localVar->getValue(), localVar->getType(), -1);
         //         if(find_if(fsl.begin(), fsl.end(), 
         //                     [uk](FreedStruct *f){return *f == uk;}) == fsl.end())
         //             fsl.push_back(localVar);
@@ -374,8 +374,8 @@ namespace ST_free {
         return false;
     }
 
-    uniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){
-        return uniqueKey(getLoadeeValue(GEle->getPointerOperand()), GEle->getResultElementType(), getValueIndices(GEle));
+    UniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){
+        return UniqueKey(getLoadeeValue(GEle->getPointerOperand()), GEle->getResultElementType(), getValueIndices(GEle));
     }
 
     vector<string> BaseAnalyzer::decodeDirectoryName(string fname){

@@ -11,12 +11,12 @@ namespace ST_free {
     }
 
     void BasicBlockWorkList::add(Value *v, Type * ty, long mem){
-        uniqueKey uk(v, ty, mem);
+        UniqueKey uk(v, ty, mem);
         MarkedValues.push_back(uk);
     }
 
     bool BasicBlockWorkList::exists(Value * v, Type * ty, long mem){
-        if(find(MarkedValues.begin(), MarkedValues.end(), uniqueKey(v, ty, mem)) != MarkedValues.end())
+        if(find(MarkedValues.begin(), MarkedValues.end(), UniqueKey(v, ty, mem)) != MarkedValues.end())
             return true;
         return false;
     }
@@ -175,7 +175,7 @@ namespace ST_free {
     }
 
     void BasicBlockManager::copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt){
-        for(uniqueKey uk : BBMap[src].getCorrectlyFreedValues().getList()){
+        for(UniqueKey uk : BBMap[src].getCorrectlyFreedValues().getList()){
             BBMap[tgt].addCorrectlyFreedValue(uk.getValue(), uk.getType(), uk.getNum());
         }
     }
