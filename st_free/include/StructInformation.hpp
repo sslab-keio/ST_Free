@@ -3,7 +3,7 @@
 #include "determinator.hpp"
 #include "support_funcs.hpp"
 #include "functionManager.hpp"
-#include "relationshipInformation.hpp"
+#include "RelationshipInformation.hpp"
 
 #define ISRESPONSIBLE 1
 #define ISNOTRESPONSIBLE 2

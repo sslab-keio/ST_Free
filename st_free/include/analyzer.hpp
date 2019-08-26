@@ -9,7 +9,7 @@
 #include "determinator.hpp"
 #include "support_funcs.hpp"
 #include "LoopManager.hpp"
-#include "relationshipInformation.hpp"
+#include "RelationshipInformation.hpp"
 #include "UniqueKeyManager.hpp"
 
 namespace ST_free {
