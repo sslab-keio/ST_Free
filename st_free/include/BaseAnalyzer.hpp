@@ -1,8 +1,8 @@
 #pragma once
 #include "ST_free.hpp"
-#include "functionManager.hpp"
+#include "FunctionManager.hpp"
 #include "statList.hpp"
-#include "argList.hpp"
+#include "ArgList.hpp"
 #include "BBWorklist.hpp"
 #include "ValueInformation.hpp"
 #include "StructInformation.hpp"

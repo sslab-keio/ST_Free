@@ -2,11 +2,11 @@
 #include "include/statList.hpp"
 #include "include/determinator.hpp"
 #include "include/support_funcs.hpp"
-#include "include/functionManager.hpp"
+#include "include/FunctionManager.hpp"
 #include "include/StructInformation.hpp"
 #include "include/LoopManager.hpp"
 
-#include "include/analyzer.hpp"
+#include "include/BaseAnalyzer.hpp"
 #include "include/StageOneAnalyzer.hpp"
 
 using namespace ST_free;

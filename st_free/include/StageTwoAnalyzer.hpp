@@ -1,5 +1,5 @@
 #include "ST_free.hpp"
-#include "analyzer.hpp"
+#include "BaseAnalyzer.hpp"
 
 namespace ST_free {
     class StageTwoAnalyzer : public BaseAnalyzer {

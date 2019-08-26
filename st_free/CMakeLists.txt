@@ -3,9 +3,9 @@ add_library( StructFreeMod MODULE
     statList.cpp
     determinator.cpp
     support_funcs.cpp
-    functionManager.cpp
-    analyzer.cpp
-    argList.cpp
+    FunctionManager.cpp
+    BaseAnalyzer.cpp
+    ArgList.cpp
     BBWorklist.cpp
     ValueInformation.cpp
     StructInformation.cpp

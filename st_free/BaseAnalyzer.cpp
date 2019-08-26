@@ -1,4 +1,4 @@
-#include "include/analyzer.hpp"
+#include "include/BaseAnalyzer.hpp"
 
 #define isEntryPoint(F, B) &(F.getEntryBlock()) == &B ? true:false
 #define UpdateIfNull(tgt, cand) (tgt) = ((tgt) == NULL ? (cand):(tgt))

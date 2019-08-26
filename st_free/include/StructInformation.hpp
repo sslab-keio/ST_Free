@@ -2,7 +2,7 @@
 #include "ST_free.hpp"
 #include "determinator.hpp"
 #include "support_funcs.hpp"
-#include "functionManager.hpp"
+#include "FunctionManager.hpp"
 #include "RelationshipInformation.hpp"
 
 #define ISRESPONSIBLE 1

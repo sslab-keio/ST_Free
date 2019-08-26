@@ -1,4 +1,4 @@
-#include "include/functionManager.hpp"
+#include "include/FunctionManager.hpp"
 
 namespace ST_free{
     bool FunctionManager::exists(Function *F) {
