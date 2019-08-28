@@ -135,6 +135,7 @@ namespace ST_free {
             bool freedStructExists(FreedStruct *fst);
             /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
+            void addAllocValue(BasicBlock *B, UniqueKey *UK);
             /*** Status Related ***/
             bool isUnanalyzed();
             bool isAnalyzed();
@@ -147,9 +148,12 @@ namespace ST_free {
             BasicBlockList getFreeList(BasicBlock *B);
             BasicBlockList getAllocList(BasicBlock *B);
             bool isFreedInBasicBlock(BasicBlock *B, Value * val, Type * ty, long mem);
+            bool isFreedInBasicBlock(BasicBlock *B, const UniqueKey *UK);
             bool isAllocatedInBasicBlock(BasicBlock *B, Value * val, Type * ty, long mem);
-            void addCorrectlyFreedValue(BasicBlock *, Value *, Type *, long mem);
+            bool isAllocatedInBasicBlock(BasicBlock *B, const UniqueKey *UK);
+            void addCorrectlyFreedValue(BasicBlock *, const UniqueKey *UK);
             bool isCorrectlyBranchedFreeValue(BasicBlock *, Value *, Type *, long mem);
+            bool isCorrectlyBranchedFreeValue(BasicBlock *, const UniqueKey *UK);
             void setCorrectlyBranched(BasicBlock *B);
             bool isCorrectlyBranched(BasicBlock *B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
