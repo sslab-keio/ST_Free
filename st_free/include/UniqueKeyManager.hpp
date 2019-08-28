@@ -29,7 +29,7 @@ namespace ST_free {
         private:
             set<UniqueKey> ukmanage;
         public:
-            UniqueKey* addUniqueKey(Value *val, Type *ty, long mem);
+            const UniqueKey* addUniqueKey(Value *val, Type *ty, long mem);
             const UniqueKey* getUniqueKey(Value *val, Type *ty, long mem); 
     };
 }

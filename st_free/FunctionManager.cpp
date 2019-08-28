@@ -77,16 +77,14 @@ namespace ST_free{
         if (UK == NULL)
             UK = this->getUniqueKeyManager()->addUniqueKey(V, memTy, num);
 
-        ValueInformation * varinfo = this->getValueInfo(V, memTy, num);
-        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-
+        ValueInformation * varinfo = this->getValueInfo(UK);
         if(varinfo == NULL)
             varinfo = this->addVariable(V, memTy, stTy, num);
         else
             varinfo->addStructParams(stTy, num);
-        
         varinfo->setFreed();
 
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);       
         if(BInfo){
             BInfo->addFree(V, memTy, num);
             if(BBManage.isPredBlockCorrectlyBranched(B) 
@@ -215,12 +213,22 @@ namespace ST_free{
         return VManage.getValueInfo(val, memType, num);
     }
 
+    ValueInformation * FunctionInformation::addVariable(UniqueKey *UK, Value * val, Type * memType, Type *parType, long num){
+        if(!VManage.exists(UK))
+            VManage.addValueInfo(UK, val, memType, parType, num);
+        return VManage.getValueInfo(UK);
+    }
+
     ValueInformation * FunctionInformation::getValueInfo(Value * val){
         return VManage.getValueInfo(val);
     }
 
     ValueInformation * FunctionInformation::getValueInfo(Value * val, Type * ty, long mem){
         return VManage.getValueInfo(val, ty, mem);
+    }
+
+    ValueInformation* FunctionInformation::getValueInfo(UniqueKey *UK){
+        return VManage.getValueInfo(UK);
     }
 
     void FunctionInformation::addLocalVar(BasicBlock *B, Type *T, Value * V, Instruction * I) {

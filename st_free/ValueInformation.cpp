@@ -21,44 +21,61 @@ namespace ST_free{
         return true;
     }
 
-    bool ValueManager::exists(Value * val, Type * ty, long num){
-        if(vinfos.find(UniqueKey(val, ty, num)) != vinfos.end()){
+    // bool ValueManager::exists(Value * val, Type * ty, long num){
+    //     if(vinfos.find(UniqueKey(val, ty, num)) != vinfos.end()){
+    //         return true;
+    //     }
+    //     return false;
+    // }
+
+    // bool ValueManager::exists(Value * val){
+    //     if(vinfos.find(UniqueKey(val, val->getType(), -1)) != vinfos.end())
+    //         return true;
+    //     return false;
+    // }
+
+    bool ValueManager::exists(UniqueKey *UK){
+        if(vinfos.find(UK) != vinfos.end())
             return true;
-        }
         return false;
     }
 
-    bool ValueManager::exists(Value * val){
-        if(vinfos.find(UniqueKey(val, val->getType(), -1)) != vinfos.end())
-            return true;
-        return false;
-    }
+    // ValueInformation * ValueManager::getValueInfo(Value *val, Type * ty, long num){
+    //     if(this->exists(val,ty, num))
+    //         return vinfos[UniqueKey(val, ty, num)];
+    //     return NULL;
+    // }
 
-    ValueInformation * ValueManager::getValueInfo(Value *val, Type * ty, long num){
-        if(this->exists(val,ty, num))
-            return vinfos[UniqueKey(val, ty, num)];
+    // ValueInformation * ValueManager::getValueInfo(Value *val){
+    //     if(this->exists(val,val->getType(), -1))
+    //         return vinfos[UniqueKey(val,val->getType(), -1)];
+    //     return NULL;
+    // }
+
+    ValueInformation * ValueManager::getValueInfo(UniqueKey *UK){
+        if(this->exists(UK))
+            return vinfos[UK];
         return NULL;
     }
 
-    ValueInformation * ValueManager::getValueInfo(Value *val){
-        if(this->exists(val,val->getType(), -1))
-            return vinfos[UniqueKey(val,val->getType(), -1)];
-        return NULL;
-    }
+    // void ValueManager::addValueInfo(Value *val, Type * ty, long num){
+    //     if(!this->exists(val, ty, num))
+    //         vinfos[UniqueKey(val, ty, num)] = new ValueInformation(val);
+    // }
 
-    void ValueManager::addValueInfo(Value *val, Type * ty, long num){
-        if(!this->exists(val, ty, num))
-            vinfos[UniqueKey(val, ty, num)] = new ValueInformation(val);
-    }
-
-    void ValueManager::addValueInfo(Value * val){
-        if(!this->exists(val, val->getType(), -1))
-            vinfos[UniqueKey(val, val->getType(), -1)] = new ValueInformation(val);
-        return;
-    }
-    void ValueManager::addValueInfo(Value * val, Type * memType, Type * parType, long num){
-        if(!this->exists(val, memType, num))
-            vinfos[UniqueKey(val, memType, num)] = new ValueInformation(val, memType, parType, num);
+    // void ValueManager::addValueInfo(Value * val){
+    //     if(!this->exists(val, val->getType(), -1))
+    //         vinfos[UniqueKey(val, val->getType(), -1)] = new ValueInformation(val);
+    //     return;
+    // }
+    // void ValueManager::addValueInfo(Value * val, Type * memType, Type * parType, long num){
+    //     if(!this->exists(val, memType, num))
+    //         vinfos[UniqueKey(val, memType, num)] = new ValueInformation(val, memType, parType, num);
+    //     return;
+    // }
+    void ValueManager::addValueInfo(UniqueKey *UK, Value * val, Type * memType, Type * parType, long num){
+        if(!this->exists(UK))
+            vinfos[UK] = new ValueInformation(val, memType, parType, num);
         return;
     }
     void ValueManager::print(){

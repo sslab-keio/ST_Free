@@ -178,8 +178,10 @@ namespace ST_free {
             /*** Individual Variable Informations ***/
             ValueInformation * addVariable(Value * val);
             ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
+            ValueInformation * addVariable(UniqueKey *UK, Value * val, Type * memType, Type *parType, long num);
 			ValueInformation * getValueInfo(Value * val);
 			ValueInformation * getValueInfo(Value * val, Type * ty, long num);
+			ValueInformation * getValueInfo(UniqueKey *UK);
             bool variableExists(Value *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *, ParentList P, ValueInformation *);
