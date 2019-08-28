@@ -6,8 +6,6 @@
 namespace ST_free {
     using BasicBlockList = vector<UniqueKey>;
     class BasicBlockWorkList {
-        private:
-            BasicBlockList MarkedValues;
         public:
             BasicBlockWorkList();
             BasicBlockWorkList(const BasicBlockList);
@@ -15,22 +13,13 @@ namespace ST_free {
             bool exists(Value * v, Type *t, long mem);
             BasicBlockList getList() const;
             void setList(BasicBlockList);
+        private:
+            BasicBlockList MarkedValues;
     };
 
     using LiveVariableList = vector<Value *>;
     using Aliases = map<Value *, Value *>;
     class BasicBlockInformation {
-        private:
-            /*** BasicBlock Lists ***/
-            BasicBlockWorkList freeList;
-            BasicBlockWorkList allocList;
-            BasicBlockWorkList correctlyFreed;
-            LiveVariableList liveVariables;
-            Aliases aliasMap;
-            /*** BasicBlock Status ***/
-            bool correctlyBranched;
-            bool predCorrectlyBranched;
-            bool loopBlock;
         public:
             BasicBlockInformation();
             BasicBlockInformation(const BasicBlockInformation &);
@@ -63,13 +52,19 @@ namespace ST_free {
             bool aliasExists(Value *);
             Value* getAlias(Value *);
             void setAlias(Value* src, Value* dest); //dest <- src
+        private:
+            /*** BasicBlock Lists ***/
+            BasicBlockWorkList freeList;
+            BasicBlockWorkList allocList;
+            BasicBlockWorkList correctlyFreed;
+            LiveVariableList liveVariables;
+            Aliases aliasMap;
+            /*** BasicBlock Status ***/
+            bool correctlyBranched;
+            bool predCorrectlyBranched;
+            bool loopBlock;
     };
     class BasicBlockManager {
-        private:
-            map<BasicBlock *,BasicBlockInformation> BBMap;
-            BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
-            LiveVariableList intersectLiveVariables(LiveVariableList src, LiveVariableList tgt);
-            bool exists(BasicBlock *B);
         public:
             /*** getter ***/
             void set(BasicBlock *B);
@@ -85,5 +80,10 @@ namespace ST_free {
             void updateSuccessorBlock(BasicBlock *src);
             void intersect(BasicBlock *src, BasicBlock *tgt);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
+        private:
+            map<BasicBlock *,BasicBlockInformation> BBMap;
+            BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
+            LiveVariableList intersectLiveVariables(LiveVariableList src, LiveVariableList tgt);
+            bool exists(BasicBlock *B);
     };
 }
