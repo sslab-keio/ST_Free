@@ -1,0 +1,172 @@
+\hypertarget{class_s_t__free_1_1_stage_two_analyzer}{}\doxysection{S\+T\+\_\+free\+::Stage\+Two\+Analyzer Class Reference}
+\label{class_s_t__free_1_1_stage_two_analyzer}\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+
+
+{\ttfamily \#include $<$Stage\+Two\+Analyzer.\+hpp$>$}
+
+
+
+Inheritance diagram for S\+T\+\_\+free\+::Stage\+Two\+Analyzer\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=221pt]{class_s_t__free_1_1_stage_two_analyzer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for S\+T\+\_\+free\+::Stage\+Two\+Analyzer\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_stage_two_analyzer__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_s_t__free_1_1_stage_two_analyzer_a2c769a3ea73ed752972b5d989a95992d}{Stage\+Two\+Analyzer}} (Function $\ast$func, \mbox{\hyperlink{class_s_t__free_1_1_struct_manager}{Struct\+Manager}} $\ast$stm, \mbox{\hyperlink{class_s_t__free_1_1_loop_manager}{Loop\+Manager}} $\ast$lmap)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_stage_two_analyzer_aef0f10d30a143b626634f6f1923f6812}{analyze\+Different\+Func}} (Function \&F)
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_stage_two_analyzer_a20fcdfaeb9a86bdcc40facfee178be39}{check\+Availability}} ()
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_stage_two_analyzer_abffca7d41c40fa17bec22cbbf3d86ffc}{analyze\+Instructions}} (Basic\+Block \&B)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_stage_two_analyzer_ac7b6a2daba169b80d8be081a38c00bec}{analyze\+Alloca\+Inst}} (Alloca\+Inst $\ast$AI, Basic\+Block \&B)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_stage_two_analyzer_a9863057f589a827a5b15bbc4292d4eea}{analyze\+Store\+Inst}} (Store\+Inst $\ast$SI, Basic\+Block \&B)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_stage_two_analyzer_aefba760075712c17fd82807e6f7027ee}{analyze\+Call\+Inst}} (Call\+Inst $\ast$CI, Basic\+Block \&B)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_stage_two_analyzer_a40215fb67514edf8a0eb3ce6436d4b4a}{analyze\+Branch\+Inst}} (Branch\+Inst $\ast$BI, Basic\+Block \&B)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_s_t__free_1_1_stage_two_analyzer_a2c769a3ea73ed752972b5d989a95992d}\label{class_s_t__free_1_1_stage_two_analyzer_a2c769a3ea73ed752972b5d989a95992d}} 
+\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}!StageTwoAnalyzer@{StageTwoAnalyzer}}
+\index{StageTwoAnalyzer@{StageTwoAnalyzer}!ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+\doxysubsubsection{\texorpdfstring{StageTwoAnalyzer()}{StageTwoAnalyzer()}}
+{\footnotesize\ttfamily S\+T\+\_\+free\+::\+Stage\+Two\+Analyzer\+::\+Stage\+Two\+Analyzer (\begin{DoxyParamCaption}\item[{Function $\ast$}]{func,  }\item[{\mbox{\hyperlink{class_s_t__free_1_1_struct_manager}{Struct\+Manager}} $\ast$}]{stm,  }\item[{\mbox{\hyperlink{class_s_t__free_1_1_loop_manager}{Loop\+Manager}} $\ast$}]{lmap }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_s_t__free_1_1_stage_two_analyzer_ac7b6a2daba169b80d8be081a38c00bec}\label{class_s_t__free_1_1_stage_two_analyzer_ac7b6a2daba169b80d8be081a38c00bec}} 
+\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}!analyzeAllocaInst@{analyzeAllocaInst}}
+\index{analyzeAllocaInst@{analyzeAllocaInst}!ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+\doxysubsubsection{\texorpdfstring{analyzeAllocaInst()}{analyzeAllocaInst()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Stage\+Two\+Analyzer\+::analyze\+Alloca\+Inst (\begin{DoxyParamCaption}\item[{Alloca\+Inst $\ast$}]{AI,  }\item[{Basic\+Block \&}]{B }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \mbox{\hyperlink{class_s_t__free_1_1_base_analyzer_aad885f28eaae71178ed1ecbfd7260824}{S\+T\+\_\+free\+::\+Base\+Analyzer}}.
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_stage_two_analyzer_ac7b6a2daba169b80d8be081a38c00bec_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_stage_two_analyzer_a40215fb67514edf8a0eb3ce6436d4b4a}\label{class_s_t__free_1_1_stage_two_analyzer_a40215fb67514edf8a0eb3ce6436d4b4a}} 
+\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}!analyzeBranchInst@{analyzeBranchInst}}
+\index{analyzeBranchInst@{analyzeBranchInst}!ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+\doxysubsubsection{\texorpdfstring{analyzeBranchInst()}{analyzeBranchInst()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Stage\+Two\+Analyzer\+::analyze\+Branch\+Inst (\begin{DoxyParamCaption}\item[{Branch\+Inst $\ast$}]{BI,  }\item[{Basic\+Block \&}]{B }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \mbox{\hyperlink{class_s_t__free_1_1_base_analyzer_a637174f799c5a2fd9004f806defeec18}{S\+T\+\_\+free\+::\+Base\+Analyzer}}.
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_stage_two_analyzer_a40215fb67514edf8a0eb3ce6436d4b4a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_stage_two_analyzer_aefba760075712c17fd82807e6f7027ee}\label{class_s_t__free_1_1_stage_two_analyzer_aefba760075712c17fd82807e6f7027ee}} 
+\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}!analyzeCallInst@{analyzeCallInst}}
+\index{analyzeCallInst@{analyzeCallInst}!ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+\doxysubsubsection{\texorpdfstring{analyzeCallInst()}{analyzeCallInst()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Stage\+Two\+Analyzer\+::analyze\+Call\+Inst (\begin{DoxyParamCaption}\item[{Call\+Inst $\ast$}]{CI,  }\item[{Basic\+Block \&}]{B }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \mbox{\hyperlink{class_s_t__free_1_1_base_analyzer_a981e3d892a505907c610e9da5c69b075}{S\+T\+\_\+free\+::\+Base\+Analyzer}}.
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_stage_two_analyzer_aefba760075712c17fd82807e6f7027ee_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_stage_two_analyzer_aef0f10d30a143b626634f6f1923f6812}\label{class_s_t__free_1_1_stage_two_analyzer_aef0f10d30a143b626634f6f1923f6812}} 
+\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}!analyzeDifferentFunc@{analyzeDifferentFunc}}
+\index{analyzeDifferentFunc@{analyzeDifferentFunc}!ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+\doxysubsubsection{\texorpdfstring{analyzeDifferentFunc()}{analyzeDifferentFunc()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Stage\+Two\+Analyzer\+::analyze\+Different\+Func (\begin{DoxyParamCaption}\item[{Function \&}]{F }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_stage_two_analyzer_aef0f10d30a143b626634f6f1923f6812_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_stage_two_analyzer_abffca7d41c40fa17bec22cbbf3d86ffc}\label{class_s_t__free_1_1_stage_two_analyzer_abffca7d41c40fa17bec22cbbf3d86ffc}} 
+\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}!analyzeInstructions@{analyzeInstructions}}
+\index{analyzeInstructions@{analyzeInstructions}!ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+\doxysubsubsection{\texorpdfstring{analyzeInstructions()}{analyzeInstructions()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Stage\+Two\+Analyzer\+::analyze\+Instructions (\begin{DoxyParamCaption}\item[{Basic\+Block \&}]{B }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \mbox{\hyperlink{class_s_t__free_1_1_base_analyzer_a2fae69bbdd95a266b4be9cb1940c7294}{S\+T\+\_\+free\+::\+Base\+Analyzer}}.
+
+\mbox{\Hypertarget{class_s_t__free_1_1_stage_two_analyzer_a9863057f589a827a5b15bbc4292d4eea}\label{class_s_t__free_1_1_stage_two_analyzer_a9863057f589a827a5b15bbc4292d4eea}} 
+\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}!analyzeStoreInst@{analyzeStoreInst}}
+\index{analyzeStoreInst@{analyzeStoreInst}!ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+\doxysubsubsection{\texorpdfstring{analyzeStoreInst()}{analyzeStoreInst()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Stage\+Two\+Analyzer\+::analyze\+Store\+Inst (\begin{DoxyParamCaption}\item[{Store\+Inst $\ast$}]{SI,  }\item[{Basic\+Block \&}]{B }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \mbox{\hyperlink{class_s_t__free_1_1_base_analyzer_a0595c149b7a80a7e7ac2999dcfa58e13}{S\+T\+\_\+free\+::\+Base\+Analyzer}}.
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_stage_two_analyzer_a9863057f589a827a5b15bbc4292d4eea_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_stage_two_analyzer_a20fcdfaeb9a86bdcc40facfee178be39}\label{class_s_t__free_1_1_stage_two_analyzer_a20fcdfaeb9a86bdcc40facfee178be39}} 
+\index{ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}!checkAvailability@{checkAvailability}}
+\index{checkAvailability@{checkAvailability}!ST\_free::StageTwoAnalyzer@{ST\_free::StageTwoAnalyzer}}
+\doxysubsubsection{\texorpdfstring{checkAvailability()}{checkAvailability()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Stage\+Two\+Analyzer\+::check\+Availability (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \mbox{\hyperlink{class_s_t__free_1_1_base_analyzer_adf735dfb1f6ac9fe2ec4d7144ff2fd08}{S\+T\+\_\+free\+::\+Base\+Analyzer}}.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/\mbox{\hyperlink{_stage_two_analyzer_8hpp}{Stage\+Two\+Analyzer.\+hpp}}\item 
+\mbox{\hyperlink{_stage_two_analyzer_8cpp}{Stage\+Two\+Analyzer.\+cpp}}\end{DoxyCompactItemize}

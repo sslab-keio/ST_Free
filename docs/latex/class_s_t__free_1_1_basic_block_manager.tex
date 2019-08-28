@@ -1,0 +1,251 @@
+\hypertarget{class_s_t__free_1_1_basic_block_manager}{}\doxysection{S\+T\+\_\+free\+::Basic\+Block\+Manager Class Reference}
+\label{class_s_t__free_1_1_basic_block_manager}\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+
+
+{\ttfamily \#include $<$B\+B\+Worklist.\+hpp$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_aaa55ebbd407e4aa1e509a990a77008a1}{set}} (Basic\+Block $\ast$B)
+\item 
+\mbox{\hyperlink{class_s_t__free_1_1_basic_block_information}{Basic\+Block\+Information}} $\ast$ \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a350fc26530e37c585212bb07ccb42ea5}{get}} (Basic\+Block $\ast$B)
+\item 
+\mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}} \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a9400dac807d95e810f800ddbc683d850}{get\+Basic\+Block\+Free\+List}} (Basic\+Block $\ast$src)
+\item 
+\mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}} \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a0558ee42a17f26d07c2842f2a5a1681e}{get\+Basic\+Block\+Alloc\+List}} (Basic\+Block $\ast$src)
+\item 
+\mbox{\hyperlink{namespace_s_t__free_ae63f32f1abc3e56f4ffa2f7a29fb21ec}{Live\+Variable\+List}} \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a42785f9d0e052d2114287214650812ae}{get\+Live\+Variables}} (Basic\+Block $\ast$B)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_ae25a33662db27bcdc73954c0a5b81ee8}{Collect\+In\+Info}} (Basic\+Block $\ast$B, bool \mbox{\hyperlink{_base_analyzer_8cpp_a69aba47bdfb7a5a5ff4c7034d53d6459}{is\+Entry\+Point}})
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a973cb9406d43983d3841f581a11ab649}{copy}} (Basic\+Block $\ast$src, Basic\+Block $\ast$tgt)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_ad79a3e5abd5c4df29996370fdc72c7d4}{copy\+Correctly\+Freed}} (Basic\+Block $\ast$src, Basic\+Block $\ast$tgt)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_ab20f4e67cb36fbe2aada0e05cdab8783}{update\+Successor\+Block}} (Basic\+Block $\ast$src)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a629d4a6bfe26b133d26441421ab6b034}{intersect}} (Basic\+Block $\ast$src, Basic\+Block $\ast$tgt)
+\item 
+bool \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a8e9131760ceeac412941badbd838b704}{is\+Pred\+Block\+Correctly\+Branched}} (Basic\+Block $\ast$B)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}} \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_ac36f7ea0f7f16a49df4cb9b2ad453653}{intersect\+List}} (\mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}} src, \mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}} tgt)
+\item 
+\mbox{\hyperlink{namespace_s_t__free_ae63f32f1abc3e56f4ffa2f7a29fb21ec}{Live\+Variable\+List}} \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a604907c25b5bc2fbb8ecc8b2acfb0a13}{intersect\+Live\+Variables}} (\mbox{\hyperlink{namespace_s_t__free_ae63f32f1abc3e56f4ffa2f7a29fb21ec}{Live\+Variable\+List}} src, \mbox{\hyperlink{namespace_s_t__free_ae63f32f1abc3e56f4ffa2f7a29fb21ec}{Live\+Variable\+List}} tgt)
+\item 
+bool \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_a1fb436568acc138dea0886d910b09f47}{exists}} (Basic\+Block $\ast$B)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+map$<$ Basic\+Block $\ast$, \mbox{\hyperlink{class_s_t__free_1_1_basic_block_information}{Basic\+Block\+Information}} $>$ \mbox{\hyperlink{class_s_t__free_1_1_basic_block_manager_afe04180eba4288796cac90fecfd348be}{B\+B\+Map}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_ae25a33662db27bcdc73954c0a5b81ee8}\label{class_s_t__free_1_1_basic_block_manager_ae25a33662db27bcdc73954c0a5b81ee8}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!CollectInInfo@{CollectInInfo}}
+\index{CollectInInfo@{CollectInInfo}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{CollectInInfo()}{CollectInInfo()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::\+Collect\+In\+Info (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{B,  }\item[{bool}]{is\+Entry\+Point }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_ae25a33662db27bcdc73954c0a5b81ee8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a973cb9406d43983d3841f581a11ab649}\label{class_s_t__free_1_1_basic_block_manager_a973cb9406d43983d3841f581a11ab649}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!copy@{copy}}
+\index{copy@{copy}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::copy (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{src,  }\item[{Basic\+Block $\ast$}]{tgt }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a973cb9406d43983d3841f581a11ab649_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_ad79a3e5abd5c4df29996370fdc72c7d4}\label{class_s_t__free_1_1_basic_block_manager_ad79a3e5abd5c4df29996370fdc72c7d4}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!copyCorrectlyFreed@{copyCorrectlyFreed}}
+\index{copyCorrectlyFreed@{copyCorrectlyFreed}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{copyCorrectlyFreed()}{copyCorrectlyFreed()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::copy\+Correctly\+Freed (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{src,  }\item[{Basic\+Block $\ast$}]{tgt }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a1fb436568acc138dea0886d910b09f47}\label{class_s_t__free_1_1_basic_block_manager_a1fb436568acc138dea0886d910b09f47}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!exists@{exists}}
+\index{exists@{exists}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{exists()}{exists()}}
+{\footnotesize\ttfamily bool S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::exists (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{B }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a1fb436568acc138dea0886d910b09f47_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a350fc26530e37c585212bb07ccb42ea5}\label{class_s_t__free_1_1_basic_block_manager_a350fc26530e37c585212bb07ccb42ea5}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!get@{get}}
+\index{get@{get}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{get()}{get()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_s_t__free_1_1_basic_block_information}{Basic\+Block\+Information}} $\ast$ S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::get (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{B }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a350fc26530e37c585212bb07ccb42ea5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a0558ee42a17f26d07c2842f2a5a1681e}\label{class_s_t__free_1_1_basic_block_manager_a0558ee42a17f26d07c2842f2a5a1681e}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!getBasicBlockAllocList@{getBasicBlockAllocList}}
+\index{getBasicBlockAllocList@{getBasicBlockAllocList}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{getBasicBlockAllocList()}{getBasicBlockAllocList()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}} S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::get\+Basic\+Block\+Alloc\+List (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{src }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a0558ee42a17f26d07c2842f2a5a1681e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a9400dac807d95e810f800ddbc683d850}\label{class_s_t__free_1_1_basic_block_manager_a9400dac807d95e810f800ddbc683d850}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!getBasicBlockFreeList@{getBasicBlockFreeList}}
+\index{getBasicBlockFreeList@{getBasicBlockFreeList}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{getBasicBlockFreeList()}{getBasicBlockFreeList()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}} S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::get\+Basic\+Block\+Free\+List (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{src }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a9400dac807d95e810f800ddbc683d850_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a42785f9d0e052d2114287214650812ae}\label{class_s_t__free_1_1_basic_block_manager_a42785f9d0e052d2114287214650812ae}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!getLiveVariables@{getLiveVariables}}
+\index{getLiveVariables@{getLiveVariables}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{getLiveVariables()}{getLiveVariables()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{namespace_s_t__free_ae63f32f1abc3e56f4ffa2f7a29fb21ec}{Live\+Variable\+List}} S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::get\+Live\+Variables (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{B }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a42785f9d0e052d2114287214650812ae_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a629d4a6bfe26b133d26441421ab6b034}\label{class_s_t__free_1_1_basic_block_manager_a629d4a6bfe26b133d26441421ab6b034}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!intersect@{intersect}}
+\index{intersect@{intersect}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{intersect()}{intersect()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::intersect (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{src,  }\item[{Basic\+Block $\ast$}]{tgt }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a629d4a6bfe26b133d26441421ab6b034_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_ac36f7ea0f7f16a49df4cb9b2ad453653}\label{class_s_t__free_1_1_basic_block_manager_ac36f7ea0f7f16a49df4cb9b2ad453653}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!intersectList@{intersectList}}
+\index{intersectList@{intersectList}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{intersectList()}{intersectList()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}} S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::intersect\+List (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}}}]{src,  }\item[{\mbox{\hyperlink{namespace_s_t__free_af61b00826be12ee52e860c1164206d98}{Basic\+Block\+List}}}]{tgt }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_ac36f7ea0f7f16a49df4cb9b2ad453653_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a604907c25b5bc2fbb8ecc8b2acfb0a13}\label{class_s_t__free_1_1_basic_block_manager_a604907c25b5bc2fbb8ecc8b2acfb0a13}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!intersectLiveVariables@{intersectLiveVariables}}
+\index{intersectLiveVariables@{intersectLiveVariables}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{intersectLiveVariables()}{intersectLiveVariables()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{namespace_s_t__free_ae63f32f1abc3e56f4ffa2f7a29fb21ec}{Live\+Variable\+List}} S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::intersect\+Live\+Variables (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{namespace_s_t__free_ae63f32f1abc3e56f4ffa2f7a29fb21ec}{Live\+Variable\+List}}}]{src,  }\item[{\mbox{\hyperlink{namespace_s_t__free_ae63f32f1abc3e56f4ffa2f7a29fb21ec}{Live\+Variable\+List}}}]{tgt }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a604907c25b5bc2fbb8ecc8b2acfb0a13_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_a8e9131760ceeac412941badbd838b704}\label{class_s_t__free_1_1_basic_block_manager_a8e9131760ceeac412941badbd838b704}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!isPredBlockCorrectlyBranched@{isPredBlockCorrectlyBranched}}
+\index{isPredBlockCorrectlyBranched@{isPredBlockCorrectlyBranched}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{isPredBlockCorrectlyBranched()}{isPredBlockCorrectlyBranched()}}
+{\footnotesize\ttfamily bool S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::is\+Pred\+Block\+Correctly\+Branched (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{B }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_a8e9131760ceeac412941badbd838b704_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_aaa55ebbd407e4aa1e509a990a77008a1}\label{class_s_t__free_1_1_basic_block_manager_aaa55ebbd407e4aa1e509a990a77008a1}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!set@{set}}
+\index{set@{set}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{set()}{set()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::set (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{B }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_aaa55ebbd407e4aa1e509a990a77008a1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_ab20f4e67cb36fbe2aada0e05cdab8783}\label{class_s_t__free_1_1_basic_block_manager_ab20f4e67cb36fbe2aada0e05cdab8783}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!updateSuccessorBlock@{updateSuccessorBlock}}
+\index{updateSuccessorBlock@{updateSuccessorBlock}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{updateSuccessorBlock()}{updateSuccessorBlock()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::update\+Successor\+Block (\begin{DoxyParamCaption}\item[{Basic\+Block $\ast$}]{src }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_basic_block_manager_ab20f4e67cb36fbe2aada0e05cdab8783_icgraph}
+\end{center}
+\end{figure}
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_s_t__free_1_1_basic_block_manager_afe04180eba4288796cac90fecfd348be}\label{class_s_t__free_1_1_basic_block_manager_afe04180eba4288796cac90fecfd348be}} 
+\index{ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}!BBMap@{BBMap}}
+\index{BBMap@{BBMap}!ST\_free::BasicBlockManager@{ST\_free::BasicBlockManager}}
+\doxysubsubsection{\texorpdfstring{BBMap}{BBMap}}
+{\footnotesize\ttfamily map$<$Basic\+Block $\ast$,\mbox{\hyperlink{class_s_t__free_1_1_basic_block_information}{Basic\+Block\+Information}}$>$ S\+T\+\_\+free\+::\+Basic\+Block\+Manager\+::\+B\+B\+Map\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/\mbox{\hyperlink{_b_b_worklist_8hpp}{B\+B\+Worklist.\+hpp}}\item 
+\mbox{\hyperlink{_b_b_worklist_8cpp}{B\+B\+Worklist.\+cpp}}\end{DoxyCompactItemize}

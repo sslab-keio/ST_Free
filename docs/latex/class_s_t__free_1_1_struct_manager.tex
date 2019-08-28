@@ -1,0 +1,272 @@
+\hypertarget{class_s_t__free_1_1_struct_manager}{}\doxysection{S\+T\+\_\+free\+::Struct\+Manager Class Reference}
+\label{class_s_t__free_1_1_struct_manager}\index{ST\_free::StructManager@{ST\_free::StructManager}}
+
+
+{\ttfamily \#include $<$Struct\+Information.\+hpp$>$}
+
+
+
+Collaboration diagram for S\+T\+\_\+free\+::Struct\+Manager\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=235pt]{class_s_t__free_1_1_struct_manager__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a4d14b1d48cd1d4cda5fc7955ed6450e6}{Struct\+Manager}} ()
+\item 
+\mbox{\hyperlink{class_s_t__free_1_1_struct_manager_ab89363cfdf1a265cedc2358bb2f95c02}{Struct\+Manager}} (vector$<$ Struct\+Type $\ast$ $>$ st)
+\item 
+\mbox{\hyperlink{class_s_t__free_1_1_struct_information}{Struct\+Information}} $\ast$ \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a7ded5058af9abc39ddfdb83b2f878c1f}{get}} (Struct\+Type $\ast$str\+Ty)
+\item 
+\mbox{\hyperlink{class_s_t__free_1_1_type_relation_manager}{Type\+Relation\+Manager}} $\ast$ \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a29afe4072622b96927b7edb303e51ac3}{get\+Type\+Relation\+Manager}} ()
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a51b5548a0dce75692adaac2da11a0458}{add\+Candidate\+Value}} (Function $\ast$F, Struct\+Type $\ast$str\+Ty, \mbox{\hyperlink{struct_s_t__free_1_1_freed_struct}{Freed\+Struct}} $\ast$fs)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_ae7a33e3aa5008c605fadcc8d899c51d6}{add\+Alloc}} (Struct\+Type $\ast$str\+Ty)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a31b972bab416351300e9c7a4c5547002}{add\+Store}} (Struct\+Type $\ast$str\+Ty, int ind)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a6eb112084864d2ad011d6569e446fc86}{add\+Global\+Var\+Store}} (Struct\+Type $\ast$str\+Ty, int ind)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_ac1776667a580ab62c4dd0350d33cd3bf}{print}} ()
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a04b6ca4c2454887f1a990a6425a0b126}{Build\+Candidate\+Count}} ()
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a61086fa51403ba0328ecffb12d5c5811}{check\+Correctness}} ()
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a8a9fd5b7ad619e4b8ffdf60c91dfa55f}{add\+Global\+Variable\+Init\+Info}} (Module \&M)
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a58c63a68d3ac19e8fb7baf3e89738907}{add\+Referee}} (Struct\+Type $\ast$referee, Struct\+Type $\ast$tgt)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a09044b4b0c289a54e97aeb12107fbb8b}{create\+Dependencies}} ()
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a40b43fb3cc08130ac3bb670f82fefdd6}{change\+Stats}} ()
+\item 
+bool \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a86048daf51883d74a2ea42c46edb10ee}{exists}} (Struct\+Type $\ast$)
+\item 
+void \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a2307f2772e7b2dcd82ed17aa09643919}{check\+Non\+Allocs}} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+map$<$ Struct\+Type $\ast$, \mbox{\hyperlink{class_s_t__free_1_1_struct_information}{Struct\+Information}} $\ast$ $>$ \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a52810d49bcdf7c6e0459bc817c3f92b6}{Struct\+Info}}
+\item 
+\mbox{\hyperlink{class_s_t__free_1_1_type_relation_manager}{Type\+Relation\+Manager}} \mbox{\hyperlink{class_s_t__free_1_1_struct_manager_a3083584bd21ef13f0e2fd223a57964ba}{ty\+Rel}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a4d14b1d48cd1d4cda5fc7955ed6450e6}\label{class_s_t__free_1_1_struct_manager_a4d14b1d48cd1d4cda5fc7955ed6450e6}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!StructManager@{StructManager}}
+\index{StructManager@{StructManager}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{StructManager()}{StructManager()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily S\+T\+\_\+free\+::\+Struct\+Manager\+::\+Struct\+Manager (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_ab89363cfdf1a265cedc2358bb2f95c02}\label{class_s_t__free_1_1_struct_manager_ab89363cfdf1a265cedc2358bb2f95c02}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!StructManager@{StructManager}}
+\index{StructManager@{StructManager}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{StructManager()}{StructManager()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily S\+T\+\_\+free\+::\+Struct\+Manager\+::\+Struct\+Manager (\begin{DoxyParamCaption}\item[{vector$<$ Struct\+Type $\ast$ $>$}]{st }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_ae7a33e3aa5008c605fadcc8d899c51d6}\label{class_s_t__free_1_1_struct_manager_ae7a33e3aa5008c605fadcc8d899c51d6}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!addAlloc@{addAlloc}}
+\index{addAlloc@{addAlloc}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{addAlloc()}{addAlloc()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::add\+Alloc (\begin{DoxyParamCaption}\item[{Struct\+Type $\ast$}]{str\+Ty }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_ae7a33e3aa5008c605fadcc8d899c51d6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a51b5548a0dce75692adaac2da11a0458}\label{class_s_t__free_1_1_struct_manager_a51b5548a0dce75692adaac2da11a0458}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!addCandidateValue@{addCandidateValue}}
+\index{addCandidateValue@{addCandidateValue}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{addCandidateValue()}{addCandidateValue()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::add\+Candidate\+Value (\begin{DoxyParamCaption}\item[{Function $\ast$}]{F,  }\item[{Struct\+Type $\ast$}]{str\+Ty,  }\item[{\mbox{\hyperlink{struct_s_t__free_1_1_freed_struct}{Freed\+Struct}} $\ast$}]{fs }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a51b5548a0dce75692adaac2da11a0458_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a8a9fd5b7ad619e4b8ffdf60c91dfa55f}\label{class_s_t__free_1_1_struct_manager_a8a9fd5b7ad619e4b8ffdf60c91dfa55f}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!addGlobalVariableInitInfo@{addGlobalVariableInitInfo}}
+\index{addGlobalVariableInitInfo@{addGlobalVariableInitInfo}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{addGlobalVariableInitInfo()}{addGlobalVariableInitInfo()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::add\+Global\+Variable\+Init\+Info (\begin{DoxyParamCaption}\item[{Module \&}]{M }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a6eb112084864d2ad011d6569e446fc86}\label{class_s_t__free_1_1_struct_manager_a6eb112084864d2ad011d6569e446fc86}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!addGlobalVarStore@{addGlobalVarStore}}
+\index{addGlobalVarStore@{addGlobalVarStore}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{addGlobalVarStore()}{addGlobalVarStore()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::add\+Global\+Var\+Store (\begin{DoxyParamCaption}\item[{Struct\+Type $\ast$}]{str\+Ty,  }\item[{int}]{ind }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a6eb112084864d2ad011d6569e446fc86_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a58c63a68d3ac19e8fb7baf3e89738907}\label{class_s_t__free_1_1_struct_manager_a58c63a68d3ac19e8fb7baf3e89738907}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!addReferee@{addReferee}}
+\index{addReferee@{addReferee}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{addReferee()}{addReferee()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::add\+Referee (\begin{DoxyParamCaption}\item[{Struct\+Type $\ast$}]{referee,  }\item[{Struct\+Type $\ast$}]{tgt }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a58c63a68d3ac19e8fb7baf3e89738907_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a31b972bab416351300e9c7a4c5547002}\label{class_s_t__free_1_1_struct_manager_a31b972bab416351300e9c7a4c5547002}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!addStore@{addStore}}
+\index{addStore@{addStore}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{addStore()}{addStore()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::add\+Store (\begin{DoxyParamCaption}\item[{Struct\+Type $\ast$}]{str\+Ty,  }\item[{int}]{ind }\end{DoxyParamCaption})}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a31b972bab416351300e9c7a4c5547002_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a04b6ca4c2454887f1a990a6425a0b126}\label{class_s_t__free_1_1_struct_manager_a04b6ca4c2454887f1a990a6425a0b126}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!BuildCandidateCount@{BuildCandidateCount}}
+\index{BuildCandidateCount@{BuildCandidateCount}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{BuildCandidateCount()}{BuildCandidateCount()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::\+Build\+Candidate\+Count (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a40b43fb3cc08130ac3bb670f82fefdd6}\label{class_s_t__free_1_1_struct_manager_a40b43fb3cc08130ac3bb670f82fefdd6}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!changeStats@{changeStats}}
+\index{changeStats@{changeStats}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{changeStats()}{changeStats()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::change\+Stats (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a40b43fb3cc08130ac3bb670f82fefdd6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a61086fa51403ba0328ecffb12d5c5811}\label{class_s_t__free_1_1_struct_manager_a61086fa51403ba0328ecffb12d5c5811}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!checkCorrectness@{checkCorrectness}}
+\index{checkCorrectness@{checkCorrectness}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{checkCorrectness()}{checkCorrectness()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::check\+Correctness (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a2307f2772e7b2dcd82ed17aa09643919}\label{class_s_t__free_1_1_struct_manager_a2307f2772e7b2dcd82ed17aa09643919}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!checkNonAllocs@{checkNonAllocs}}
+\index{checkNonAllocs@{checkNonAllocs}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{checkNonAllocs()}{checkNonAllocs()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::check\+Non\+Allocs (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a09044b4b0c289a54e97aeb12107fbb8b}\label{class_s_t__free_1_1_struct_manager_a09044b4b0c289a54e97aeb12107fbb8b}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!createDependencies@{createDependencies}}
+\index{createDependencies@{createDependencies}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{createDependencies()}{createDependencies()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::create\+Dependencies (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a09044b4b0c289a54e97aeb12107fbb8b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a86048daf51883d74a2ea42c46edb10ee}\label{class_s_t__free_1_1_struct_manager_a86048daf51883d74a2ea42c46edb10ee}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!exists@{exists}}
+\index{exists@{exists}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{exists()}{exists()}}
+{\footnotesize\ttfamily bool S\+T\+\_\+free\+::\+Struct\+Manager\+::exists (\begin{DoxyParamCaption}\item[{Struct\+Type $\ast$}]{st }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a86048daf51883d74a2ea42c46edb10ee_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a7ded5058af9abc39ddfdb83b2f878c1f}\label{class_s_t__free_1_1_struct_manager_a7ded5058af9abc39ddfdb83b2f878c1f}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!get@{get}}
+\index{get@{get}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{get()}{get()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_s_t__free_1_1_struct_information}{Struct\+Information}}$\ast$ S\+T\+\_\+free\+::\+Struct\+Manager\+::get (\begin{DoxyParamCaption}\item[{Struct\+Type $\ast$}]{str\+Ty }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a7ded5058af9abc39ddfdb83b2f878c1f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a29afe4072622b96927b7edb303e51ac3}\label{class_s_t__free_1_1_struct_manager_a29afe4072622b96927b7edb303e51ac3}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!getTypeRelationManager@{getTypeRelationManager}}
+\index{getTypeRelationManager@{getTypeRelationManager}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{getTypeRelationManager()}{getTypeRelationManager()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_s_t__free_1_1_type_relation_manager}{Type\+Relation\+Manager}}$\ast$ S\+T\+\_\+free\+::\+Struct\+Manager\+::get\+Type\+Relation\+Manager (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_s_t__free_1_1_struct_manager_a29afe4072622b96927b7edb303e51ac3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_ac1776667a580ab62c4dd0350d33cd3bf}\label{class_s_t__free_1_1_struct_manager_ac1776667a580ab62c4dd0350d33cd3bf}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!print@{print}}
+\index{print@{print}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{print()}{print()}}
+{\footnotesize\ttfamily void S\+T\+\_\+free\+::\+Struct\+Manager\+::print (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Member Data Documentation}
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a52810d49bcdf7c6e0459bc817c3f92b6}\label{class_s_t__free_1_1_struct_manager_a52810d49bcdf7c6e0459bc817c3f92b6}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!StructInfo@{StructInfo}}
+\index{StructInfo@{StructInfo}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{StructInfo}{StructInfo}}
+{\footnotesize\ttfamily map$<$Struct\+Type $\ast$, \mbox{\hyperlink{class_s_t__free_1_1_struct_information}{Struct\+Information}} $\ast$$>$ S\+T\+\_\+free\+::\+Struct\+Manager\+::\+Struct\+Info\hspace{0.3cm}{\ttfamily [private]}}
+
+\mbox{\Hypertarget{class_s_t__free_1_1_struct_manager_a3083584bd21ef13f0e2fd223a57964ba}\label{class_s_t__free_1_1_struct_manager_a3083584bd21ef13f0e2fd223a57964ba}} 
+\index{ST\_free::StructManager@{ST\_free::StructManager}!tyRel@{tyRel}}
+\index{tyRel@{tyRel}!ST\_free::StructManager@{ST\_free::StructManager}}
+\doxysubsubsection{\texorpdfstring{tyRel}{tyRel}}
+{\footnotesize\ttfamily \mbox{\hyperlink{class_s_t__free_1_1_type_relation_manager}{Type\+Relation\+Manager}} S\+T\+\_\+free\+::\+Struct\+Manager\+::ty\+Rel\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/\mbox{\hyperlink{_struct_information_8hpp}{Struct\+Information.\+hpp}}\item 
+\mbox{\hyperlink{_struct_information_8cpp}{Struct\+Information.\+cpp}}\end{DoxyCompactItemize}
