@@ -106,7 +106,6 @@ namespace ST_free {
             vector<BasicBlock *> endPoint;
             LocalVarList localVariables;
             FreedStructList freedStruct;
-            vector<UniqueKey> isCorrectlyBranchedFreeValues;
             BasicBlockManager BBManage;
             ValueManager VManage;
             LoopInfo * LoopI;
