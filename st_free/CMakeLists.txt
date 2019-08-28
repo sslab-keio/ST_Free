@@ -6,7 +6,7 @@ add_library( StructFreeMod MODULE
     FunctionManager.cpp
     BaseAnalyzer.cpp
     ArgList.cpp
-    BBWorklist.cpp
+    BasicBlockManager.cpp
     ValueInformation.cpp
     StructInformation.cpp
     LoopManager.cpp

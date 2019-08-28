@@ -3,7 +3,7 @@
 #include "FunctionManager.hpp"
 #include "statList.hpp"
 #include "ArgList.hpp"
-#include "BBWorklist.hpp"
+#include "BasicBlockManager.hpp"
 #include "ValueInformation.hpp"
 #include "StructInformation.hpp"
 #include "determinator.hpp"

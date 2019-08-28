@@ -1,6 +1,6 @@
 #pragma once
 #include "ST_free.hpp"
-#include "BBWorklist.hpp"
+#include "BasicBlockManager.hpp"
 #include "ArgList.hpp"
 #include "UniqueKeyManager.hpp"
 
