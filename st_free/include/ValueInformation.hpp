@@ -68,7 +68,7 @@ namespace ST_free{
             bool isFreed(){return freed;}
     };
     class ValueManager{
-        private:
+        private: 
             map<UniqueKey, ValueInformation *> vinfos;
         public:
             bool exists(Value *val, Type * ty, long num);

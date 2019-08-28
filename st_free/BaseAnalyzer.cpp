@@ -374,9 +374,9 @@ namespace ST_free {
         return false;
     }
 
-    UniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){
-        return UniqueKey(getLoadeeValue(GEle->getPointerOperand()), GEle->getResultElementType(), getValueIndices(GEle));
-    }
+    // UniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){
+    //     return UniqueKey(getLoadeeValue(GEle->getPointerOperand()), GEle->getResultElementType(), getValueIndices(GEle));
+    // }
 
     vector<string> BaseAnalyzer::decodeDirectoryName(string fname){
         vector<string> dirs;

@@ -2,6 +2,7 @@
 #include "ST_free.hpp"
 #include "BBWorklist.hpp"
 #include "ArgList.hpp"
+#include "UniqueKeyManager.hpp"
 
 namespace ST_free{
     using ParentList = vector<Type *>;
@@ -115,7 +116,7 @@ namespace ST_free{
             FunctionInformation();
             FunctionInformation(Function *F);
             /*** Function ***/
-            Function & getFunction();
+            Function& getFunction();
             /*** EndPoints ***/
             void addEndPoint(BasicBlock *B);
             vector<BasicBlock *> getEndPoint() const;
@@ -193,8 +194,8 @@ namespace ST_free{
     class FunctionManager {
         public:
             bool exists(Function *);
-            FunctionInformation * getElement(Function *F);
+            FunctionInformation* getElement(Function *F);
         private:
-            map<Function *, FunctionInformation *> func_map;
+            map<Function*, FunctionInformation*> func_map;
     };
 }

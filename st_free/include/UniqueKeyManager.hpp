@@ -25,7 +25,6 @@ namespace ST_free {
                 return v < uk.getValue();
             }
     };
-
     class UniqueKeyManager {
         private:
             set<UniqueKey> ukmanage;

@@ -20,6 +20,7 @@ namespace ST_free{
             return false;
         return true;
     }
+
     bool ValueManager::exists(Value * val, Type * ty, long num){
         if(vinfos.find(UniqueKey(val, ty, num)) != vinfos.end()){
             return true;
