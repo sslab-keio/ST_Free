@@ -4,7 +4,7 @@
 #include "ArgList.hpp"
 #include "UniqueKeyManager.hpp"
 
-namespace ST_free{
+namespace ST_free {
     using ParentList = vector<Type *>;
     struct FreedStruct {
         private:
@@ -98,6 +98,8 @@ namespace ST_free{
     using LocalVarList = vector<FreedStruct *>;
     struct FunctionInformation {
         private:
+            /*** Private Variables ***/
+            static UniqueKeyManager UKManage;
             Function *F;
             int stat;
             ArgList args;
@@ -109,6 +111,7 @@ namespace ST_free{
             ValueManager VManage;
             LoopInfo * LoopI;
             map<Value *, vector<Function *>> funcPtr;
+            /*** Private Methods ***/
             int getStat();
             void setStat(int);
         public:
@@ -121,7 +124,7 @@ namespace ST_free{
             void addEndPoint(BasicBlock *B);
             vector<BasicBlock *> getEndPoint() const;
             /*** FreeValue Related ***/
-            void addFreeValue(BasicBlock *B, Value *V);
+            // void addFreeValue(BasicBlock *B, Value *V);
             void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
             void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void addFreedStruct(Type *T, Value *V, Instruction *I);
@@ -190,6 +193,8 @@ namespace ST_free{
             /*** Func Ptr related ***/
             void addFunctionPointerInfo(Value *val, Function *func);
             vector<Function *> getPointedFunctions(Value *val);
+            /*** UniqueKeys ***/
+            UniqueKeyManager* getUniqueKeyManager(){return &UKManage};
     };
     class FunctionManager {
         public:

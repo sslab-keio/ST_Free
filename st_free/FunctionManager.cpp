@@ -1,6 +1,8 @@
 #include "include/FunctionManager.hpp"
 
 namespace ST_free{
+    UniqueKeyManager FunctionInformation::UKManage;
+
     bool FunctionManager::exists(Function *F) {
         if(func_map.find(F) != func_map.end())
             return true;
@@ -63,14 +65,18 @@ namespace ST_free{
     void FunctionInformation::addEndPoint(BasicBlock *B){
         endPoint.push_back(B);
     }
-    void FunctionInformation::addFreeValue(BasicBlock *B, Value *V) {
-        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-        if(BInfo)
-            BInfo->addFree(V, V->getType(), -1);
-        // BBManage.add(B, V, FREED);
-    }
+    // void FunctionInformation::addFreeValue(BasicBlock *B, Value *V) {
+    //     BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+    //     if(BInfo)
+    //         BInfo->addFree(V, V->getType(), -1);
+    //     // BBManage.add(B, V, FREED);
+    // }
 
     void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
+        const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, memTy, num);
+        if (UK == NULL)
+            UK = this->getUniqueKeyManager()->addUniqueKey(V, memTy, num);
+
         ValueInformation * varinfo = this->getValueInfo(V, memTy, num);
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
 

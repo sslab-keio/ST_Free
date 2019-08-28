@@ -9,8 +9,9 @@ namespace ST_free {
         outs() << "=====================\n";
     }
 
-    void UniqueKeyManager::addUniqueKey(Value *val, Type *ty, long mem) {
-        ukmanage.insert(UniqueKey(val, ty, mem));
+    UniqueKey* UniqueKeyManager::addUniqueKey(Value *val, Type *ty, long mem) {
+        auto uk = ukmanage.insert(UniqueKey(val, ty, mem));
+        return &(*(uk.first));
     }
 
     const UniqueKey* UniqueKeyManager::getUniqueKey(Value *val, Type *ty, long mem){
