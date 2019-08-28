@@ -79,7 +79,7 @@ namespace ST_free{
 
         ValueInformation * varinfo = this->getValueInfo(UK);
         if(varinfo == NULL)
-            varinfo = this->addVariable(V, memTy, stTy, num);
+            varinfo = this->addVariable(UK, V, memTy, stTy, num);
         else
             varinfo->addStructParams(stTy, num);
         varinfo->setFreed();
@@ -202,32 +202,38 @@ namespace ST_free{
         args.isArgAllocated(num);
     }
     ValueInformation * FunctionInformation::addVariable(Value * val){
-        if(!VManage.exists(val))
-            VManage.addValueInfo(val);
-        return VManage.getValueInfo(val);
+        const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, val->getType(), -1);
+        if(UK == NULL)
+            UK = this->getUniqueKeyManager()->addUniqueKey(val, val->getType(), -1);
+        if(!VManage.exists(UK))
+            VManage.addValueInfo(UK, val);
+        return VManage.getValueInfo(UK);
     }
     
-    ValueInformation * FunctionInformation::addVariable(Value * val, Type * memType, Type *parType, long num){
-        if(!VManage.exists(val, memType, num))
-            VManage.addValueInfo(val, memType, parType, num);
-        return VManage.getValueInfo(val, memType, num);
-    }
+    // ValueInformation * FunctionInformation::addVariable(Value * val, Type * memType, Type *parType, long num){
+    //     if(!VManage.exists(val, memType, num))
+    //         VManage.addValueInfo(val, memType, parType, num);
+    //     return VManage.getValueInfo(val, memType, num);
+    // }
 
-    ValueInformation * FunctionInformation::addVariable(UniqueKey *UK, Value * val, Type * memType, Type *parType, long num){
+    ValueInformation * FunctionInformation::addVariable(const UniqueKey *UK, Value * val, Type * memType, Type *parType, long num){
         if(!VManage.exists(UK))
             VManage.addValueInfo(UK, val, memType, parType, num);
         return VManage.getValueInfo(UK);
     }
 
-    ValueInformation * FunctionInformation::getValueInfo(Value * val){
-        return VManage.getValueInfo(val);
-    }
+    // ValueInformation * FunctionInformation::getValueInfo(Value * val){
+    //     return VManage.getValueInfo(val);
+    // }
 
     ValueInformation * FunctionInformation::getValueInfo(Value * val, Type * ty, long mem){
-        return VManage.getValueInfo(val, ty, mem);
+        const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, ty, mem);
+        if(UK != NULL)
+            return this->getValueInfo(UK);
+        return NULL;
     }
 
-    ValueInformation* FunctionInformation::getValueInfo(UniqueKey *UK){
+    ValueInformation* FunctionInformation::getValueInfo(const UniqueKey *UK){
         return VManage.getValueInfo(UK);
     }
 
@@ -239,14 +245,18 @@ namespace ST_free{
         localVariables.push_back(new FreedStruct(T, V, I, P, B, vinfo));
     }
 
-    void FunctionInformation::incrementRefCount(Value *V, Type *T, long mem, Value *ref){
-        ValueInformation * vinfo = VManage.getValueInfo(V, T, mem);
-        if(vinfo == NULL){
-            VManage.addValueInfo(V, T, mem);
-            vinfo = VManage.getValueInfo(V, T, mem);
-        }
-        vinfo->incrementRefCount(ref);
-    }
+//     void FunctionInformation::incrementRefCount(Value *V, Type *T, long mem, Value *ref){
+//         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
+//         if (UK == NULL)
+//             UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
+
+//         ValueInformation * vinfo = VManage.getValueInfo(UK);
+//         if(vinfo == NULL){
+//             VManage.addValueInfo(UK, V, T, mem);
+//             vinfo = VManage.getValueInfo(V, T, mem);
+//         }
+//         vinfo->incrementRefCount(ref);
+//     }
     
     // void FunctionInformation::incrementFreedRefCount(BasicBlock *B, Value *V, Value *ref){
     //     ValueInformation * vinfo = VManage.getValueInfo(V);

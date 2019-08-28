@@ -177,18 +177,18 @@ namespace ST_free {
             bool isArgAllocated(int64_t num);
             /*** Individual Variable Informations ***/
             ValueInformation * addVariable(Value * val);
-            ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
-            ValueInformation * addVariable(UniqueKey *UK, Value * val, Type * memType, Type *parType, long num);
-			ValueInformation * getValueInfo(Value * val);
+            // ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
+            ValueInformation * addVariable(const UniqueKey *UK, Value * val, Type * memType, Type *parType, long num);
+			// ValueInformation * getValueInfo(Value * val);
 			ValueInformation * getValueInfo(Value * val, Type * ty, long num);
-			ValueInformation * getValueInfo(UniqueKey *UK);
+			ValueInformation * getValueInfo(const UniqueKey *UK);
             bool variableExists(Value *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *, ParentList P, ValueInformation *);
             LocalVarList getLocalVar() const;
             void addBasicBlockLiveVariable(BasicBlock *B, Value *);
             bool localVarExists(Type *);
-            void incrementRefCount(Value *V, Type *T, long mem, Value *ref);
+            // void incrementRefCount(Value *V, Type *T, long mem, Value *ref);
             bool isLiveInBasicBlock(BasicBlock *B, Value *val);
             /*** Debugging ***/
             void printVal(){VManage.print();}
@@ -196,7 +196,7 @@ namespace ST_free {
             void addFunctionPointerInfo(Value *val, Function *func);
             vector<Function *> getPointedFunctions(Value *val);
             /*** UniqueKeys ***/
-            UniqueKeyManager* getUniqueKeyManager(){return &UKManage};
+            UniqueKeyManager* getUniqueKeyManager(){return &UKManage;}
     };
     class FunctionManager {
         public:

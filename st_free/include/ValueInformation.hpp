@@ -69,19 +69,19 @@ namespace ST_free{
     };
     class ValueManager{
         private: 
-            map<UniqueKey *, ValueInformation *> vinfos;
+            map<const UniqueKey *, ValueInformation *> vinfos;
             // map<UniqueKey, ValueInformation *> vinfos;
         public:
             // bool exists(Value *val, Type * ty, long num);
             // bool exists(Value *val);
-            bool exists(UniqueKey *UK);
+            bool exists(const UniqueKey *UK);
             // ValueInformation * getValueInfo(Value *val, Type * ty, long num);
             // ValueInformation * getValueInfo(Value *val);
-            ValueInformation * getValueInfo(UniqueKey *UK);
+            ValueInformation * getValueInfo(const UniqueKey *UK);
             // void addValueInfo(Value * val, Type * ty, long num);
-            // void addValueInfo(Value * val);
+            void addValueInfo(const UniqueKey *UK, Value * val);
             // void addValueInfo(Value * val, Type * memType, Type * parType, long num);
-            void addValueInfo(UniqueKey *UK, Value * val, Type * memType, Type * parType, long num);
+            void addValueInfo(const UniqueKey *UK, Value * val, Type * memType, Type * parType, long num);
             void print();
     };
 }

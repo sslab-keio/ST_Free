@@ -34,7 +34,7 @@ namespace ST_free{
     //     return false;
     // }
 
-    bool ValueManager::exists(UniqueKey *UK){
+    bool ValueManager::exists(const UniqueKey *UK){
         if(vinfos.find(UK) != vinfos.end())
             return true;
         return false;
@@ -52,7 +52,7 @@ namespace ST_free{
     //     return NULL;
     // }
 
-    ValueInformation * ValueManager::getValueInfo(UniqueKey *UK){
+    ValueInformation * ValueManager::getValueInfo(const UniqueKey *UK){
         if(this->exists(UK))
             return vinfos[UK];
         return NULL;
@@ -63,24 +63,24 @@ namespace ST_free{
     //         vinfos[UniqueKey(val, ty, num)] = new ValueInformation(val);
     // }
 
-    // void ValueManager::addValueInfo(Value * val){
-    //     if(!this->exists(val, val->getType(), -1))
-    //         vinfos[UniqueKey(val, val->getType(), -1)] = new ValueInformation(val);
-    //     return;
-    // }
+    void ValueManager::addValueInfo(const UniqueKey *UK, Value * val){
+        if(!this->exists(UK))
+            vinfos[UK] = new ValueInformation(val);
+        return;
+    }
     // void ValueManager::addValueInfo(Value * val, Type * memType, Type * parType, long num){
     //     if(!this->exists(val, memType, num))
     //         vinfos[UniqueKey(val, memType, num)] = new ValueInformation(val, memType, parType, num);
     //     return;
     // }
-    void ValueManager::addValueInfo(UniqueKey *UK, Value * val, Type * memType, Type * parType, long num){
+    void ValueManager::addValueInfo(const UniqueKey *UK, Value * val, Type * memType, Type * parType, long num){
         if(!this->exists(UK))
             vinfos[UK] = new ValueInformation(val, memType, parType, num);
         return;
     }
     void ValueManager::print(){
         for(auto vmap: vinfos){
-            vmap.first.print();
+            (vmap.first)->print();
         }
     }
 }
