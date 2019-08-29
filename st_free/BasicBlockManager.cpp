@@ -188,7 +188,7 @@ namespace ST_free {
                 isFirst = false;
             } else {
                 this->intersect(PredBB, B);
-                // this->copyCorrectlyFreed(PredBB, B);
+                this->copyCorrectlyFreed(PredBB, B);
             }
         }
         return;
@@ -290,7 +290,7 @@ namespace ST_free {
         for(BasicBlock * SucBB : successors(src)){
             if(this->exists(SucBB)){
                 // this->intersect(src, SucBB);
-                // this->copyCorrectlyFreed(src, SucBB);
+                this->copyCorrectlyFreed(src, SucBB);
             }
         }
     }
