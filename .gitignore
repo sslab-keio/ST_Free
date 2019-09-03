@@ -1,0 +1,5 @@
+test_set/*/bin/
+test_set/*/ir/
+test_set/*/log/
+
+docs/

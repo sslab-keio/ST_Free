@@ -1,5 +1,18 @@
 add_library( StructFreeMod MODULE
     ST_free.cpp
+    statList.cpp
+    determinator.cpp
+    support_funcs.cpp
+    FunctionManager.cpp
+    BaseAnalyzer.cpp
+    ArgList.cpp
+    BasicBlockManager.cpp
+    ValueInformation.cpp
+    StructInformation.cpp
+    LoopManager.cpp
+    StageOneAnalyzer.cpp
+    RelationshipInformation.cpp
+    UniqueKeyManager.cpp
 )
 # Use C++11 to compile our pass (i.e., supply -std=c++11).
 target_compile_features(StructFreeMod PRIVATE cxx_range_for cxx_auto_type)
@@ -9,6 +22,9 @@ target_compile_features(StructFreeMod PRIVATE cxx_range_for cxx_auto_type)
 set_target_properties(StructFreeMod PROPERTIES
     COMPILE_FLAGS "-fno-rtti"
 )
+include_directories(./include)
+
+add_definitions(-DSTAGE_ONE)
 
 # Get proper shared-library behavior (where symbols are not necessarily
 # resolved when the shared library is linked) on OS X.

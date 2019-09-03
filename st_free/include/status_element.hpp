@@ -1,4 +1,5 @@
 #include "ST_free.hpp"
+#pragma once
 
 struct status_element{
     Type * struct_type;
