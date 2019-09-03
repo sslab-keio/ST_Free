@@ -1,9 +1,10 @@
 #pragma once
 #include "ST_free.hpp"
-#include "BBWorklist.hpp"
-#include "argList.hpp"
+#include "BasicBlockManager.hpp"
+#include "ArgList.hpp"
+#include "UniqueKeyManager.hpp"
 
-namespace ST_free{
+namespace ST_free {
     using ParentList = vector<Type *>;
     struct FreedStruct {
         private:
@@ -72,10 +73,10 @@ namespace ST_free{
             bool operator !=(FreedStruct v){
                 return V != v.getValue() && T != v.getType() && I != v.getInst();
             }
-            bool operator ==(uniqueKey uk){
+            bool operator ==(UniqueKey uk){
                 return T == uk.getType() && V == uk.getValue();
             }
-            bool operator !=(uniqueKey uk){
+            bool operator !=(UniqueKey uk){
                 return T != uk.getType() && V != uk.getValue();
             }
 
@@ -97,17 +98,19 @@ namespace ST_free{
     using LocalVarList = vector<FreedStruct *>;
     struct FunctionInformation {
         private:
+            /*** Private Variables ***/
+            static UniqueKeyManager UKManage;
             Function *F;
             int stat;
             ArgList args;
             vector<BasicBlock *> endPoint;
             LocalVarList localVariables;
             FreedStructList freedStruct;
-            vector<uniqueKey> isCorrectlyBranchedFreeValues;
             BasicBlockManager BBManage;
             ValueManager VManage;
             LoopInfo * LoopI;
             map<Value *, vector<Function *>> funcPtr;
+            /*** Private Methods ***/
             int getStat();
             void setStat(int);
         public:
@@ -115,12 +118,12 @@ namespace ST_free{
             FunctionInformation();
             FunctionInformation(Function *F);
             /*** Function ***/
-            Function & getFunction();
+            Function& getFunction();
             /*** EndPoints ***/
             void addEndPoint(BasicBlock *B);
             vector<BasicBlock *> getEndPoint() const;
             /*** FreeValue Related ***/
-            void addFreeValue(BasicBlock *B, Value *V);
+            // void addFreeValue(BasicBlock *B, Value *V);
             void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
             void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void addFreedStruct(Type *T, Value *V, Instruction *I);
@@ -131,6 +134,7 @@ namespace ST_free{
             bool freedStructExists(FreedStruct *fst);
             /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
+            void addAllocValue(BasicBlock *B, UniqueKey *UK);
             /*** Status Related ***/
             bool isUnanalyzed();
             bool isAnalyzed();
@@ -143,9 +147,12 @@ namespace ST_free{
             BasicBlockList getFreeList(BasicBlock *B);
             BasicBlockList getAllocList(BasicBlock *B);
             bool isFreedInBasicBlock(BasicBlock *B, Value * val, Type * ty, long mem);
+            bool isFreedInBasicBlock(BasicBlock *B, const UniqueKey *UK);
             bool isAllocatedInBasicBlock(BasicBlock *B, Value * val, Type * ty, long mem);
-            void addCorrectlyFreedValue(BasicBlock *, Value *, Type *, long mem);
+            bool isAllocatedInBasicBlock(BasicBlock *B, const UniqueKey *UK);
+            void addCorrectlyFreedValue(BasicBlock *, const UniqueKey *UK);
             bool isCorrectlyBranchedFreeValue(BasicBlock *, Value *, Type *, long mem);
+            bool isCorrectlyBranchedFreeValue(BasicBlock *, const UniqueKey *UK);
             void setCorrectlyBranched(BasicBlock *B);
             bool isCorrectlyBranched(BasicBlock *B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
@@ -173,28 +180,32 @@ namespace ST_free{
             bool isArgAllocated(int64_t num);
             /*** Individual Variable Informations ***/
             ValueInformation * addVariable(Value * val);
-            ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
-			ValueInformation * getValueInfo(Value * val);
+            // ValueInformation * addVariable(Value * val, Type * memType, Type *parType, long num);
+            ValueInformation * addVariable(const UniqueKey *UK, Value * val, Type * memType, Type *parType, long num);
+			// ValueInformation * getValueInfo(Value * val);
 			ValueInformation * getValueInfo(Value * val, Type * ty, long num);
+			ValueInformation * getValueInfo(const UniqueKey *UK);
             bool variableExists(Value *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *);
             void addLocalVar(BasicBlock *, Type *, Value *, Instruction *, ParentList P, ValueInformation *);
             LocalVarList getLocalVar() const;
             void addBasicBlockLiveVariable(BasicBlock *B, Value *);
             bool localVarExists(Type *);
-            void incrementRefCount(Value *V, Type *T, long mem, Value *ref);
+            // void incrementRefCount(Value *V, Type *T, long mem, Value *ref);
             bool isLiveInBasicBlock(BasicBlock *B, Value *val);
             /*** Debugging ***/
             void printVal(){VManage.print();}
             /*** Func Ptr related ***/
             void addFunctionPointerInfo(Value *val, Function *func);
             vector<Function *> getPointedFunctions(Value *val);
+            /*** UniqueKeys ***/
+            UniqueKeyManager* getUniqueKeyManager(){return &UKManage;}
     };
     class FunctionManager {
         public:
             bool exists(Function *);
-            FunctionInformation * getElement(Function *F);
+            FunctionInformation* getElement(Function *F);
         private:
-            map<Function *, FunctionInformation *> func_map;
+            map<Function*, FunctionInformation*> func_map;
     };
 }

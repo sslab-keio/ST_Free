@@ -1,4 +1,5 @@
 #include "ST_free.hpp"
+#pragma once
 
 using namespace std;
 using namespace llvm;
@@ -24,12 +25,11 @@ namespace ST_free {
                 return v < uk.getValue();
             }
     };
-
     class UniqueKeyManager {
         private:
             set<UniqueKey> ukmanage;
         public:
-            void addUniqueKey(Value *val, Type *ty, long mem);
+            const UniqueKey* addUniqueKey(Value *val, Type *ty, long mem);
             const UniqueKey* getUniqueKey(Value *val, Type *ty, long mem); 
     };
 }

@@ -1,12 +1,5 @@
 #include "include/ValueInformation.hpp"
 namespace ST_free{
-    void uniqueKey::print() const{
-        outs() << "== Unique Key Info ==\n";
-        outs() << "[Value]: " << *this->getValue() << "\n";
-        outs() << "[Type]: " << *this->getType() << "\n";
-        outs() << "[memberNum]: " << this->getNum() << "\n";
-        outs() << "=====================\n";
-    }
     Value * ValueInformation::getValue() const{
         return V;
     }
@@ -27,49 +20,67 @@ namespace ST_free{
             return false;
         return true;
     }
-    bool ValueManager::exists(Value * val, Type * ty, long num){
-        if(vinfos.find(uniqueKey(val, ty, num)) != vinfos.end()){
+
+    // bool ValueManager::exists(Value * val, Type * ty, long num){
+    //     if(vinfos.find(UniqueKey(val, ty, num)) != vinfos.end()){
+    //         return true;
+    //     }
+    //     return false;
+    // }
+
+    // bool ValueManager::exists(Value * val){
+    //     if(vinfos.find(UniqueKey(val, val->getType(), -1)) != vinfos.end())
+    //         return true;
+    //     return false;
+    // }
+
+    bool ValueManager::exists(const UniqueKey *UK){
+        if(vinfos.find(UK) != vinfos.end())
             return true;
-        }
         return false;
     }
 
-    bool ValueManager::exists(Value * val){
-        if(vinfos.find(uniqueKey(val, val->getType(), -1)) != vinfos.end())
-            return true;
-        return false;
-    }
+    // ValueInformation * ValueManager::getValueInfo(Value *val, Type * ty, long num){
+    //     if(this->exists(val,ty, num))
+    //         return vinfos[UniqueKey(val, ty, num)];
+    //     return NULL;
+    // }
 
-    ValueInformation * ValueManager::getValueInfo(Value *val, Type * ty, long num){
-        if(this->exists(val,ty, num))
-            return vinfos[uniqueKey(val, ty, num)];
+    // ValueInformation * ValueManager::getValueInfo(Value *val){
+    //     if(this->exists(val,val->getType(), -1))
+    //         return vinfos[UniqueKey(val,val->getType(), -1)];
+    //     return NULL;
+    // }
+
+    ValueInformation * ValueManager::getValueInfo(const UniqueKey *UK){
+        if(this->exists(UK))
+            return vinfos[UK];
         return NULL;
     }
 
-    ValueInformation * ValueManager::getValueInfo(Value *val){
-        if(this->exists(val,val->getType(), -1))
-            return vinfos[uniqueKey(val,val->getType(), -1)];
-        return NULL;
-    }
+    // void ValueManager::addValueInfo(Value *val, Type * ty, long num){
+    //     if(!this->exists(val, ty, num))
+    //         vinfos[UniqueKey(val, ty, num)] = new ValueInformation(val);
+    // }
 
-    void ValueManager::addValueInfo(Value *val, Type * ty, long num){
-        if(!this->exists(val, ty, num))
-            vinfos[uniqueKey(val, ty, num)] = new ValueInformation(val);
-    }
-
-    void ValueManager::addValueInfo(Value * val){
-        if(!this->exists(val, val->getType(), -1))
-            vinfos[uniqueKey(val, val->getType(), -1)] = new ValueInformation(val);
+    void ValueManager::addValueInfo(const UniqueKey *UK, Value * val){
+        if(!this->exists(UK))
+            vinfos[UK] = new ValueInformation(val);
         return;
     }
-    void ValueManager::addValueInfo(Value * val, Type * memType, Type * parType, long num){
-        if(!this->exists(val, memType, num))
-            vinfos[uniqueKey(val, memType, num)] = new ValueInformation(val, memType, parType, num);
+    // void ValueManager::addValueInfo(Value * val, Type * memType, Type * parType, long num){
+    //     if(!this->exists(val, memType, num))
+    //         vinfos[UniqueKey(val, memType, num)] = new ValueInformation(val, memType, parType, num);
+    //     return;
+    // }
+    void ValueManager::addValueInfo(const UniqueKey *UK, Value * val, Type * memType, Type * parType, long num){
+        if(!this->exists(UK))
+            vinfos[UK] = new ValueInformation(val, memType, parType, num);
         return;
     }
     void ValueManager::print(){
         for(auto vmap: vinfos){
-            vmap.first.print();
+            (vmap.first)->print();
         }
     }
 }

@@ -1,15 +1,16 @@
 #pragma once
 #include "ST_free.hpp"
-#include "functionManager.hpp"
+#include "FunctionManager.hpp"
 #include "statList.hpp"
-#include "argList.hpp"
-#include "BBWorklist.hpp"
+#include "ArgList.hpp"
+#include "BasicBlockManager.hpp"
 #include "ValueInformation.hpp"
 #include "StructInformation.hpp"
 #include "determinator.hpp"
 #include "support_funcs.hpp"
 #include "LoopManager.hpp"
-#include "relationshipInformation.hpp"
+#include "RelationshipInformation.hpp"
+#include "UniqueKeyManager.hpp"
 
 namespace ST_free {
     class BaseAnalyzer {
@@ -60,7 +61,7 @@ namespace ST_free {
             bool isStoreFromStructMember(StoreInst * SI);
             bool isStoreToStruct(StoreInst *SI);
             bool isStoreFromStruct(StoreInst *SI);
-            uniqueKey decodeGEPInst(GetElementPtrInst *GEle);
+            // UniqueKey decodeGEPInst(GetElementPtrInst *GEle);
             vector<string> decodeDirectoryName(string str);
             void getStructParents(Instruction *I, vector<pair<Type *, int>> &typeList);
         private:

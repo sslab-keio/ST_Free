@@ -1,4 +1,4 @@
-#include "include/BBWorklist.hpp"
+#include "include/BasicBlockManager.hpp"
 
 namespace ST_free {
 
@@ -10,13 +10,21 @@ namespace ST_free {
         MarkedValues = BasicBlockList(v);
     }
 
-    void BasicBlockWorkList::add(Value *v, Type * ty, long mem){
-        uniqueKey uk(v, ty, mem);
-        MarkedValues.push_back(uk);
+    // void BasicBlockWorkList::add(Value *v, Type * ty, long mem){
+    //     UniqueKey uk(v, ty, mem);
+    //     MarkedValues.push_back(uk);
+    // }
+    void BasicBlockWorkList::add(const UniqueKey *UK){
+        MarkedValues.push_back(UK);
     }
+    // bool BasicBlockWorkList::exists(Value * v, Type * ty, long mem){
+    //     if(find(MarkedValues.begin(), MarkedValues.end(), UniqueKey(v, ty, mem)) != MarkedValues.end())
+    //         return true;
+    //     return false;
+    // }
 
-    bool BasicBlockWorkList::exists(Value * v, Type * ty, long mem){
-        if(find(MarkedValues.begin(), MarkedValues.end(), uniqueKey(v, ty, mem)) != MarkedValues.end())
+    bool BasicBlockWorkList::exists(const UniqueKey *UK){
+        if(find(MarkedValues.begin(), MarkedValues.end(), UK) != MarkedValues.end())
             return true;
         return false;
     }
@@ -49,8 +57,12 @@ namespace ST_free {
         return MarkedValues;
     }
 
-    void BasicBlockInformation::addFree(Value *v, Type * ty , long mem){
-        freeList.add(v, ty, mem);
+    // void BasicBlockInformation::addFree(Value *v, Type * ty , long mem){
+    //     freeList.add(v, ty, mem);
+    // }
+
+    void BasicBlockInformation::addFree(const UniqueKey *UK){
+        freeList.add(UK);
     }
 
     void BasicBlockInformation::setCorrectlyBranched(){
@@ -69,28 +81,44 @@ namespace ST_free {
         return correctlyBranched;
     }
 
-    void BasicBlockInformation::addCorrectlyFreedValue(Value * V, Type * T, long mem){
-        correctlyFreed.add(V, T, mem);
+    // void BasicBlockInformation::addCorrectlyFreedValue(Value * V, Type * T, long mem){
+    //     correctlyFreed.add(V, T, mem);
+    // }
+
+    void BasicBlockInformation::addCorrectlyFreedValue(const UniqueKey *UK){
+        correctlyFreed.add(UK);
     }
 
-    bool BasicBlockInformation::CorrectlyFreedValueExists(Value * V, Type * T, long mem){
-        return correctlyFreed.exists(V, T, mem);
+    // bool BasicBlockInformation::CorrectlyFreedValueExists(Value * V, Type * T, long mem){
+    //     return correctlyFreed.exists(V, T, mem);
+    // }
+
+    bool BasicBlockInformation::CorrectlyFreedValueExists(const UniqueKey *UK){
+        return correctlyFreed.exists(UK);
     }
 
     BasicBlockWorkList BasicBlockInformation::getCorrectlyFreedValues() const{
         return correctlyFreed;
     }
 
-    bool BasicBlockInformation::FreeExists(Value *v, Type * ty, long mem){
-        return freeList.exists(v, ty, mem);
+    // bool BasicBlockInformation::FreeExists(Value *v, Type * ty, long mem){
+    //     return freeList.exists(v, ty, mem);
+    // }
+
+    bool BasicBlockInformation::FreeExists(const UniqueKey *UK){
+        return freeList.exists(UK);
     }
 
     void BasicBlockInformation::setFreeList(BasicBlockList v){
         freeList.setList(v);
     }
 
-    void BasicBlockInformation::addAlloc(Value *v, Type * ty, long mem){
-        allocList.add(v, ty, mem);
+    // void BasicBlockInformation::addAlloc(Value *v, Type * ty, long mem){
+    //     allocList.add(v, ty, mem);
+    // }
+
+    void BasicBlockInformation::addAlloc(const UniqueKey *UK){
+        allocList.add(UK);
     }
 
     bool BasicBlockInformation::LiveVariableExists(Value * v){
@@ -99,8 +127,12 @@ namespace ST_free {
         return false;
     }
 
-    bool BasicBlockInformation::AllocExists(Value *v, Type *ty, long mem){
-        return allocList.exists(v, ty, mem);
+    // bool BasicBlockInformation::AllocExists(Value *v, Type *ty, long mem){
+    //     return allocList.exists(v, ty, mem);
+    // }
+
+    bool BasicBlockInformation::AllocExists(const UniqueKey *UK){
+        return allocList.exists(UK);
     }
 
     void BasicBlockInformation::setAllocList(BasicBlockList v){
@@ -175,8 +207,8 @@ namespace ST_free {
     }
 
     void BasicBlockManager::copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt){
-        for(uniqueKey uk : BBMap[src].getCorrectlyFreedValues().getList()){
-            BBMap[tgt].addCorrectlyFreedValue(uk.getValue(), uk.getType(), uk.getNum());
+        for(const UniqueKey* uk : BBMap[src].getCorrectlyFreedValues().getList()){
+            BBMap[tgt].addCorrectlyFreedValue(uk);
         }
     }
 

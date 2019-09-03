@@ -1,27 +1,8 @@
 #include "ST_free.hpp"
+#include "UniqueKeyManager.hpp"
 #pragma once
 
 namespace ST_free{
-    class uniqueKey {
-        private:
-            Value * v;
-            Type * t;
-            long memberNum;
-        public:
-            Value * getValue() const {return v;}
-            Type * getType() const {return t;}
-            long getNum() const {return memberNum;}
-            uniqueKey(Value *val, Type *ty, long mem){v = val;t = ty;memberNum = mem;}
-            void print() const;
-            bool operator ==(const uniqueKey& uk) const {return (v == uk.getValue() && t == uk.getType() && memberNum == uk.getNum());}
-            bool operator<(const uniqueKey& uk) const {
-                if(v == uk.getValue()){
-                    if(t == uk.getType()) return memberNum < uk.getNum();
-                    else return t < uk.getType();
-                }
-                return v < uk.getValue();
-            }
-    };
     class ValueInformation {
         private:
             Value * V;
@@ -87,16 +68,20 @@ namespace ST_free{
             bool isFreed(){return freed;}
     };
     class ValueManager{
-        private:
-            map<uniqueKey, ValueInformation *> vinfos;
+        private: 
+            map<const UniqueKey *, ValueInformation *> vinfos;
+            // map<UniqueKey, ValueInformation *> vinfos;
         public:
-            bool exists(Value *val, Type * ty, long num);
-            bool exists(Value *val);
-            ValueInformation * getValueInfo(Value *val, Type * ty, long num);
-            ValueInformation * getValueInfo(Value *val);
-            void addValueInfo(Value * val, Type * ty, long num);
-            void addValueInfo(Value * val);
-            void addValueInfo(Value * val, Type * memType, Type * parType, long num);
+            // bool exists(Value *val, Type * ty, long num);
+            // bool exists(Value *val);
+            bool exists(const UniqueKey *UK);
+            // ValueInformation * getValueInfo(Value *val, Type * ty, long num);
+            // ValueInformation * getValueInfo(Value *val);
+            ValueInformation * getValueInfo(const UniqueKey *UK);
+            // void addValueInfo(Value * val, Type * ty, long num);
+            void addValueInfo(const UniqueKey *UK, Value * val);
+            // void addValueInfo(Value * val, Type * memType, Type * parType, long num);
+            void addValueInfo(const UniqueKey *UK, Value * val, Type * memType, Type * parType, long num);
             void print();
     };
 }

@@ -3,15 +3,16 @@ add_library( StructFreeMod MODULE
     statList.cpp
     determinator.cpp
     support_funcs.cpp
-    functionManager.cpp
-    analyzer.cpp
-    argList.cpp
-    BBWorklist.cpp
+    FunctionManager.cpp
+    BaseAnalyzer.cpp
+    ArgList.cpp
+    BasicBlockManager.cpp
     ValueInformation.cpp
     StructInformation.cpp
     LoopManager.cpp
     StageOneAnalyzer.cpp
-    relationshipInformation.cpp
+    RelationshipInformation.cpp
+    UniqueKeyManager.cpp
 )
 # Use C++11 to compile our pass (i.e., supply -std=c++11).
 target_compile_features(StructFreeMod PRIVATE cxx_range_for cxx_auto_type)

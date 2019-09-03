@@ -1,4 +1,4 @@
-#include "include/relationshipInformation.hpp"
+#include "include/RelationshipInformation.hpp"
 
 namespace ST_free {
     bool RelationshipInformation::exists(Value *src){
