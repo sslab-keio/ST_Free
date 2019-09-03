@@ -243,6 +243,8 @@ namespace ST_free {
             if(isStructEleFree(val)) {
                 GetElementPtrInst * GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
+                    if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
+                        GEle = getRootGEle(GEle);
                     UpdateIfNull(freeValue, getLoadeeValue(GEle->getPointerOperand()));
                     UpdateIfNull(memType, GEle->getResultElementType());
                     if(GEle->getSourceElementType()->isStructTy())
@@ -275,11 +277,14 @@ namespace ST_free {
             if(freeValue) {
                 if(getFunctionInformation()->aliasExists(B, freeValue)) {
                     Value * aliasVal = getFunctionInformation()->getAlias(B, freeValue);
+
                     if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)){
                         generateWarning(CI, "Alias Free found");
-                        this->addFree(GEle, CI, B, true);
+                        if (V != aliasVal)
+                            this->addFree(GEle, CI, B, true);
                     }
                 }
+
                 if (getFunctionInformation()->isArgValue(freeValue)) {
                     getFunctionInformation()->setArgFree(freeValue);
                     if(get_type(memType)->isStructTy()){

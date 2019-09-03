@@ -27,12 +27,20 @@ namespace ST_free {
     }
 
     Value * getLoadeeValue(Value * val){
-        if(LoadInst *inst = dyn_cast<LoadInst>(val)){
-            // if(GetElementPtrInst *gele = dyn_cast<GetElementPtrInst>(inst->getPointerOperand()))
-            //     return getLoadeeValue(gele->getPointerOperand());
-            return inst->getPointerOperand();
+        Value *v = val;
+        while (v && (isa<LoadInst>(v) || isa<GetElementPtrInst>(v))) {
+            if(auto inst = dyn_cast<LoadInst>(v)){
+                v = inst->getPointerOperand();
+            } else if(auto inst = dyn_cast<GetElementPtrInst>(v)){
+                v = inst->getPointerOperand();
+            } else {
+                v = NULL;
+            }
         }
-        return NULL;
+
+        if (v == val)
+            v = NULL;
+        return v;
     }
     /*** Retrieve Pointer Dereferance Type ***/
     Type * get_type(Value * val){
@@ -106,5 +114,13 @@ namespace ST_free {
     User * getFirstUser(Value * v){
         for(User * usr : v->users())
             return usr;
+    }
+
+    GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle) {
+        GetElementPtrInst *tgt = GEle;
+        while(isa<GetElementPtrInst>(tgt->getPointerOperand())){
+            tgt = cast<GetElementPtrInst>(tgt->getPointerOperand());
+        }
+        return tgt;
     }
 }

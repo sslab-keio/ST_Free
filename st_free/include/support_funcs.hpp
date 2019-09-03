@@ -13,4 +13,5 @@ namespace ST_free{
     long getValueIndices(GetElementPtrInst * inst);
     static LoadInst * find_load_recursively(Instruction *val, int TTL);
     User * getFirstUser(Value *);
+    GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
 }

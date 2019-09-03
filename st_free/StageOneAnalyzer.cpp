@@ -23,13 +23,6 @@ namespace ST_free {
     }
 
     void StageOneAnalyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B){
-        // this->addLocalVariable(
-        //         &B,
-        //         ainst->getAllocatedType(),
-        //         ainst,
-        //         cast<Instruction>(getFirstUser(&I)),
-        //         ParentList()
-        //     );
     }
 
     void StageOneAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
@@ -117,11 +110,11 @@ namespace ST_free {
 
         for(Function* called_function: funcLists) {
             if (isAllocFunction(called_function)) {
-                Value * val = getAllocatedValue(CI);
-                if(val != NULL) 
-                    if(StructType * strTy = dyn_cast<StructType>(get_type(val->getType()))) {
-                        getStructManager()->addAlloc(strTy);
-                    }
+                // Value * val = getAllocatedValue(CI);
+                // if(val != NULL) 
+                //     if(StructType * strTy = dyn_cast<StructType>(get_type(val->getType()))) {
+                //         getStructManager()->addAlloc(strTy);
+                //     }
                 // this->addAlloc(CI, &B);
             } else if (isFreeFunction(called_function)) {
                 for (auto arguments = CI->arg_begin(); arguments != CI->arg_end(); arguments++) {
@@ -156,7 +149,7 @@ namespace ST_free {
                     continue;
 
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
-                if(vinfo != NULL){
+                if(vinfo != NULL) {
                     bool isFreed = false;
                     if(getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
                             || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)) {

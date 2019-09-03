@@ -21,7 +21,6 @@ namespace{
         virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
             AU.setPreservesAll();
             AU.addRequired<LoopInfoWrapperPass>();
-            AU.addRequired<DominatorTreeWrapperPass>();
         }
 
         /*** Main Modular ***/
