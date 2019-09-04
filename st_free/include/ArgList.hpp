@@ -6,14 +6,15 @@ namespace ST_free {
     class ArgElement {
         private:
             Value * val;
+            uint64_t index;
             bool freed;
-            bool allocated;
             vector<ArgElement> structElements;
         public:
-            ArgElement(Value * v){
+            ArgElement(Value * v, uint64_t ind, uint64_t structSize){
                 val = v;
+                index = structSize;
                 freed = false;
-                allocated = false;
+                structElements = vector<ArgElement>(structSize);
             }
             bool isFreed(){return freed;}
             void setFreed(){freed = true;}
