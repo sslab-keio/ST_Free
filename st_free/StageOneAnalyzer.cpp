@@ -149,16 +149,16 @@ namespace ST_free {
                     continue;
 
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
-                if(vinfo != NULL) {
+                if (vinfo != NULL) {
                     bool isFreed = false;
-                    if(getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
+                    if (getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
                             || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)) {
                         isFreed = true;
                     }
 
-                    if(isFreed) {
+                    if (isFreed) {
                         getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
-                        if(getFunctionInformation()->isArgValue(vinfo->getValue())) {
+                        if (getFunctionInformation()->isArgValue(vinfo->getValue())) {
                             getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
                         }
                     }

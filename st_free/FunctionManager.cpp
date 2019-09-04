@@ -65,30 +65,24 @@ namespace ST_free{
     void FunctionInformation::addEndPoint(BasicBlock *B){
         endPoint.push_back(B);
     }
-    // void FunctionInformation::addFreeValue(BasicBlock *B, Value *V) {
-    //     BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-    //     if(BInfo)
-    //         BInfo->addFree(V, V->getType(), -1);
-    //     // BBManage.add(B, V, FREED);
-    // }
 
-    void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
+    void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type *stTy, long num) {
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, memTy, num);
         if (UK == NULL)
             UK = this->getUniqueKeyManager()->addUniqueKey(V, memTy, num);
 
         ValueInformation * varinfo = this->getValueInfo(UK);
-        if(varinfo == NULL)
+        if (varinfo == NULL)
             varinfo = this->addVariable(UK, V, memTy, stTy, num);
         else
             varinfo->addStructParams(stTy, num);
         varinfo->setFreed();
 
-        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);       
-        if(BInfo){
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if (BInfo) {
             BInfo->addFree(UK);
             if(BBManage.isPredBlockCorrectlyBranched(B) 
-                    || BInfo->isLoopBlock()){
+                    || BInfo->isLoopBlock()) {
                 this->addCorrectlyFreedValue(B, UK);
             }
         }
@@ -202,39 +196,33 @@ namespace ST_free{
     void FunctionInformation::setStructMemberArgFreed(Value *V, int64_t num){
         args.setStructMemberFree(V, num);
     }
+
     void FunctionInformation::setStructMemberArgAllocated(Value *V, int64_t num){
         args.setStructMemberAllocated(V, num);
     }
+
     bool FunctionInformation::isArgFreed(int64_t num){
         args.isArgFreed(num);
     }
+
     bool FunctionInformation::isArgAllocated(int64_t num){
         args.isArgAllocated(num);
     }
+
     ValueInformation * FunctionInformation::addVariable(Value * val){
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, val->getType(), -1);
-        if(UK == NULL)
+        if (UK == NULL)
             UK = this->getUniqueKeyManager()->addUniqueKey(val, val->getType(), -1);
-        if(!VManage.exists(UK))
+        if (!VManage.exists(UK))
             VManage.addValueInfo(UK, val);
         return VManage.getValueInfo(UK);
     }
     
-    // ValueInformation * FunctionInformation::addVariable(Value * val, Type * memType, Type *parType, long num){
-    //     if(!VManage.exists(val, memType, num))
-    //         VManage.addValueInfo(val, memType, parType, num);
-    //     return VManage.getValueInfo(val, memType, num);
-    // }
-
     ValueInformation * FunctionInformation::addVariable(const UniqueKey *UK, Value * val, Type * memType, Type *parType, long num){
         if(!VManage.exists(UK))
             VManage.addValueInfo(UK, val, memType, parType, num);
         return VManage.getValueInfo(UK);
     }
-
-    // ValueInformation * FunctionInformation::getValueInfo(Value * val){
-    //     return VManage.getValueInfo(val);
-    // }
 
     ValueInformation * FunctionInformation::getValueInfo(Value * val, Type * ty, long mem){
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, ty, mem);
@@ -362,6 +350,7 @@ namespace ST_free{
     bool FunctionInformation::isPredBlockCorrectlyBranched(BasicBlock *B){
         return BBManage.isPredBlockCorrectlyBranched(B);
     }
+
     void FunctionInformation::addCorrectlyFreedValue(BasicBlock * B, const UniqueKey *UK){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
         if(BInfo){

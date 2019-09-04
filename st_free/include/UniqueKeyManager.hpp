@@ -31,5 +31,6 @@ namespace ST_free {
         public:
             const UniqueKey* addUniqueKey(Value *val, Type *ty, long mem);
             const UniqueKey* getUniqueKey(Value *val, Type *ty, long mem); 
+            void print();
     };
 }

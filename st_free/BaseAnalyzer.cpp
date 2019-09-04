@@ -243,42 +243,43 @@ namespace ST_free {
             if(isStructEleFree(val)) {
                 GetElementPtrInst * GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
-                    if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
-                        GEle = getRootGEle(GEle);
-                    UpdateIfNull(freeValue, getLoadeeValue(GEle->getPointerOperand()));
+                    index = getValueIndices(GEle);
                     UpdateIfNull(memType, GEle->getResultElementType());
                     if(GEle->getSourceElementType()->isStructTy())
                         UpdateIfNull(parentType, cast<StructType>(GEle->getSourceElementType()));
-                    index = getValueIndices(GEle);
+
+                    if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
+                        GEle = getRootGEle(GEle);
+                    UpdateIfNull(freeValue, getLoadeeValue(GEle->getPointerOperand()));
                 }
                 isStructRelated = true;
                 generateWarning(val, "Struct element free");
             }
 
-            if(isStructFree(val)) {
+            if (isStructFree(val)) {
                 Value * loaded_value = getStructFreedValue(val);
-                if(loaded_value) {
+                if (loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
                     UpdateIfNull(memType, getStructType(val));
-                    if(!isAlias && !getFunctionInformation()->aliasExists(B, freeValue))
+                    if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue))
                         getFunctionInformation()->addFreedStruct(B, getStructType(val), freeValue, CI, parentType);
                 }
                 isStructRelated = true;
                 generateWarning(val, "Struct Free");
             }
 
-            if(!isStructRelated) {
+            if (!isStructRelated) {
                 UpdateIfNull(freeValue, getFreedValue(val));
-                if(freeValue != NULL)
+                if (freeValue != NULL)
                     UpdateIfNull(memType, freeValue->getType());
                 generateWarning(val, "Value Free");
             }
 
-            if(freeValue) {
-                if(getFunctionInformation()->aliasExists(B, freeValue)) {
+            if (freeValue) {
+                if (getFunctionInformation()->aliasExists(B, freeValue)) {
                     Value * aliasVal = getFunctionInformation()->getAlias(B, freeValue);
 
-                    if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)){
+                    if (GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)){
                         generateWarning(CI, "Alias Free found");
                         if (V != aliasVal)
                             this->addFree(GEle, CI, B, true);
@@ -287,10 +288,10 @@ namespace ST_free {
 
                 if (getFunctionInformation()->isArgValue(freeValue)) {
                     getFunctionInformation()->setArgFree(freeValue);
-                    if(get_type(memType)->isStructTy()){
+                    if (get_type(memType)->isStructTy()) {
                         getFunctionInformation()->setStructArgFree(freeValue, get_type(freeValue)->getStructNumElements());
                     }
-                    if(parentType && index >= 0) {
+                    if (parentType && index >= 0) {
                         getFunctionInformation()->setStructMemberArgFreed(freeValue, index);
                     }
                 }
@@ -300,10 +301,10 @@ namespace ST_free {
     }
 
     void BaseAnalyzer::addAlloc(CallInst *CI, BasicBlock *B) {
-        if(isStructEleAlloc(CI)){
+        if (isStructEleAlloc(CI)) {
             GetElementPtrInst *inst = getAllocStructEleInfo(CI);
 
-            if(inst != NULL) {
+            if (inst != NULL) {
                 if (getFunctionInformation()->isArgValue(getLoadeeValue(inst->getPointerOperand())))
                     getFunctionInformation()->setArgAlloc(getLoadeeValue(inst->getPointerOperand()));
 
