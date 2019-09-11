@@ -159,13 +159,13 @@ namespace ST_free {
                     if (isFreed) {
                         getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
                         if (getFunctionInformation()->isArgValue(vinfo->getValue())) {
-                            getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
+                            getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getParents());
                         }
                     }
                 }
             }
 
-            if (!getFunctionInformation()->isArgValue(freedStruct->getValue())){
+            if (!getFunctionInformation()->isArgValue(freedStruct->getValue())) {
                 getStructManager()->addCandidateValue(&(getFunctionInformation()->getFunction()), strTy, freedStruct);
             }
         }

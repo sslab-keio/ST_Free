@@ -44,3 +44,5 @@
 
 using namespace llvm;
 using namespace std;
+
+using ParentList = vector<pair<Type *, int>>;

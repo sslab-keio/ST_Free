@@ -1,17 +1,9 @@
+#pragma once
 #include "ST_free.hpp"
 #include "UniqueKeyManager.hpp"
-#pragma once
 
-namespace ST_free{
+namespace ST_free {
     class ValueInformation {
-        private:
-            Value * V;
-            long memberNum;
-            Type * memberType;
-            Type * structType;
-            bool freed;
-            bool parentFreed;
-            int refCount;
         public:
             ValueInformation(Value * val){
                 V = val;
@@ -36,6 +28,17 @@ namespace ST_free{
                 structType = parType;
                 refCount = 0;
                 freed = false;
+            }
+            ValueInformation(Value * val, Type * memType, Type * parType, long num, ParentList plist){
+                V = val;
+                memberNum = num;
+                memberType = memType;
+                structType = parType;
+                refCount = 0;
+                freed = false;
+                for (auto parent: plist)
+                    parents.push_back(parent);
+                // parents = ParentList(plist);
             }
             bool operator == (const Value * val){
                 return V == val;
@@ -66,22 +69,27 @@ namespace ST_free{
             }
             void setFreed(){freed = true;}
             bool isFreed(){return freed;}
+            void addParent(Type* ty, int ind);
+            ParentList getParents() {return parents;}
+            Type* getTopParent();
+        private:
+            Value * V;
+            long memberNum;
+            ParentList parents;
+            Type * memberType;
+            Type * structType;
+            bool freed;
+            bool parentFreed;
+            int refCount;
     };
-    class ValueManager{
+    class ValueManager {
         private: 
             map<const UniqueKey *, ValueInformation *> vinfos;
-            // map<UniqueKey, ValueInformation *> vinfos;
         public:
-            // bool exists(Value *val, Type * ty, long num);
-            // bool exists(Value *val);
             bool exists(const UniqueKey *UK);
-            // ValueInformation * getValueInfo(Value *val, Type * ty, long num);
-            // ValueInformation * getValueInfo(Value *val);
             ValueInformation * getValueInfo(const UniqueKey *UK);
-            // void addValueInfo(Value * val, Type * ty, long num);
             void addValueInfo(const UniqueKey *UK, Value * val);
-            // void addValueInfo(Value * val, Type * memType, Type * parType, long num);
-            void addValueInfo(const UniqueKey *UK, Value * val, Type * memType, Type * parType, long num);
+            void addValueInfo(const UniqueKey *UK, Value * val, Type * memType, Type * parType, long num, ParentList plist);
             void print();
     };
 }

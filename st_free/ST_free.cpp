@@ -31,9 +31,9 @@ namespace{
 
             // StManage->addGlobalVariableInitInfo(M);
 #ifdef STAGE_ONE
-            StageOneAnalyzer analyze(StManage, loopmap);
+            StageOneAnalyzer* analyze = new StageOneAnalyzer(StManage, loopmap);
 #else
-            BaseAnalyzer analyze(StManage, loopmap);
+            BaseAnalyzer* analyze = new BaseAnalyzer(StManage, loopmap);
 #endif
 
             /*** Generate LoopInformation ***/
@@ -48,7 +48,7 @@ namespace{
             for(Function &F: M) {
                 // outs() << i++ << "/" << M.size() << "\n";
                 if(!(F.isDeclaration()))
-                    analyze.analyze(F);
+                    analyze->analyze(F);
             }
 
             /*** Main Warning Generator ***/

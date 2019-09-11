@@ -32,8 +32,8 @@ namespace ST_free{
         return;
     }
 
-    void StructInformation::checkCorrectness(){
-        for(CandidateValue* cand : candidates){
+    void StructInformation::checkCorrectness() {
+        for(CandidateValue* cand : candidates) {
             string warningStr("Struct element is NOT Freed (indexes: ");
             bool hasWarning = false;
             for(unsigned ind = 0; ind < cand->getMemberSize(); ind++){
@@ -41,7 +41,8 @@ namespace ST_free{
                     if(this->isResponsible(ind)) {
                         if(this->judgeResponsibility(ind) 
                                 && !this->isAllStoreGlobalVar(ind)
-                                && !this->isBidirectionalReferencing(cand, ind)){
+                                && !this->isBidirectionalReferencing(cand, ind)
+                                ){
                         // if(!this->isAllStoreGlobalVar(ind)){
                             // generateError(cand->getInstruction(), "Struct element is NOT Freed");
                             warningStr += to_string(ind);
@@ -68,8 +69,8 @@ namespace ST_free{
     }
 
     bool StructInformation::isBidirectionalReferencing(CandidateValue *cand, int ind){
-        Type *parent = cand->getTopParent();
-        Type *member = strTy->getElementType(ind);
+        // Type *parent = cand->getTopParent();
+        // Type *member = strTy->getElementType(ind);
         // if(parent == get_type(member)){
         //     return true;
         // }

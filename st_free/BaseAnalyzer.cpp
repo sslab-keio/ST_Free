@@ -160,7 +160,8 @@ namespace ST_free {
                     if(isFreed) {
                         getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
                         if(getFunctionInformation()->isArgValue(vinfo->getValue())) {
-                            getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
+                            // getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
+                            getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), ParentList());
                         }
                     }
                 }
@@ -193,7 +194,7 @@ namespace ST_free {
         if (StructType * strTy = dyn_cast<StructType>(T)) {
             getFunctionInformation()->addLocalVar(B, strTy, V, I, P, vinfo);
 
-            P.push_back(T);
+            // P.push_back(T);
             for (Type * ele: strTy->elements()) {
                 if(ele->isStructTy())
                     this->addLocalVariable(B, ele, V, I, P);
@@ -207,7 +208,7 @@ namespace ST_free {
         if (StructType * strTy = dyn_cast<StructType>(get_type(T))) {
             getFunctionInformation()->addLocalVar(B, strTy, V, I, P, vinfo);
 
-            P.push_back(T);
+            // P.push_back(T);
             for (Type * ele: strTy->elements()) {
                 if(ele->isStructTy())
                     this->addLocalVariable(B, ele, V, I, P);
@@ -238,11 +239,14 @@ namespace ST_free {
         Value* freeValue = NULL;
         Type* memType = NULL;
         StructType* parentType = NULL;
+        ParentList indexes;
 
         if (Instruction * val = dyn_cast<Instruction>(V)) {
             if(isStructEleFree(val)) {
                 GetElementPtrInst * GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
+                    this->getStructParents(GEle, indexes);
+
                     index = getValueIndices(GEle);
                     UpdateIfNull(memType, GEle->getResultElementType());
                     if(GEle->getSourceElementType()->isStructTy())
@@ -287,15 +291,18 @@ namespace ST_free {
                 }
 
                 if (getFunctionInformation()->isArgValue(freeValue)) {
-                    getFunctionInformation()->setArgFree(freeValue);
-                    if (get_type(memType)->isStructTy()) {
-                        getFunctionInformation()->setStructArgFree(freeValue, get_type(freeValue)->getStructNumElements());
-                    }
-                    if (parentType && index >= 0) {
-                        getFunctionInformation()->setStructMemberArgFreed(freeValue, index);
+                    if (!parentType)
+                        getFunctionInformation()->setArgFree(freeValue);
+                    else if (parentType && index >= 0){
+                        vector<int> ind;
+                        for (pair<Type *, int> ele : indexes) {
+                            ind.push_back(ele.second);
+                        }
+                        getFunctionInformation()->setStructMemberArgFreed(freeValue, indexes);
                     }
                 }
-                getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index);
+                // getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index);
+                getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
             }
         }
     }
@@ -346,8 +353,8 @@ namespace ST_free {
                 }
             }
 
-            if(DF->isArgAllocated(ind))
-                this->addAlloc(CI, &B);
+            // if(DF->isArgAllocated(ind))
+            //     this->addAlloc(CI, &B);
         }
         return;
     }
