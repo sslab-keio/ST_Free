@@ -345,18 +345,30 @@ namespace ST_free {
         int ind = 0;
 
         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++, ind++) {
-            if(DF->isArgFreed(ind)) {
-                Type * T = get_type(cast<Value>(arguments));
-                this->addFree(cast<Value>(arguments), CI, &B);
-                if (isa<StructType>(T)) {
-                    getFunctionInformation()->copyStructMemberFreed(T, DF->getStructMemberFreed(T));
+            ArgStatus *args = DF->getArgList().getArgStatus(ind);
+
+            if (args) {
+                // this->copyArgStatusRecursively(Func, CI, B, args);
+                if (args->isFreed()) {
+                    Type *T = get_type(cast<Value>(arguments));
+                    this->addFree(cast<Value>(arguments), CI, &B);
+
+                    if (isa<StructType>(T))
+                        getFunctionInformation()->copyStructMemberFreed(T, DF->getStructMemberFreed(T));
                 }
             }
-
-            // if(DF->isArgAllocated(ind))
-            //     this->addAlloc(CI, &B);
         }
         return;
+    }
+
+    void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, ArgStatus *ArgStat) {
+        if (ArgStat->isFreed()) {
+            // Type *T = get_type(cast<Value>(arguments));
+            // this->addFree(cast<Value>(arguments), CI, &B);
+
+            // if (isa<StructType>(T))
+            //     getFunctionInformation()->copyStructMemberFreed(T, DF->getStructMemberFreed(T));
+        }
     }
 
     bool BaseAnalyzer::isStoreToStructMember(StoreInst * SI){

@@ -12,7 +12,8 @@
 #define UNALLOCATED 5
 
 namespace ST_free{
-    /* class [CandidateValue]
+    /** Class [CandidateValue]
+     *
      * */
     class CandidateValue {
         private:
@@ -20,22 +21,15 @@ namespace ST_free{
             FreedStruct *fst;
         public:
             CandidateValue(Function *func, FreedStruct *fs){F = func; fst = fs;}
-            FreedStruct * getFreedStruct(){return fst;};
-            Function * getFunction(){return F;};
+            FreedStruct *getFreedStruct(){return fst;};
+            Function *getFunction(){return F;};
             unsigned getMemberSize(){return fst->memberSize();};
             bool memberIsFreed(unsigned ind){return fst->memberIsFreed(ind);};
             bool memberIsStoredInLoop(unsigned ind){return fst->isStoredInLoop(ind);};
-            Instruction * getInstruction(){return fst->getInst();}
+            Instruction *getInstruction(){return fst->getInst();}
             Type *getTopParent(){return fst->getTopParent();}
             void print(){fst->print();};
     };
-    // class FunctionPtrInfo {
-    //     private:
-    //         Function * Func;
-    //         vector<string> DirectoryPath;
-    //     public:
-    //         FunctionPtrInfo(Function *Func, Value *V);
-    // }
     struct globalVarInfo {
         vector<string> dirs;
         GlobalVariable *GV;
@@ -44,11 +38,12 @@ namespace ST_free{
             GV = G;
         }
     };
-    /* Class [StructInformation]
+    /**
+     * Class [StructInformation]
      * keeps track of each structure information,
      * including referees, candidates, each memberstats,
      * and allocated times
-     * */
+     **/
     class StructInformation {
         private:
             struct storeCount {
@@ -59,7 +54,6 @@ namespace ST_free{
                     globalVar = 0;
                 }
             };
-
             StructType * strTy;
             vector<StructType *> referees;
             vector<int> memberStats;
@@ -113,13 +107,13 @@ namespace ST_free{
                 outs() << "\tGV: " << stc[ind].globalVar << "\n";
             }
     };
-    /* Class
+    /** Class
      * [Struct Manager]
      * Manages StructInformation in a map, and controls them
      * This manager should be generated per module.
      * The constructor generates the map of the struct, and also
      * stores the referees of each StructType. 
-     * */
+     **/
     class StructManager {
         public:
             StructManager(){};

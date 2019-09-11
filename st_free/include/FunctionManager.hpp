@@ -32,6 +32,8 @@ namespace ST_free {
             /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
             void addAllocValue(BasicBlock *B, UniqueKey *UK);
+            /*** Arg related ***/
+            ArgList getArgList(){return args;}
             /*** Status Related ***/
             bool isUnanalyzed();
             bool isAnalyzed();

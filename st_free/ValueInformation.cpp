@@ -28,19 +28,6 @@ namespace ST_free{
         return NULL;
     }
 
-    // bool ValueManager::exists(Value * val, Type * ty, long num){
-    //     if(vinfos.find(UniqueKey(val, ty, num)) != vinfos.end()){
-    //         return true;
-    //     }
-    //     return false;
-    // }
-
-    // bool ValueManager::exists(Value * val){
-    //     if(vinfos.find(UniqueKey(val, val->getType(), -1)) != vinfos.end())
-    //         return true;
-    //     return false;
-    // }
-
     bool ValueManager::exists(const UniqueKey *UK){
         if(vinfos.find(UK) != vinfos.end())
             return true;

@@ -54,6 +54,7 @@ namespace ST_free {
             void addPointerLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P);
             /*** Argument Status ***/
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
+            void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, ArgStatus *ArgStat);
             /*** Branch Instruction(Correctly Branched) ***/
             bool isCorrectlyBranched(BranchInst * BI);
             /*** Store Instruction related funtions ***/

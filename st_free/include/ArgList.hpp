@@ -55,6 +55,7 @@ namespace ST_free {
             }
             void setArg(uint64_t arg_no, Value * V);
             Value * getArg(uint64_t arg_no);
+            ArgStatus* getArgStatus(int arg){return (arg >= 0 && arg < stats.size())  ? &stats[arg]:NULL;};
             void setArgs(Function *F);
             bool isInList(Value * V);
             int64_t getOperandNum(Value *V);

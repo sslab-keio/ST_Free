@@ -187,8 +187,7 @@ namespace ST_free{
         // args.setStructMemberAllocated(V, num);
     }
 
-    bool FunctionInformation::isArgFreed(int64_t num){
-        // args.isArgFreed(num);
+    bool FunctionInformation::isArgFreed(int64_t num) {
         return false;
     }
 
@@ -271,6 +270,7 @@ namespace ST_free{
             return (*fs)->getFreedMember();
         return vector<bool>();
     }
+
     void FunctionInformation::copyStructMemberFreed(Type * T,vector<bool> members){
         auto fs = find_if(freedStruct.begin(), freedStruct.end(), [T](FreedStruct *f){return *f == T; });
         if(fs != freedStruct.end()){
