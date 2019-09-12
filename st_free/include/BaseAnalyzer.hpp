@@ -48,13 +48,13 @@ namespace ST_free {
             virtual void analyzeBranchInst(BranchInst * BI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
-            void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false);
+            void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false, ParentList additionalParents = ParentList());
             void addAlloc(CallInst *CI, BasicBlock *B);
             void addLocalVariable(BasicBlock * B, Type * T, Value * V, Instruction * I, ParentList P);
             void addPointerLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P);
             /*** Argument Status ***/
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
-            void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, ArgStatus *ArgStat);
+            void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value* arg, ArgStatus *ArgStat, int ind, ParentList plist);
             /*** Branch Instruction(Correctly Branched) ***/
             bool isCorrectlyBranched(BranchInst * BI);
             /*** Store Instruction related funtions ***/

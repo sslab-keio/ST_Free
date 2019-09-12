@@ -233,7 +233,7 @@ namespace ST_free {
         return;
     }
 
-    void BaseAnalyzer::addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias) {
+    void BaseAnalyzer::addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias, ParentList additionalParents) {
         bool isStructRelated = false;
         long index = -1;
         Value* freeValue = NULL;
@@ -246,6 +246,8 @@ namespace ST_free {
                 GetElementPtrInst * GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
                     this->getStructParents(GEle, indexes);
+                    for(auto addParent : additionalParents)
+                        indexes.push_back(addParent);
 
                     index = getValueIndices(GEle);
                     UpdateIfNull(memType, GEle->getResultElementType());
@@ -294,14 +296,9 @@ namespace ST_free {
                     if (!parentType)
                         getFunctionInformation()->setArgFree(freeValue);
                     else if (parentType && index >= 0){
-                        vector<int> ind;
-                        for (pair<Type *, int> ele : indexes) {
-                            ind.push_back(ele.second);
-                        }
                         getFunctionInformation()->setStructMemberArgFreed(freeValue, indexes);
                     }
                 }
-                // getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index);
                 getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
             }
         }
@@ -346,28 +343,23 @@ namespace ST_free {
 
         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++, ind++) {
             ArgStatus *args = DF->getArgList().getArgStatus(ind);
-
-            if (args) {
-                // this->copyArgStatusRecursively(Func, CI, B, args);
-                if (args->isFreed()) {
-                    Type *T = get_type(cast<Value>(arguments));
-                    this->addFree(cast<Value>(arguments), CI, &B);
-
-                    if (isa<StructType>(T))
-                        getFunctionInformation()->copyStructMemberFreed(T, DF->getStructMemberFreed(T));
-                }
-            }
+            this->copyArgStatusRecursively(Func, CI, B, cast<Value>(arguments), args, ind, ParentList());
         }
         return;
     }
 
-    void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, ArgStatus *ArgStat) {
-        if (ArgStat->isFreed()) {
-            // Type *T = get_type(cast<Value>(arguments));
-            // this->addFree(cast<Value>(arguments), CI, &B);
-
-            // if (isa<StructType>(T))
-            //     getFunctionInformation()->copyStructMemberFreed(T, DF->getStructMemberFreed(T));
+    void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value *arg, ArgStatus *ArgStat, int ind, ParentList plist) {
+        if (ArgStat && ArgStat->isStruct()) {
+            if (ArgStat->isFreed()) {
+                this->addFree(arg, CI, &B, false, plist);
+                // Type *T = get_type(ArgStat->getType());
+                // if (isa<StructType>(T))
+                //     getFunctionInformation()->copyStructMemberFreed(T, ArgStat->getFreedList());
+            }
+            // plist.push_back(pair<Type *, int>(ArgStat->getType(), ind));
+            for (int index = 0; index < ArgStat->size(); index++) {
+                this->copyArgStatusRecursively(Func, CI, B, arg, ArgStat->getStatus(index), index, plist);
+            }
         }
     }
 

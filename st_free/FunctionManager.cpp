@@ -383,6 +383,7 @@ namespace ST_free{
     void FunctionInformation::updateSuccessorBlock(BasicBlock &B){
         BBManage.updateSuccessorBlock(&B);
     }
+
     void FunctionInformation::setLoopInfo(LoopInfo *li){
         LoopI = li;
     }

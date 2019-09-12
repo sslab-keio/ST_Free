@@ -26,7 +26,7 @@ namespace ST_free {
             void addFreedStruct(Type *T, Value *V, Instruction *I);
             void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I);
             void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent);
-            void addParentType(Type *T, Value *V,Instruction *I, StructType *parentTy, int ind);
+            void addParentType(Type *T, Value *V, Instruction *I, StructType *parentTy, int ind);
             FreedStructList getFreedStruct() const;
             bool freedStructExists(FreedStruct *fst);
             /** AllocValue Related ***/
