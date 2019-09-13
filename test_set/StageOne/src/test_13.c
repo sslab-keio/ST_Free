@@ -27,8 +27,8 @@ int main()
 {
     struct A* testA;
 
-    // freeC(testA->b->c);
-    // freeB(testA);
+    freeC(testA->b->c);
+    freeB(testA);
     free(testA);
 
     return 0;

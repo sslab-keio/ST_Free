@@ -39,7 +39,7 @@ namespace ST_free{
     }
 
     void ArgStatus::extendStatusSize(int extSize) {
-        for(int i = 0; i < extSize && this->size() < this->maxSize(); i++) {
+        for(int i = 0; i < extSize && this->size() < this->maxSize(); i++, statusSize++) {
             Type *memTy = get_type(T)->getStructElementType(this->size());
             structStatus.push_back(ArgStatus(memTy));
         }

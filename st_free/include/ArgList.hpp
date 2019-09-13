@@ -14,22 +14,27 @@ namespace ST_free {
             ArgStatus(uint64_t structSize) {
                 freed = false;
                 structStatus = vector<ArgStatus>(structSize);
+                statusSize = structSize;
                 T = NULL;
             }
             ArgStatus(Type *Ty) {
                 freed = false;
                 T = Ty;
+                structStatus = vector<ArgStatus>();
+                statusSize = 0;
             }
             ArgStatus() {
                 freed = false;
                 T = NULL;
+                structStatus = vector<ArgStatus>();
+                statusSize = 0;
             }
             bool isFreed(){return freed;}
             void setFreed(){freed = true;}
             void setType(Type *Ty){T = Ty;}
             Type* getType(){return T;}
             bool isStruct(){return T && get_type(T)->isStructTy();}
-            int size(){return structStatus.size();}
+            uint size(){return statusSize;}
             int maxSize();
             bool isMemberFreed(vector<int> indexes);
             void setMemberFreed(vector<int> indexes);
@@ -40,6 +45,7 @@ namespace ST_free {
             bool freed;
             vector<ArgStatus> structStatus;
             Type *T;
+            int statusSize;
     };
     class ArgList {
         public:
