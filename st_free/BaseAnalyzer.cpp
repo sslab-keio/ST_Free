@@ -246,20 +246,17 @@ namespace ST_free {
                 GetElementPtrInst * GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
                     this->getStructParents(GEle, indexes);
-                    for(auto addParent : additionalParents)
+                    for(auto addParent : additionalParents) {
                         indexes.push_back(addParent);
+                    }
 
-                    // for(auto ind:indexes){
+                    // for (auto ind:indexes) {
                     //     outs() << *ind.first << " " << ind.second << "\n";
                     // }
                     // outs() << "=============\n";
 
-                    // index = getValueIndices(GEle);
-                    // UpdateIfNull(memType, GEle->getResultElementType());
                     index = indexes.back().second;
                     UpdateIfNull(memType, indexes.back().first);
-                    // outs() << getValueIndices(GEle) << " " << indexes.back().second << "\n";
-                    // outs() << *GEle->getResultElementType() << " " << *indexes.back().first << "\n";
                     if(GEle->getSourceElementType()->isStructTy())
                         UpdateIfNull(parentType, cast<StructType>(GEle->getSourceElementType()));
 
@@ -308,6 +305,10 @@ namespace ST_free {
                         getFunctionInformation()->setStructMemberArgFreed(freeValue, indexes);
                     }
                 }
+                // outs() << *freeValue << "\n";
+                // if(memType)
+                //     outs() << "\t" << *memType << "\n";
+                // outs() << "\t" << index << "\n";
                 getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
             }
         }
@@ -352,16 +353,16 @@ namespace ST_free {
 
         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++, ind++) {
             ArgStatus *args = DF->getArgList()->getArgStatus(ind);
-            this->copyArgStatusRecursively(Func, CI, B, cast<Value>(arguments), args, ind, ParentList());
+            this->copyArgStatusRecursively(Func, CI, B, cast<Value>(arguments), args, ind, ParentList(), true);
         }
         return;
     }
 
-    void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value *arg, ArgStatus *ArgStat, int ind, ParentList plist) {
-        // outs() << Func.getName() << " " << ArgStat->size() << " " << ArgStat->maxSize() << "(" << ind << ")\n";
-        // outs() << *arg << "\n";
-        // outs().flush();
+    void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value *arg, ArgStatus *ArgStat, int ind, ParentList plist, bool isFirst) {
         if (ArgStat && ArgStat->isStruct()) {
+            if (!isFirst)
+                plist.push_back(pair<Type *, int>(ArgStat->getType(), ind));
+
             if (ArgStat->isFreed()) {
                 this->addFree(arg, CI, &B, false, plist);
                 Type *T = get_type(ArgStat->getType());
@@ -369,14 +370,13 @@ namespace ST_free {
                     getFunctionInformation()->copyStructMemberFreed(T, ArgStat->getFreedList());
             }
 
-            plist.push_back(pair<Type *, int>(ArgStat->getType(), ind));
             for (int index = 0; index < ArgStat->size(); index++) {
                 this->copyArgStatusRecursively(Func, CI, B, arg, ArgStat->getStatus(index), index, plist);
             }
         }
     }
 
-    bool BaseAnalyzer::isStoreToStructMember(StoreInst * SI){
+    bool BaseAnalyzer::isStoreToStructMember(StoreInst * SI) {
         if(GetElementPtrInst * gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())) {
             if(isa<StructType>(gEle->getSourceElementType())) {
                 return true;
