@@ -250,11 +250,6 @@ namespace ST_free {
                         indexes.push_back(addParent);
                     }
 
-                    // for (auto ind:indexes) {
-                    //     outs() << *ind.first << " " << ind.second << "\n";
-                    // }
-                    // outs() << "=============\n";
-
                     index = indexes.back().second;
                     UpdateIfNull(memType, indexes.back().first);
                     if(GEle->getSourceElementType()->isStructTy())
@@ -305,10 +300,7 @@ namespace ST_free {
                         getFunctionInformation()->setStructMemberArgFreed(freeValue, indexes);
                     }
                 }
-                // outs() << *freeValue << "\n";
-                // if(memType)
-                //     outs() << "\t" << *memType << "\n";
-                // outs() << "\t" << index << "\n";
+
                 getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
             }
         }
