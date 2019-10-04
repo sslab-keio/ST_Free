@@ -53,6 +53,9 @@ namespace ST_free{
                         // break;
                     } else if(this->isUnknown(ind)) {
                         if(this->judgeResponsibility(ind)) {
+                            warningStr += to_string(ind);
+                            warningStr += ' ';
+                            hasWarning = true;
                             // generateError(cand->getInstruction(), "Struct element is NOT Freed");
                             // break;
                         }
@@ -78,7 +81,7 @@ namespace ST_free{
     }
 
     bool StructInformation::judgeResponsibility(int ind){
-        int threashold = candidateNum / 2;
+        int threashold = candidateNum * THREASHOLD;
         // outs() << ind << " " << threashold << " " << freedCounts[ind] << "\n";
         if(freedCounts[ind] >= threashold)
             return true;
