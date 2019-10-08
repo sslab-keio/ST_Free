@@ -5,7 +5,6 @@
 #include "include/FunctionManager.hpp"
 #include "include/StructInformation.hpp"
 #include "include/LoopManager.hpp"
-
 #include "include/BaseAnalyzer.hpp"
 #include "include/StageOneAnalyzer.hpp"
 
