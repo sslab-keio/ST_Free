@@ -29,7 +29,7 @@ namespace ST_free {
         AliasElement valueEle, pointerEle;
 
         /*** Check the Pointer of StoreInst ***/
-        if(this->isStoreToStructMember(SI)){
+        if(this->isStoreToStructMember(SI)) {
             generateWarning(SI, "is Store to struct member");
             GetElementPtrInst * GEle = getStoredStruct(SI);
             if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {

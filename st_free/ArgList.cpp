@@ -56,7 +56,10 @@ namespace ST_free{
     void ArgList::setArg(uint64_t arg_no, Value *V) {
         if (arg_no < arg_list.size()) {
              arg_list[arg_no] = V;
-             stats[arg_no].setType(V->getType());
+             if (auto alloca_inst = dyn_cast<AllocaInst>(V))
+                 stats[arg_no].setType(alloca_inst->getAllocatedType());
+             else
+                 stats[arg_no].setType(V->getType());
         }
         return;
     }

@@ -44,30 +44,35 @@ namespace ST_free {
     }
     /*** Retrieve Pointer Dereferance Type ***/
     Type * get_type(Value * val){
-        Type * val_type;
+        Type * val_type = NULL;
 
-        if(val == NULL){
+        if(val == NULL)
             return NULL;
+
+        if (auto allocaInst = dyn_cast<AllocaInst>(val)) {
+            val_type = allocaInst->getAllocatedType();
+            if (val_type->isPointerTy())
+                val_type = (cast<PointerType>(val_type))->getElementType();
         }
 
-        val_type = val->getType();
-        while(val_type->isPointerTy()){
-            val_type = (cast<PointerType>(val_type))->getElementType();
-        }
         return val_type;
     }
 
-    Type * get_type(Type * t){
-        Type * val_type;
+    Type * get_type(Type * t) {
+        Type * val_type = NULL;
 
         if(t == NULL)
             return NULL;
+
         val_type = t;
-        while(val_type->isPointerTy()){
+        if (val_type->isPointerTy())
             val_type = (cast<PointerType>(val_type))->getElementType();
-        }
+        // while(val_type->isPointerTy()){
+        //     val_type = (cast<PointerType>(val_type))->getElementType();
+        // }
         return val_type;
     }
+
     void generateWarning(Instruction * Inst, string warn){
         if(const DebugLoc &Loc = Inst->getDebugLoc()){
             unsigned line = Loc.getLine();
