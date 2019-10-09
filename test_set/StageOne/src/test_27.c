@@ -23,7 +23,7 @@ int main()
     tA = (struct testA *)malloc(sizeof(struct testA));
     tA->tB = (struct testB *)malloc(sizeof(struct testB));
 
-    if (tA->tB)
+    if (err < 0)
         goto freeStruct;
 
     free(tA->tB);

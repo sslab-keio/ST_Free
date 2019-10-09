@@ -30,22 +30,18 @@ namespace ST_free {
             if(this->isReturnFunc(&I))
                 getFunctionInformation()->addEndPoint(&B);
 
-            if(AllocaInst *AI = dyn_cast<AllocaInst>(&I)) {
+            if(AllocaInst *AI = dyn_cast<AllocaInst>(&I))
                 this->analyzeAllocaInst(AI, B);
-            }
-            else if (CallInst *CI = dyn_cast<CallInst>(&I)) {
+            else if (CallInst *CI = dyn_cast<CallInst>(&I))
                 this->analyzeCallInst(CI, B);
-            }
-            else if (StoreInst *SI = dyn_cast<StoreInst>(&I)) {
+            else if (StoreInst *SI = dyn_cast<StoreInst>(&I))
                 this->analyzeStoreInst(SI, B);
-            }
-            else if (BranchInst *BI = dyn_cast<BranchInst>(&I)) {
+            else if (BranchInst *BI = dyn_cast<BranchInst>(&I))
                 this->analyzeBranchInst(BI, B);
-            }
         }
     }
 
-    void BaseAnalyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B){
+    void BaseAnalyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B) {
         // this->addLocalVariable(
         //         &B,
         //         ainst->getAllocatedType(),
@@ -55,10 +51,10 @@ namespace ST_free {
         //     );
     }
 
-    void BaseAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
+    void BaseAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B) {
         // if(this->isStoreToStruct(SI)){
         // }
-        if(this->isStoreToStructMember(SI)){
+        if(this->isStoreToStructMember(SI)) {
             generateWarning(SI, "is Store to struct");
             GetElementPtrInst * GEle = getStoredStruct(SI);
             stManage->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
@@ -70,7 +66,8 @@ namespace ST_free {
                         getValueIndices(GEle)
                     );
             }
-            if(isa<AllocaInst>(SI->getValueOperand())){
+
+            if(isa<AllocaInst>(SI->getValueOperand())) {
                 getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getValueOperand());
             }
         }

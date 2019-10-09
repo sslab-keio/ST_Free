@@ -23,7 +23,6 @@ namespace ST_free{
     void StructInformation::BuildCandidateCount(){
         for(CandidateValue* cand : candidates){
             for(unsigned ind = 0; ind < cand->getMemberSize(); ind++){
-                // if(cand->memberIsFreed(ind) && this->isUnknown(ind)){
                 if(cand->memberIsFreed(ind)){
                     this->incrementFreedCount(ind);
                 }
@@ -50,14 +49,12 @@ namespace ST_free{
                             hasWarning = true;
                         }
                         // cand->print();
-                        // break;
                     } else if(this->isUnknown(ind)) {
                         if(this->judgeResponsibility(ind)) {
                             warningStr += to_string(ind);
                             warningStr += ' ';
                             hasWarning = true;
                             // generateError(cand->getInstruction(), "Struct element is NOT Freed");
-                            // break;
                         }
                     }
                 }
@@ -123,6 +120,12 @@ namespace ST_free{
     void StructInformation::incrementStoreTotal(int ind){
         if(ind < stc.size())
             stc[ind].total++;
+    }
+
+    bool StructInformation::isNotStored(int ind) {
+        if(ind < stc.size())
+            return stc[ind].total != 0;
+        return false;
     }
 
     void StructInformation::incrementStoreGlobalVar(int ind){

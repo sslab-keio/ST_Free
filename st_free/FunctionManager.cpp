@@ -23,23 +23,23 @@ namespace ST_free{
         }
     }
 
-    FunctionInformation::FunctionInformation(){
+    FunctionInformation::FunctionInformation() {
         stat = UNANALYZED;
     }
 
-    Function & FunctionInformation::getFunction(){
+    Function & FunctionInformation::getFunction() {
         return (Function &)(* this->F);
     }
 
-    int FunctionInformation::getStat(){
+    int FunctionInformation::getStat() {
         return this->stat;
     }
 
-    void FunctionInformation::setStat(int stat){
+    void FunctionInformation::setStat(int stat) {
         this->stat = stat;
     }
 
-    void FunctionInformation::addEndPoint(BasicBlock *B){
+    void FunctionInformation::addEndPoint(BasicBlock *B) {
         endPoint.push_back(B);
     }
 
@@ -248,11 +248,11 @@ namespace ST_free{
     //         vinfo->incrementRefCount(ref);
     // }
 
-    LocalVarList FunctionInformation::getLocalVar() const{
+    LocalVarList FunctionInformation::getLocalVar() const {
         return localVariables;
     }
 
-    bool FunctionInformation::localVarExists(Type * T){
+    bool FunctionInformation::localVarExists(Type * T) {
         if(find_if(localVariables.begin(), localVariables.end(), [T](FreedStruct *fs) { return *fs == T; }) == localVariables.end())
             return false;
         return true;
@@ -280,14 +280,14 @@ namespace ST_free{
                 }
             }
         }
-            
     }
+
     void FunctionInformation::addBasicBlockLiveVariable(BasicBlock * B, Value *V){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
         if(BInfo)
             BInfo->addLiveVariable(V);
     }
-    bool FunctionInformation::isFreedInBasicBlock(BasicBlock *B, Value *val, Type* ty, long mem){
+    bool FunctionInformation::isFreedInBasicBlock(BasicBlock *B, Value *val, Type* ty, long mem) {
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, ty, mem);
         if(BInfo && UK)

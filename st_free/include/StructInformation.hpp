@@ -11,7 +11,7 @@
 #define NOTPOINTERTY 4
 #define UNALLOCATED 5
 
-#define THREASHOLD 0.0
+#define THREASHOLD 0.1
 
 namespace ST_free{
     /** Class [CandidateValue]
@@ -99,6 +99,7 @@ namespace ST_free{
             void incrementAllocNum(){allocNum++;}
             bool hasNoAlloc(){return allocNum == 0;}
             void incrementStoreTotal(int ind);
+            bool isNotStored(int ind);
             void incrementStoreGlobalVar(int ind);
             void addFunctionPtr(int ind, Function *func);
             vector<Function *> getFunctionPtr(int ind);
