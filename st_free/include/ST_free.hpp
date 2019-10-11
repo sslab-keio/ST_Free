@@ -29,6 +29,7 @@
 #include <stack>
 #include <algorithm>
 #include <string>
+#include <ctime>
 
 #define NO_ALLOC 0
 #define ALLOCATED 1

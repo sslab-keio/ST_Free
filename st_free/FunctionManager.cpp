@@ -117,8 +117,8 @@ namespace ST_free{
         }
     }
 
-    void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent){
-        FreedStruct * fst = new FreedStruct(T, V, I, B, NULL);
+    void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent, bool isInStruct){
+        FreedStruct * fst = new FreedStruct(T, V, I, B, NULL, isInStruct);
         if(!this->freedStructExists(fst)) {
             freedStruct.push_back(fst);
         } else {
@@ -178,7 +178,8 @@ namespace ST_free{
     void FunctionInformation::setStructMemberArgFreed(Value *V, ParentList indexes){
         vector<int> ind;
         for(auto i : indexes) {
-            ind.push_back(i.second);
+            if (i.second != ROOT_INDEX)
+                ind.push_back(i.second);
         }
         args.setFreed(V, ind);
     }

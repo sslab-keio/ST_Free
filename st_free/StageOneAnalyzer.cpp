@@ -150,13 +150,9 @@ namespace ST_free {
 
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
                 if (vinfo != NULL) {
-                    bool isFreed = false;
                     if (getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
-                            || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)) {
-                        isFreed = true;
-                    }
-
-                    if (isFreed) {
+                            || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
+                        ) {
                         getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
                         if (getFunctionInformation()->isArgValue(vinfo->getValue())) {
                             getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getParents());
@@ -165,7 +161,7 @@ namespace ST_free {
                 }
             }
 
-            if (!getFunctionInformation()->isArgValue(freedStruct->getValue())) {
+            if (freedStruct->isInStruct() || !getFunctionInformation()->isArgValue(freedStruct->getValue())) {
                 getStructManager()->addCandidateValue(&(getFunctionInformation()->getFunction()), strTy, freedStruct);
             }
         }

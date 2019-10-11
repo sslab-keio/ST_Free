@@ -22,7 +22,7 @@ namespace ST_free {
                 ParentType = ParentList(P);
                 valInfo = NULL;
             };
-            FreedStruct(Type *Ty, Value *val, Instruction *Inst, BasicBlock * freedB, ValueInformation *vinfo){
+            FreedStruct(Type *Ty, Value *val, Instruction *Inst, BasicBlock * freedB, ValueInformation *vinfo, bool hasParent = false){
                 T=Ty;
                 V=val;
                 I=Inst;
@@ -30,8 +30,9 @@ namespace ST_free {
                 storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
                 valInfo = vinfo;
                 freedBlock = freedB;
+                inStruct = hasParent;
             };
-            FreedStruct(Type *Ty, Value *val, Instruction *Inst, ParentList P, BasicBlock * freedB, ValueInformation *vinfo){
+            FreedStruct(Type *Ty, Value *val, Instruction *Inst, ParentList P, BasicBlock * freedB, ValueInformation *vinfo, bool hasParent = false){
                 T=Ty;
                 V=val;
                 I=Inst;
@@ -39,6 +40,7 @@ namespace ST_free {
                 storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
                 valInfo = vinfo;
                 freedBlock = freedB;
+                inStruct = hasParent;
             };
             bool operator ==(Value * v){
                 return V == v;
@@ -84,6 +86,7 @@ namespace ST_free {
             // Type *getTopParent(){return this->getValueInformation()->getTopParent();}
             Type *getTopParent(){return ParentType.empty() ? NULL:ParentType[0].first;}
             ParentList getParentTypes() {return this->getValueInformation()->getParents();}
+            bool isInStruct(){return inStruct;}
         private:
             Type *T;
             ParentList ParentType;
@@ -93,5 +96,6 @@ namespace ST_free {
             vector<bool> FreedMembers;
             ValueInformation * valInfo;
             BasicBlock * freedBlock;
+            bool inStruct;
     };
 }

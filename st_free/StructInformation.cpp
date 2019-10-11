@@ -51,9 +51,9 @@ namespace ST_free{
                         // cand->print();
                     } else if(this->isUnknown(ind)) {
                         if(this->judgeResponsibility(ind)) {
-                            warningStr += to_string(ind);
-                            warningStr += ' ';
-                            hasWarning = true;
+                            // warningStr += to_string(ind);
+                            // warningStr += ' ';
+                            // hasWarning = true;
                             // generateError(cand->getInstruction(), "Struct element is NOT Freed");
                         }
                     }
@@ -135,7 +135,8 @@ namespace ST_free{
 
     void StructInformation::print(){
         outs() << "=== StructInfo: Debug Info===\n";
-        outs() << "[Struct]: " << strTy->getName() << "\n";
+        if (strTy->hasName())
+            outs() << "[Struct]: " << strTy->getName() << "\n";
         // outs() << "[AllocNum]: " << allocNum << "\n";
         outs() << "[Referees] (TTL: " << referees.size() << ") \n";
         // for (StructType* ty : referees){

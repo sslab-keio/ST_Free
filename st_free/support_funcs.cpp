@@ -53,6 +53,10 @@ namespace ST_free {
             val_type = allocaInst->getAllocatedType();
             if (val_type->isPointerTy())
                 val_type = (cast<PointerType>(val_type))->getElementType();
+        } else if(auto GEleInst = dyn_cast<GetElementPtrInst>(val)) {
+            val_type = GEleInst->getSourceElementType();
+            if (val_type->isPointerTy())
+                val_type = (cast<PointerType>(val_type))->getElementType();
         }
 
         return val_type;
@@ -67,9 +71,6 @@ namespace ST_free {
         val_type = t;
         if (val_type->isPointerTy())
             val_type = (cast<PointerType>(val_type))->getElementType();
-        // while(val_type->isPointerTy()){
-        //     val_type = (cast<PointerType>(val_type))->getElementType();
-        // }
         return val_type;
     }
 

@@ -25,7 +25,7 @@ namespace ST_free {
             void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void addFreedStruct(Type *T, Value *V, Instruction *I);
             void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I);
-            void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent);
+            void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent, bool isInStruct = false);
             void addParentType(Type *T, Value *V, Instruction *I, StructType *parentTy, int ind);
             FreedStructList getFreedStruct() const;
             bool freedStructExists(FreedStruct *fst);

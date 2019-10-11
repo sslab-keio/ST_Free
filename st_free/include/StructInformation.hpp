@@ -11,7 +11,7 @@
 #define NOTPOINTERTY 4
 #define UNALLOCATED 5
 
-#define THREASHOLD 0.1
+#define THREASHOLD 0.0
 
 namespace ST_free{
     /** Class [CandidateValue]

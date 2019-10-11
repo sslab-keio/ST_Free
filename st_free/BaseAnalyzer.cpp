@@ -239,23 +239,24 @@ namespace ST_free {
         ParentList indexes;
 
         if (Instruction * val = dyn_cast<Instruction>(V)) {
-            if(isStructEleFree(val)) {
+            if(isStructEleFree(val) || additionalParents.size() > 0) {
                 GetElementPtrInst * GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
                     this->getStructParents(GEle, indexes);
-                    for(auto addParent : additionalParents) {
-                        indexes.push_back(addParent);
-                    }
-
-                    index = indexes.back().second;
-                    UpdateIfNull(memType, indexes.back().first);
-                    if(GEle->getSourceElementType()->isStructTy())
-                        UpdateIfNull(parentType, cast<StructType>(GEle->getSourceElementType()));
-
                     if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
                         GEle = getRootGEle(GEle);
                     UpdateIfNull(freeValue, getLoadeeValue(GEle->getPointerOperand()));
                 }
+
+                for(auto addParent : additionalParents) {
+                    indexes.push_back(addParent);
+                }
+
+                index = indexes.back().second;
+                UpdateIfNull(memType, indexes.back().first);
+
+                if (get_type(indexes.front().first)->isStructTy())
+                    UpdateIfNull(parentType, cast<StructType>(get_type(indexes.front().first)));
                 isStructRelated = true;
                 generateWarning(val, "Struct element free");
             }
@@ -265,8 +266,8 @@ namespace ST_free {
                 if (loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
                     UpdateIfNull(memType, getStructType(val));
-                    if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue))
-                        getFunctionInformation()->addFreedStruct(B, getStructType(val), freeValue, CI, parentType);
+                    if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && get_type(memType)->isStructTy())
+                        getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
                 }
                 isStructRelated = true;
                 generateWarning(val, "Struct Free");
@@ -297,7 +298,6 @@ namespace ST_free {
                         getFunctionInformation()->setStructMemberArgFreed(freeValue, indexes);
                     }
                 }
-
                 getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
             }
         }
@@ -415,11 +415,14 @@ namespace ST_free {
         if(LoadInst *LI = dyn_cast<LoadInst>(I)) {
             if(Instruction *Inst = dyn_cast<Instruction>(LI->getPointerOperand()))
                 this->getStructParents(Inst, typeList);
-        } else if(GetElementPtrInst * GI = dyn_cast<GetElementPtrInst>(I)){
-            // outs() << *GI->getSourceElementType() << " " << getValueIndices(GI) << "\n";
+        } else if(GetElementPtrInst * GI = dyn_cast<GetElementPtrInst>(I)) {
+            // outs() << *GI->getResultElementType() << " " << getValueIndices(GI) << "\n";
             if(Instruction *Inst = dyn_cast<Instruction>(GI->getPointerOperand()))
                 this->getStructParents(Inst, typeList);
             typeList.push_back(pair<Type *, int>(GI->getResultElementType(), getValueIndices(GI)));
+        } else if(AllocaInst *AI = dyn_cast<AllocaInst>(I)) {
+            typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
+            // typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), 0));
         }
         return;
     }
