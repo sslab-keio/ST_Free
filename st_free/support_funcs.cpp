@@ -111,7 +111,7 @@ namespace ST_free {
         }
     }
 
-    Value * getArgAlloca(Value *arg){
+    Value * getArgAlloca(Value *arg) {
         for(auto usr = arg->user_begin(); usr != arg->user_end();usr++){
              if(StoreInst * str_inst = dyn_cast<StoreInst>(*usr)){
                 return str_inst->getOperand(1);
@@ -120,26 +120,5 @@ namespace ST_free {
         return NULL;
     }
 
-    long getValueIndices(GetElementPtrInst * inst){
-        long indice = 0;
-        for(auto idx_itr = inst->idx_begin(); idx_itr != inst->idx_end(); idx_itr++){
-            if (idx_itr == inst->idx_begin())
-                continue;
-            if(ConstantInt * cint = dyn_cast<ConstantInt>(idx_itr->get())) 
-                indice = cint->getSExtValue();
-        }
-        return indice;
-    }
-    User * getFirstUser(Value * v){
-        for(User * usr : v->users())
-            return usr;
-    }
 
-    GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle) {
-        GetElementPtrInst *tgt = GEle;
-        while(isa<GetElementPtrInst>(tgt->getPointerOperand())){
-            tgt = cast<GetElementPtrInst>(tgt->getPointerOperand());
-        }
-        return tgt;
-    }
 }

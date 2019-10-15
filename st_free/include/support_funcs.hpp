@@ -11,8 +11,5 @@ namespace ST_free{
     void generateWarning(Instruction * Inst, Value *val);
     void generateError(Instruction *, std::string);
     Value * getArgAlloca(Value *arg);
-    long getValueIndices(GetElementPtrInst * inst);
     static LoadInst * find_load_recursively(Instruction *val, int TTL);
-    User * getFirstUser(Value *);
-    GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
 }

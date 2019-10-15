@@ -23,7 +23,6 @@ namespace ST_free {
     }
 
     void StageOneAnalyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B){
-
     }
 
     void StageOneAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){

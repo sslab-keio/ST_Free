@@ -4,8 +4,8 @@
 namespace ST_free {
     class StageOneAnalyzer : public BaseAnalyzer {
         public:
-            StageOneAnalyzer(Function *func, StructManager *stm, LoopManager *lmap) : BaseAnalyzer(func, stm, lmap){};
-            StageOneAnalyzer(StructManager *stm, LoopManager *lmap) : BaseAnalyzer(stm, lmap){};
+            StageOneAnalyzer(Function *func, StructManager *stm, LoopManager *lmap, const DataLayout *dl) : BaseAnalyzer(func, stm, lmap, dl){};
+            StageOneAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl) : BaseAnalyzer(stm, lmap, dl){};
         protected:
             /*** Availability Analysis ***/
             void checkAvailability();

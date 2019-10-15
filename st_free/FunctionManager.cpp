@@ -416,7 +416,25 @@ namespace ST_free{
     void FunctionInformation::addFunctionPointerInfo(Value *val, Function *func){
         funcPtr[val].push_back(func);
     }
+
     vector<Function *> FunctionInformation::getPointedFunctions(Value *val){
         return funcPtr[val];
+    }
+
+    void FunctionInformation::addAliasedType(Value* V, Type* T) {
+        if (aliasedType.find(V) == aliasedType.end())
+            aliasedType[V] = T;
+    }
+
+    Type* FunctionInformation::getAliasedType(Value *V) {
+        if (aliasedType.find(V) != aliasedType.end())
+            return aliasedType[V];
+        return NULL;
+    }
+
+    bool FunctionInformation::aliasedTypeExists(Value *V) {
+        if (aliasedType.find(V) != aliasedType.end())
+            return true;
+        return false;
     }
 }

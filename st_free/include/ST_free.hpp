@@ -20,6 +20,7 @@
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/PassAnalysisSupport.h"
 #include "llvm/IR/Dominators.h"
+#include "llvm/IR/DataLayout.h"
 
 // include STL
 #include <iostream>

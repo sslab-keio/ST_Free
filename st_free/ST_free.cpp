@@ -30,9 +30,9 @@ namespace{
 
             // StManage->addGlobalVariableInitInfo(M);
 #ifdef STAGE_ONE
-            StageOneAnalyzer* analyze = new StageOneAnalyzer(StManage, loopmap);
+            StageOneAnalyzer* analyze = new StageOneAnalyzer(StManage, loopmap, &M.getDataLayout());
 #else
-            BaseAnalyzer* analyze = new BaseAnalyzer(StManage, loopmap);
+            BaseAnalyzer* analyze = new BaseAnalyzer(StManage, loopmap, &M.getDataLayout());
 #endif
 
             /*** Generate LoopInformation ***/

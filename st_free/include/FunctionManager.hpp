@@ -100,6 +100,10 @@ namespace ST_free {
             vector<Function *> getPointedFunctions(Value *val);
             /*** UniqueKeys ***/
             UniqueKeyManager* getUniqueKeyManager(){return &UKManage;}
+            /*** Aliased Type ***/
+            void addAliasedType(Value* V, Type* T);
+            Type* getAliasedType(Value *V);
+            bool aliasedTypeExists(Value *V);
         private:
             /*** Private Variables ***/
             static UniqueKeyManager UKManage;
@@ -113,6 +117,7 @@ namespace ST_free {
             ValueManager VManage;
             LoopInfo * LoopI;
             map<Value *, vector<Function *>> funcPtr;
+            map<Value *, Type*> aliasedType;
             /*** Private Methods ***/
             int getStat();
             void setStat(int);

@@ -240,7 +240,7 @@ namespace ST_free {
 
         if (Instruction * val = dyn_cast<Instruction>(V)) {
             if(isStructEleFree(val) || additionalParents.size() > 0) {
-                GetElementPtrInst * GEle = getFreeStructEleInfo(val);
+                GetElementPtrInst *GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
                     this->getStructParents(GEle, indexes);
                     if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
@@ -262,6 +262,7 @@ namespace ST_free {
             }
 
             if (isStructFree(val)) {
+                generateWarning(val, "Struct Free");
                 Value * loaded_value = getStructFreedValue(val);
                 if (loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
@@ -271,7 +272,6 @@ namespace ST_free {
                     }
                 }
                 isStructRelated = true;
-                generateWarning(val, "Struct Free");
             } else if (isOptimizedStructFree(val)) {
                 generateWarning(val, "Optimized Struct Free?");
                 UpdateIfNull(freeValue, val);
@@ -320,8 +320,7 @@ namespace ST_free {
             }
         }
         if(get_type(Ty)->isStructTy()) {
-            // Value, Type
-            // alias CI type to got Struct Type
+            getFunctionInformation()->addAliasedType(CI, Ty);
         }
         // if (isStructEleAlloc(CI)) {
         //     GetElementPtrInst *inst = getAllocStructEleInfo(CI);
@@ -349,7 +348,6 @@ namespace ST_free {
     }
 
     bool BaseAnalyzer::isReturnFunc(Instruction *I) {
-        //TODO: add terminating funcs
         if(isa<ReturnInst>(I))
             return true;
         return false;
@@ -399,14 +397,14 @@ namespace ST_free {
         return false;
     }
 
-    bool BaseAnalyzer::isStoreToStruct(StoreInst *SI){
+    bool BaseAnalyzer::isStoreToStruct(StoreInst *SI) {
         if(SI->getPointerOperandType()->isPointerTy())
             if(get_type(SI->getPointerOperandType())->isStructTy())
                 return true;
             return false;
     }
     
-    bool BaseAnalyzer::isStoreFromStruct(StoreInst *SI){
+    bool BaseAnalyzer::isStoreFromStruct(StoreInst *SI) {
         if(get_type(SI->getValueOperand()->getType())->isStructTy())
             return true;
         return false;
@@ -442,5 +440,226 @@ namespace ST_free {
             typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
         }
         return;
+    }
+
+    // long BaseAnalyzer::determineIndice(StructType* parent, Type* const *tgt) {
+    //     vector<long> tgt_ind;
+    //     long index = 0;
+    //     for(auto ele = parent->element_begin(); ele != parent->element_end(); ele++, index++) {
+    //         if (ele == tgt)
+    //             tgt_ind.push_back(index);
+    //     }
+
+    //     if (tgt_ind.size() > 1) {
+    //         // Do something
+    //     } else if(tgt_ind.size() == 1) {
+    //         index = tgt_ind.front();
+    //     } else {
+    //         index = -1;
+    //     }
+    //     return index;
+    // }
+    long BaseAnalyzer::getMemberIndiceFromByte(StructType * STy, uint64_t byte){
+        const StructLayout* sl = this->getStructLayout(STy);
+        if (sl != NULL)
+            return sl->getElementContainingOffset(byte);
+        return -1;
+    }
+
+    long BaseAnalyzer::getValueIndices(GetElementPtrInst* inst) {
+        auto idx_itr = inst->idx_end() - 1;
+        long indice = 0;
+
+        // if (isa<IntegerType>(inst->getSourceElementType())) {
+        //     Type *Ty = NULL;
+        //     for (auto usr:inst->user()) {
+        //         if (auto bit_cast = isa<BitCastInst>(usr))
+        //             Ty = bit_cast->getDestTy();
+        //     }
+        //     if (get_type(Ty)->isStructTy())
+        //         outs() << "\n";
+        // } else {
+        if(ConstantInt *cint = dyn_cast<ConstantInt>(idx_itr->get()))
+            indice = cint->getSExtValue();
+        // }
+        return indice;
+    }
+
+    GetElementPtrInst* BaseAnalyzer::getRootGEle(GetElementPtrInst *GEle) {
+        GetElementPtrInst *tgt = GEle;
+        while(isa<GetElementPtrInst>(tgt->getPointerOperand())){
+            tgt = cast<GetElementPtrInst>(tgt->getPointerOperand());
+        }
+        return tgt;
+    }
+
+    bool BaseAnalyzer::isStructEleAlloc(Instruction * val){
+        for (User *usr: val->users()){
+            User * tmp_usr = usr;
+            if(!isa<StoreInst>(usr)){
+                for(User * neo_usr: usr->users()){
+                    if(isa<StoreInst>(neo_usr)){
+                        tmp_usr = neo_usr;
+                        break;
+                    }
+                }
+            }
+            if(StoreInst * str_inst = dyn_cast<StoreInst>(tmp_usr)){
+                Value * tgt_op = str_inst->getOperand(1);
+                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(tgt_op)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    Value* BaseAnalyzer::getAllocatedValue(Instruction * val){
+        for (User *usr: val->users()){
+            User * tmp_usr = usr;
+            if(!isa<StoreInst>(usr)){
+                for(User * neo_usr: usr->users()){
+                    if(isa<StoreInst>(neo_usr)){
+                        tmp_usr = neo_usr;
+                        break;
+                    }
+                }
+            }
+            if(StoreInst * str_inst = dyn_cast<StoreInst>(tmp_usr)){
+                Value * tgt_op = str_inst->getOperand(1);
+                return tgt_op;
+            }
+        }
+        return NULL;
+    }
+
+    GetElementPtrInst * BaseAnalyzer::getAllocStructEleInfo(Instruction * val){
+        for (User *usr: val->users()){
+            User * tmp_usr = usr;
+            if(!isa<StoreInst>(usr)){
+                for(User * neo_usr: usr->users()){
+                    if(isa<StoreInst>(neo_usr)){
+                        tmp_usr = neo_usr;
+                        break;
+                    }
+                }
+            }
+            if(StoreInst * str_inst = dyn_cast<StoreInst>(tmp_usr)){
+                Value * tgt_op = str_inst->getOperand(1);
+                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(tgt_op)){
+                    return inst;
+                }
+            }
+        }
+        return NULL;
+    }
+
+    bool BaseAnalyzer::isStructEleFree(Instruction * val){
+        if(isa<GetElementPtrInst>(val))
+            return true;
+
+        LoadInst * l_inst = find_load(val);
+        if(l_inst != NULL && l_inst->getOperandList() != NULL){
+            // generateError(val , "Found load inst operandlist");
+            for(Use &U : l_inst->operands()){
+                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    GetElementPtrInst* BaseAnalyzer::getFreeStructEleInfo(Instruction * val){
+        if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(val))
+            return GEle;
+        LoadInst * l_inst = find_load(val);
+        if(l_inst != NULL && l_inst->getOperandList() != NULL){
+            for(Use &U : l_inst->operands()){
+                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
+                    return inst;
+                }
+            }
+        }
+        return NULL;
+    }
+
+    bool BaseAnalyzer::isStructFree(Instruction * val){
+        if(getStructFreedValue(val) != NULL)
+            return true;
+        return false;
+    }
+
+    bool BaseAnalyzer::isOptimizedStructFree(Instruction *I) {
+        Type *Ty = I->getType();
+        for (User *usr:I->users()) {
+            if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
+                Ty = BitCast->getDestTy();
+            }
+        }
+        if(Ty && get_type(Ty)->isStructTy()) {
+            return true;
+        }
+        return false;
+    }
+
+    Type* BaseAnalyzer::getOptimizedStructFree(Instruction *I) {
+        Type *Ty = I->getType();
+        for (User *usr:I->users()) {
+            if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
+                Ty = BitCast->getDestTy();
+            }
+        }
+        if(Ty && get_type(Ty)->isStructTy()) {
+            return Ty;
+        }
+        return NULL;
+    }
+
+    Type * BaseAnalyzer::getStructType(Instruction * val){
+        Type * tgt_type = NULL;
+        LoadInst *load_inst = find_load(val);
+        if (load_inst != NULL && load_inst->getOperandList() != NULL)
+            tgt_type = get_type(load_inst->getPointerOperand());
+        return tgt_type;
+    }
+
+    bool BaseAnalyzer::isFuncPointer(Type * t){
+        Type * tgt = get_type(t);
+        if(tgt->isFunctionTy())
+            return true;
+        return false;
+    }
+
+    Value * BaseAnalyzer::getStructFreedValue(Instruction * val) {
+        LoadInst *load_inst = find_load(val);
+        if (load_inst != NULL) {
+            if(load_inst->getOperandList() != NULL) {
+                Type * tgt_type = get_type(load_inst->getPointerOperand());
+                if (tgt_type != NULL && tgt_type->isStructTy()) {
+                    return getLoadeeValue(load_inst);
+                }
+            }
+        }
+        return NULL;
+    }
+
+    Value * BaseAnalyzer::getFreedValue(Instruction * val) {
+        LoadInst *load_inst = find_load(val);
+        if (load_inst != NULL && load_inst->getOperandList() != NULL)
+            return getLoadeeValue(load_inst);
+        return NULL;
+    }
+
+    GetElementPtrInst *  BaseAnalyzer::getStoredStructEle(StoreInst * SI) {
+        if(auto LInst = dyn_cast<LoadInst>(SI->getValueOperand()))
+            if(auto GEle = dyn_cast<GetElementPtrInst>(LInst->getPointerOperand()))
+                return GEle;
+        return NULL;
+    }
+
+    GetElementPtrInst * BaseAnalyzer::getStoredStruct(StoreInst *SI){
+        if(GetElementPtrInst * gepi = dyn_cast<GetElementPtrInst>(SI->getPointerOperand()))
+            return gepi;
+        return NULL;
     }
 }

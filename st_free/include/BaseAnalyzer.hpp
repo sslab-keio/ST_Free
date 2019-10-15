@@ -17,15 +17,17 @@ namespace ST_free {
         public:
             BaseAnalyzer(){
             }
-            BaseAnalyzer(Function *func, StructManager *stm, LoopManager *lmap) {
+            BaseAnalyzer(Function *func, StructManager *stm, LoopManager *lmap, const DataLayout *dl) {
                 FEle = identifier.getElement(func);
                 loopmap = lmap;
                 stManage = stm;
                 FEle->setLoopInfo(loopmap->get(func));
+                dat_layout = dl;
             }
-            BaseAnalyzer(StructManager *stm, LoopManager *lmap){
+            BaseAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl){
                 loopmap = lmap;
                 stManage = stm;
+                dat_layout = dl;
             }
             void analyze(Function &F);
             void analyzeDifferentFunc(Function &);
@@ -38,6 +40,9 @@ namespace ST_free {
             StructManager* getStructManager(){return stManage;};
             void setStructManager(StructManager *stManager){stManage = stManager;};
             TypeRelationManager* getTypeRelationManager(){return stManage->getTypeRelationManager();};
+            void setDataLayout(DataLayout* dl) {dat_layout = dl;}
+            const DataLayout* getDataLayout() {return dat_layout;}
+            const StructLayout* getStructLayout(StructType *STy) {return dat_layout->getStructLayout(STy);}
             /*** Availability Analysis ***/
             virtual void checkAvailability();
             /*** Instruction Analysis ***/
@@ -65,10 +70,34 @@ namespace ST_free {
             // UniqueKey decodeGEPInst(GetElementPtrInst *GEle);
             vector<string> decodeDirectoryName(string str);
             void getStructParents(Instruction *I, vector<pair<Type *, int>> &typeList);
+            /*** Determinator ***/
+            long getMemberIndiceFromByte(StructType * STy, uint64_t byte);
+            bool isStructEleAlloc(Instruction *);
+            bool isStructEleFree(Instruction *);
+            bool isStructFree(Instruction *);
+            bool isOptimizedStructFree(Instruction *I);
+            Type* getOptimizedStructFree(Instruction *I);
+            Value* getStructFreedValue(Instruction * val);
+            bool isHeapValue(Value *);
+            bool isFuncPointer(Type * t);
+            GetElementPtrInst* getAllocStructEleInfo(Instruction *);
+            GetElementPtrInst* getFreeStructEleInfo(Instruction *);
+            GetElementPtrInst*  getStoredStructEle(StoreInst * SI);
+            GetElementPtrInst*  getStoredStruct(StoreInst * SI);
+            Type * getStructType(Instruction * val);
+            Value * getFreedValue(Instruction * val);
+            Value * getAllocatedValue(Instruction *I);
+            /*** Support Methods ***/
+            long getValueIndices(GetElementPtrInst * inst);
+            GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
+            // long determineIndice(StructType* parent, Type* const* tgt, string name);
         private:
+            /*** Managers and DataLayouts ***/
             FunctionManager identifier;
             LoopManager *loopmap;
             StructManager *stManage;
+            const DataLayout* dat_layout;
+            /*** Current Function/ Stacked Functions ***/
             FunctionInformation *FEle;
             stack<Function *> functionStack;
     };
