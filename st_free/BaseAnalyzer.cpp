@@ -266,11 +266,20 @@ namespace ST_free {
                 if (loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
                     UpdateIfNull(memType, getStructType(val));
-                    if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && get_type(memType)->isStructTy())
+                    if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && get_type(memType)->isStructTy()) {
                         getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
+                    }
                 }
                 isStructRelated = true;
                 generateWarning(val, "Struct Free");
+            } else if (isOptimizedStructFree(val)) {
+                generateWarning(val, "Optimized Struct Free?");
+                UpdateIfNull(freeValue, val);
+                UpdateIfNull(memType, getOptimizedStructFree(val));
+                if (get_type(memType)->isStructTy()) {
+                    getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
+                }
+                isStructRelated = true;
             }
 
             if (!isStructRelated) {
@@ -304,28 +313,38 @@ namespace ST_free {
     }
 
     void BaseAnalyzer::addAlloc(CallInst *CI, BasicBlock *B) {
-        if (isStructEleAlloc(CI)) {
-            GetElementPtrInst *inst = getAllocStructEleInfo(CI);
-
-            if (inst != NULL) {
-                if (getFunctionInformation()->isArgValue(getLoadeeValue(inst->getPointerOperand())))
-                    getFunctionInformation()->setArgAlloc(getLoadeeValue(inst->getPointerOperand()));
-
-                // getFunctionInformation()->addAllocValue(
-                //         B,
-                //         getLoadeeValue(inst->getPointerOperand()),
-                //         inst->getResultElementType()
-                //         );
-                generateWarning(CI, "Struct element malloc");
+        Type *Ty = CI->getType();
+        for (User *usr:CI->users()) {
+            if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
+                Ty = BitCast->getDestTy();
             }
-        } else {
-            Value * val = getAllocatedValue(CI);
-            if (getFunctionInformation()->isArgValue(val))
-                getFunctionInformation()->setArgAlloc(val);
-            this->addPointerLocalVariable(B, val->getType(), val, CI, ParentList());
-            // getFunctionInformation()->addAllocValue(B, val, val->getType());
-            generateWarning(CI, "Value malloc");
         }
+        if(get_type(Ty)->isStructTy()) {
+            // Value, Type
+            // alias CI type to got Struct Type
+        }
+        // if (isStructEleAlloc(CI)) {
+        //     GetElementPtrInst *inst = getAllocStructEleInfo(CI);
+
+        //     if (inst != NULL) {
+        //         if (getFunctionInformation()->isArgValue(getLoadeeValue(inst->getPointerOperand())))
+        //             getFunctionInformation()->setArgAlloc(getLoadeeValue(inst->getPointerOperand()));
+
+        //         // getFunctionInformation()->addAllocValue(
+        //         //         B,
+        //         //         getLoadeeValue(inst->getPointerOperand()),
+        //         //         inst->getResultElementType()
+        //         //         );
+        //         generateWarning(CI, "Struct element malloc");
+        //     }
+        // } else {
+        //     Value * val = getAllocatedValue(CI);
+        //     if (getFunctionInformation()->isArgValue(val))
+        //         getFunctionInformation()->setArgAlloc(val);
+        //     this->addPointerLocalVariable(B, val->getType(), val, CI, ParentList());
+        //     // getFunctionInformation()->addAllocValue(B, val, val->getType());
+        //     generateWarning(CI, "Value malloc");
+        // }
         return;
     }
 
@@ -416,13 +435,11 @@ namespace ST_free {
             if(Instruction *Inst = dyn_cast<Instruction>(LI->getPointerOperand()))
                 this->getStructParents(Inst, typeList);
         } else if(GetElementPtrInst * GI = dyn_cast<GetElementPtrInst>(I)) {
-            // outs() << *GI->getResultElementType() << " " << getValueIndices(GI) << "\n";
             if(Instruction *Inst = dyn_cast<Instruction>(GI->getPointerOperand()))
                 this->getStructParents(Inst, typeList);
             typeList.push_back(pair<Type *, int>(GI->getResultElementType(), getValueIndices(GI)));
         } else if(AllocaInst *AI = dyn_cast<AllocaInst>(I)) {
             typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
-            // typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), 0));
         }
         return;
     }

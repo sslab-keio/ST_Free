@@ -17,8 +17,10 @@ namespace ST_free {
                 if(Instruction * inst = dyn_cast<Instruction>(U)){
                     if(isa<LoadInst>(inst))
                         return cast<LoadInst>(inst);
+                    // if(isa<BitCastInst>(inst))
+                    //     generateError(inst, "Found bit cast");
 
-                    if(LoadInst * res = find_load_recursively(inst, --TTL))
+                    if (LoadInst * res = find_load_recursively(inst, --TTL))
                         return res;
                 }
             }
@@ -78,13 +80,24 @@ namespace ST_free {
         if(const DebugLoc &Loc = Inst->getDebugLoc()){
             unsigned line = Loc.getLine();
             unsigned col = Loc.getCol();
-            DEBUG_WITH_TYPE("st_free", outs() << "\033[1;34m[ST_free]\033[0m ");
+            DEBUG_WITH_TYPE("st_free", outs() << "[WARNING] ");
             DEBUG_WITH_TYPE("st_free", outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ");
             DEBUG_WITH_TYPE("st_free", outs() << warn << "\n");
         }
     }
-    void generateWarning(string warn){
-            DEBUG_WITH_TYPE("st_free", outs() << "\033[1;34m[ST_free]\033[0m: ");
+
+    void generateWarning(Instruction * Inst, Value *val){
+        if(const DebugLoc &Loc = Inst->getDebugLoc()){
+            unsigned line = Loc.getLine();
+            unsigned col = Loc.getCol();
+            outs() << "[WARNING] ";
+            outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
+            outs() << *val << "\n";
+        }
+    }
+
+    void generateWarning(string warn) {
+            DEBUG_WITH_TYPE("st_free", outs() << "[WARNING] ");
             DEBUG_WITH_TYPE("st_free", outs() << warn << "\n");
     }
 

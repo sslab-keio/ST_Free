@@ -7,6 +7,8 @@ namespace ST_free {
     bool isStructEleAlloc(Instruction *);
     bool isStructEleFree(Instruction *);
     bool isStructFree(Instruction *);
+    bool isOptimizedStructFree(Instruction *I);
+    Type* getOptimizedStructFree(Instruction *I);
     Value* getStructFreedValue(Instruction * val);
     bool isHeapValue(Value *);
     bool isFuncPointer(Type * t);

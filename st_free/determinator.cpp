@@ -121,6 +121,32 @@ namespace ST_free {
         return false;
     }
 
+    bool isOptimizedStructFree(Instruction *I) {
+        Type *Ty = I->getType();
+        for (User *usr:I->users()) {
+            if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
+                Ty = BitCast->getDestTy();
+            }
+        }
+        if(Ty && get_type(Ty)->isStructTy()) {
+            return true;
+        }
+        return false;
+    }
+
+    Type* getOptimizedStructFree(Instruction *I) {
+        Type *Ty = I->getType();
+        for (User *usr:I->users()) {
+            if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
+                Ty = BitCast->getDestTy();
+            }
+        }
+        if(Ty && get_type(Ty)->isStructTy()) {
+            return Ty;
+        }
+        return NULL;
+    }
+
     Type * getStructType(Instruction * val){
         Type * tgt_type = NULL;
         LoadInst *load_inst = find_load(val);
