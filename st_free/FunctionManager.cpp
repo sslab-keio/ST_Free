@@ -422,7 +422,7 @@ namespace ST_free{
     }
 
     void FunctionInformation::addAliasedType(Value* V, Type* T) {
-        if (aliasedType.find(V) == aliasedType.end())
+        if (aliasedType.find(V) == aliasedType.end()) 
             aliasedType[V] = T;
     }
 

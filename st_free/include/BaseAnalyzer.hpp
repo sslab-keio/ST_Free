@@ -67,7 +67,7 @@ namespace ST_free {
             bool isStoreFromStructMember(StoreInst * SI);
             bool isStoreToStruct(StoreInst *SI);
             bool isStoreFromStruct(StoreInst *SI);
-            // UniqueKey decodeGEPInst(GetElementPtrInst *GEle);
+            pair<Type*, long> decodeGEPInst(GetElementPtrInst *GEle);
             vector<string> decodeDirectoryName(string str);
             void getStructParents(Instruction *I, vector<pair<Type *, int>> &typeList);
             /*** Determinator ***/
@@ -90,7 +90,6 @@ namespace ST_free {
             /*** Support Methods ***/
             long getValueIndices(GetElementPtrInst * inst);
             GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
-            // long determineIndice(StructType* parent, Type* const* tgt, string name);
         private:
             /*** Managers and DataLayouts ***/
             FunctionManager identifier;

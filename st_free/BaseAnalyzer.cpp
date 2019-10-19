@@ -242,6 +242,7 @@ namespace ST_free {
             if(isStructEleFree(val) || additionalParents.size() > 0) {
                 GetElementPtrInst *GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
+
                     this->getStructParents(GEle, indexes);
                     if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
                         GEle = getRootGEle(GEle);
@@ -273,7 +274,6 @@ namespace ST_free {
                 }
                 isStructRelated = true;
             } else if (isOptimizedStructFree(val)) {
-                generateWarning(val, "Optimized Struct Free?");
                 UpdateIfNull(freeValue, val);
                 UpdateIfNull(memType, getOptimizedStructFree(val));
                 if (get_type(memType)->isStructTy()) {
@@ -435,30 +435,15 @@ namespace ST_free {
         } else if(GetElementPtrInst * GI = dyn_cast<GetElementPtrInst>(I)) {
             if(Instruction *Inst = dyn_cast<Instruction>(GI->getPointerOperand()))
                 this->getStructParents(Inst, typeList);
-            typeList.push_back(pair<Type *, int>(GI->getResultElementType(), getValueIndices(GI)));
+            // typeList.push_back(pair<Type *, int>(GI->getResultElementType(), getValueIndices(GI)));
+            pair<Type*, long> decoded_vals = this->decodeGEPInst(GI);
+            typeList.push_back(pair<Type *, int>(decoded_vals.first, decoded_vals.second));
         } else if(AllocaInst *AI = dyn_cast<AllocaInst>(I)) {
             typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
         }
         return;
     }
 
-    // long BaseAnalyzer::determineIndice(StructType* parent, Type* const *tgt) {
-    //     vector<long> tgt_ind;
-    //     long index = 0;
-    //     for(auto ele = parent->element_begin(); ele != parent->element_end(); ele++, index++) {
-    //         if (ele == tgt)
-    //             tgt_ind.push_back(index);
-    //     }
-
-    //     if (tgt_ind.size() > 1) {
-    //         // Do something
-    //     } else if(tgt_ind.size() == 1) {
-    //         index = tgt_ind.front();
-    //     } else {
-    //         index = -1;
-    //     }
-    //     return index;
-    // }
     long BaseAnalyzer::getMemberIndiceFromByte(StructType * STy, uint64_t byte){
         const StructLayout* sl = this->getStructLayout(STy);
         if (sl != NULL)
@@ -553,34 +538,46 @@ namespace ST_free {
         return NULL;
     }
 
-    bool BaseAnalyzer::isStructEleFree(Instruction * val){
+    bool BaseAnalyzer::isStructEleFree(Instruction *val){
         if(isa<GetElementPtrInst>(val))
             return true;
 
         LoadInst * l_inst = find_load(val);
         if(l_inst != NULL && l_inst->getOperandList() != NULL){
-            // generateError(val , "Found load inst operandlist");
-            for(Use &U : l_inst->operands()){
-                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
-                    return true;
-                }
+            Value *V = l_inst->getPointerOperand();
+            if (auto bit_cast_inst = dyn_cast<BitCastInst>(V)) {
+                generateWarning(val, "found BitCast");
+                V = bit_cast_inst->getOperand(0);
             }
+            if (auto GEle = dyn_cast<GetElementPtrInst>(V)) {
+                return true;
+            }
+            // generateError(val , "Found load inst operandlist");
+            // for(Use &U : l_inst->operands()){
+            //     if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
+            //         return true;
+            //     }
+            // }
         }
         return false;
     }
 
     GetElementPtrInst* BaseAnalyzer::getFreeStructEleInfo(Instruction * val){
-        if(GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(val))
+         if(auto GEle = dyn_cast<GetElementPtrInst>(val))
             return GEle;
+
         LoadInst * l_inst = find_load(val);
         if(l_inst != NULL && l_inst->getOperandList() != NULL){
-            for(Use &U : l_inst->operands()){
-                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
-                    return inst;
-                }
+            Value *V = l_inst->getPointerOperand();
+            if (auto bit_cast_inst = dyn_cast<BitCastInst>(V)) {
+                generateWarning(val, "found BitCast");
+                V = bit_cast_inst->getOperand(0);
+            }
+            if (auto GEle = dyn_cast<GetElementPtrInst>(V)) {
+                return GEle;
             }
         }
-        return NULL;
+        return NULL;       
     }
 
     bool BaseAnalyzer::isStructFree(Instruction * val){
@@ -590,29 +587,11 @@ namespace ST_free {
     }
 
     bool BaseAnalyzer::isOptimizedStructFree(Instruction *I) {
-        Type *Ty = I->getType();
-        for (User *usr:I->users()) {
-            if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
-                Ty = BitCast->getDestTy();
-            }
-        }
-        if(Ty && get_type(Ty)->isStructTy()) {
-            return true;
-        }
-        return false;
+        return getFunctionInformation()->aliasedTypeExists(I);
     }
 
     Type* BaseAnalyzer::getOptimizedStructFree(Instruction *I) {
-        Type *Ty = I->getType();
-        for (User *usr:I->users()) {
-            if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
-                Ty = BitCast->getDestTy();
-            }
-        }
-        if(Ty && get_type(Ty)->isStructTy()) {
-            return Ty;
-        }
-        return NULL;
+        return getFunctionInformation()->getAliasedType(I);
     }
 
     Type * BaseAnalyzer::getStructType(Instruction * val){
@@ -661,5 +640,21 @@ namespace ST_free {
         if(GetElementPtrInst * gepi = dyn_cast<GetElementPtrInst>(SI->getPointerOperand()))
             return gepi;
         return NULL;
+    }
+
+    pair<Type*, long> BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle) {
+        Type* Ty = GEle->getResultElementType();
+        long index = getValueIndices(GEle);
+
+        if (GEle->getSourceElementType()->isIntegerTy()) {
+            if(getFunctionInformation()->aliasedTypeExists(GEle->getPointerOperand()))
+                Ty = getFunctionInformation()->getAliasedType(GEle->getPointerOperand());
+            if (Ty && get_type(Ty)->isStructTy()){
+                index = getMemberIndiceFromByte(cast<StructType>(Ty), index);
+                generateError(GEle, "Getting Real index");
+            }
+        }
+
+        return pair<Type*, long>(Ty, index);
     }
 }

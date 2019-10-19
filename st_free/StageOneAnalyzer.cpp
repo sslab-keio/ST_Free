@@ -3,22 +3,20 @@
 namespace ST_free {
     
     void StageOneAnalyzer::analyzeInstructions(BasicBlock &B) {
-        for (Instruction &I: B){
+        for (Instruction &I: B) {
             if(this->isReturnFunc(&I))
                 getFunctionInformation()->addEndPoint(&B);
 
-            if(AllocaInst *AI = dyn_cast<AllocaInst>(&I)) {
+            if(AllocaInst *AI = dyn_cast<AllocaInst>(&I))
                 this->analyzeAllocaInst(AI, B);
-            }
-            else if (CallInst *CI = dyn_cast<CallInst>(&I)) {
+            else if (CallInst *CI = dyn_cast<CallInst>(&I))
                 this->analyzeCallInst(CI, B);
-            }
-            else if (StoreInst *SI = dyn_cast<StoreInst>(&I)) {
+            else if (StoreInst *SI = dyn_cast<StoreInst>(&I))
                 this->analyzeStoreInst(SI, B);
-            }
-            else if (BranchInst *BI = dyn_cast<BranchInst>(&I)) {
+            else if (BranchInst *BI = dyn_cast<BranchInst>(&I))
                 this->analyzeBranchInst(BI, B);
-            }
+            else if (GetElementPtrInst *GI = dyn_cast<GetElementPtrInst>(&I))
+                this->decodeGEPInst(GI);
         }
     }
 
@@ -113,9 +111,9 @@ namespace ST_free {
                 // Value * val = getAllocatedValue(CI);
                 // if(val != NULL) 
                 //     if(StructType * strTy = dyn_cast<StructType>(get_type(val->getType()))) {
-                //         getStructManager()->addAlloc(strTy);
+                    // getStructManager()->addAlloc(strTy);
                 //     }
-                // this->addAlloc(CI, &B);
+                this->addAlloc(CI, &B);
             } else if (isFreeFunction(called_function)) {
                 for (auto arguments = CI->arg_begin(); arguments != CI->arg_end(); arguments++) {
                     this->addFree(cast<Value>(arguments), CI, &B);
