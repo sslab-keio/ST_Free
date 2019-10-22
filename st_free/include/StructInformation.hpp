@@ -10,6 +10,7 @@
 #define ISUNKNOWN 3
 #define NOTPOINTERTY 4
 #define UNALLOCATED 5
+#define PRIMITIVE 6
 
 #define THREASHOLD 0.0
 
@@ -68,6 +69,7 @@ namespace ST_free{
             vector<CandidateValue *> candidates;
             bool isResponsible(int ind){return memberStats[ind] == ISRESPONSIBLE;};
             bool isUnknown(int ind){return memberStats[ind] == ISUNKNOWN;};
+            bool isPrimitive(int ind){return memberStats[ind] == PRIMITIVE;};
             bool judgeResponsibility(int ind);
             bool isBidirectionalReferencing(CandidateValue *cand, int ind);
             unsigned int getAllocNum(){return allocNum;};

@@ -28,20 +28,16 @@ namespace ST_free {
         return NULL;
     }
 
-    Value * getLoadeeValue(Value * val){
+    Value * getLoadeeValue(Value* val){
         Value *v = val;
-        while (v && (isa<LoadInst>(v) || isa<GetElementPtrInst>(v))) {
+        while (isa<LoadInst>(v) || isa<GetElementPtrInst>(v)) {
             if(auto inst = dyn_cast<LoadInst>(v)){
                 v = inst->getPointerOperand();
             } else if(auto inst = dyn_cast<GetElementPtrInst>(v)){
                 v = inst->getPointerOperand();
-            } else {
-                v = NULL;
             }
         }
 
-        if (v == val)
-            v = NULL;
         return v;
     }
     /*** Retrieve Pointer Dereferance Type ***/
@@ -64,8 +60,8 @@ namespace ST_free {
         return val_type;
     }
 
-    Type * get_type(Type * t) {
-        Type * val_type = NULL;
+    Type* get_type(Type* t) {
+        Type* val_type = NULL;
 
         if(t == NULL)
             return NULL;
@@ -105,7 +101,7 @@ namespace ST_free {
         if(const DebugLoc &Loc = Inst->getDebugLoc()){
             unsigned line = Loc.getLine();
             unsigned col = Loc.getCol();
-            outs() << "\033[1;31m[ST_free]\033[0m ";
+            outs() << "[ERROR] ";
             outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
             outs() << warn << "\n";
         }

@@ -107,6 +107,14 @@ namespace ST_free {
             getFunctionInformation()->setCorrectlyBranched(&B);
         }
     }
+    void BaseAnalyzer::analyzeBitCastInst(BitCastInst *BCI, BasicBlock &B) {
+        Type *tgtTy = get_type(BCI->getDestTy());
+        if (get_type(BCI->getSrcTy())->isIntegerTy() && tgtTy->isStructTy()) {
+            Value *V = BCI->getOperand(0);
+            getFunctionInformation()->addAliasedType(V, tgtTy);
+        }
+        return;
+    }
     
     void BaseAnalyzer::checkAvailability() {
         FreedStructList fsl = getFunctionInformation()->getFreedStruct();
@@ -242,19 +250,23 @@ namespace ST_free {
             if(isStructEleFree(val) || additionalParents.size() > 0) {
                 GetElementPtrInst *GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
-
                     this->getStructParents(GEle, indexes);
+                    // indexes.push_back(pair<Type*, int>(extractResultElementType(GEle), ROOT_INDEX));
+                    GetElementPtrInst *tmpGEle = GEle;
                     if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
-                        GEle = getRootGEle(GEle);
-                    UpdateIfNull(freeValue, getLoadeeValue(GEle->getPointerOperand()));
+                        tmpGEle = getRootGEle(GEle);
+                    UpdateIfNull(freeValue, getLoadeeValue(tmpGEle->getPointerOperand()));
                 }
 
                 for(auto addParent : additionalParents) {
                     indexes.push_back(addParent);
                 }
 
+                // index = indexes[indexes.size() - 2].second;
                 index = indexes.back().second;
-                UpdateIfNull(memType, indexes.back().first);
+                if (auto StTy = dyn_cast<StructType>(get_type(indexes.back().first)))
+                    if(-1 < index && index < StTy->getNumElements())
+                        UpdateIfNull(memType, StTy->getElementType(index));
 
                 if (get_type(indexes.front().first)->isStructTy())
                     UpdateIfNull(parentType, cast<StructType>(get_type(indexes.front().first)));
@@ -439,7 +451,7 @@ namespace ST_free {
             pair<Type*, long> decoded_vals = this->decodeGEPInst(GI);
             typeList.push_back(pair<Type *, int>(decoded_vals.first, decoded_vals.second));
         } else if(AllocaInst *AI = dyn_cast<AllocaInst>(I)) {
-            typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
+            // typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
         }
         return;
     }
@@ -643,18 +655,31 @@ namespace ST_free {
     }
 
     pair<Type*, long> BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle) {
-        Type* Ty = GEle->getResultElementType();
+        // Type* Ty = GEle->getResultElementType();
+        Type* Ty = GEle->getSourceElementType();
         long index = getValueIndices(GEle);
 
         if (GEle->getSourceElementType()->isIntegerTy()) {
             if(getFunctionInformation()->aliasedTypeExists(GEle->getPointerOperand()))
                 Ty = getFunctionInformation()->getAliasedType(GEle->getPointerOperand());
             if (Ty && get_type(Ty)->isStructTy()){
-                index = getMemberIndiceFromByte(cast<StructType>(Ty), index);
-                generateError(GEle, "Getting Real index");
+                index = getMemberIndiceFromByte(cast<StructType>(get_type(Ty)), index);
             }
         }
 
         return pair<Type*, long>(Ty, index);
+    }
+
+    Type* BaseAnalyzer::extractResultElementType(GetElementPtrInst *GEle) {
+        Type *Ty = GEle->getResultElementType();
+
+        if (get_type(Ty)->isIntegerTy()) {
+            for(User* usr: GEle->users()) {
+                if (auto BCI = dyn_cast<BitCastInst>(usr)) {
+                    Ty = get_type(BCI->getDestTy());
+                }
+            }
+        }
+        return Ty;
     }
 }

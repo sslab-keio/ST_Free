@@ -51,6 +51,7 @@ namespace ST_free {
             virtual void analyzeStoreInst(StoreInst * SI, BasicBlock &B);
             virtual void analyzeCallInst(CallInst *CI, BasicBlock &B);
             virtual void analyzeBranchInst(BranchInst * BI, BasicBlock &B);
+            virtual void analyzeBitCastInst(BitCastInst *BCI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
             void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false, ParentList additionalParents = ParentList());
@@ -90,6 +91,7 @@ namespace ST_free {
             /*** Support Methods ***/
             long getValueIndices(GetElementPtrInst * inst);
             GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
+            Type* extractResultElementType(GetElementPtrInst *GEle);
         private:
             /*** Managers and DataLayouts ***/
             FunctionManager identifier;

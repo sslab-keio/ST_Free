@@ -12,10 +12,15 @@ namespace ST_free{
         candidateNum = 0;
         allocNum = 0;
         for(Type * ty: st->elements()){
-            if(!isa<PointerType>(ty))
+            if(!ty->isPointerTy())
                 memberStats[ind] = NOTPOINTERTY;
-            else if(isa<FunctionType>(get_type(ty)))
+            else if(get_type(ty)->isFunctionTy())
                 memberStats[ind] = ISNOTRESPONSIBLE;
+            else if(get_type(ty)->isIntegerTy()
+                    || get_type(ty)->isFloatTy()
+                    || get_type(ty)->isDoubleTy()
+                    || get_type(ty)->isHalfTy())
+                memberStats[ind] = PRIMITIVE;
             ind++;
         }
     }
@@ -33,30 +38,41 @@ namespace ST_free{
 
     void StructInformation::checkCorrectness() {
         for(CandidateValue* cand : candidates) {
-            string warningStr("Struct element is NOT Freed (indexes: ");
+            string warningStr("MEMBER NOT FREED.(");
             bool hasWarning = false;
             for(unsigned ind = 0; ind < cand->getMemberSize(); ind++){
                 if(!cand->memberIsFreed(ind)) {
+#ifdef STAGE_ONE
                     if(this->isResponsible(ind)) {
                         if(this->judgeResponsibility(ind) 
                                 && !this->isAllStoreGlobalVar(ind)
                                 && !this->isBidirectionalReferencing(cand, ind)
                                 ){
                         // if(!this->isAllStoreGlobalVar(ind)){
-                            // generateError(cand->getInstruction(), "Struct element is NOT Freed");
+                            // warningStr += "index: ";
                             warningStr += to_string(ind);
                             warningStr += ' ';
                             hasWarning = true;
                         }
-                        // cand->print();
-                    } else if(this->isUnknown(ind)) {
+                    }
+#endif
+#ifdef STAGE_TWO
+                    if(this->isUnknown(ind)) {
                         if(this->judgeResponsibility(ind)) {
-                            // warningStr += to_string(ind);
-                            // warningStr += ' ';
-                            // hasWarning = true;
-                            // generateError(cand->getInstruction(), "Struct element is NOT Freed");
+                            warningStr += to_string(ind);
+                            warningStr += ' ';
+                            hasWarning = true;
+                            generateError(cand->getInstruction(), "Struct element is NOT Freed");
                         }
                     }
+#endif
+#ifdef STAGE_PRIMITIVE
+                    if(this->isPrimitive(ind)) {
+                            warningStr += to_string(ind);
+                            warningStr += ' ';
+                            hasWarning = true;
+                    }
+#endif
                 }
             }
             warningStr += ')';
@@ -164,6 +180,9 @@ namespace ST_free{
                     break;
                 case UNALLOCATED:
                     outs() << "UNALLOCATED";
+                    break;
+                case PRIMITIVE:
+                    outs() << "PRIMITIVE";
                     break;
                 default:
                     outs() << "DEFAULT";
