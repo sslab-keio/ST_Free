@@ -593,6 +593,10 @@ namespace ST_free {
     }
 
     bool BaseAnalyzer::isStructFree(Instruction * val){
+        // if (auto BCI = dyn_cast<BitCastInst>(val)) {
+        //     if(get_type(BCI->getSrcTy())->isStructTy())
+        //         return true;
+        // }
         if(getStructFreedValue(val) != NULL)
             return true;
         return false;

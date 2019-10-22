@@ -119,11 +119,19 @@ namespace ST_free{
 
     void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent, bool isInStruct){
         FreedStruct * fst = new FreedStruct(T, V, I, B, NULL, isInStruct);
-        if(!this->freedStructExists(fst)) {
+        if(!this->freedStructExists(fst))
             freedStruct.push_back(fst);
-        } else {
+        else
             delete fst;
-        }
+
+        /*** Look for any statically allcated struct type,
+         * and add them to freed struct as well ***/
+        // if (auto StTy = dyn_cast<StructType>(T)) {
+        //     for (auto ele : StTy->elements()) {
+        //         if (ele->isStructTy())
+        //             this->addFreedStruct(B, ele, V, I, parent, true);
+        //     }
+        // }
     }
 
     bool FunctionInformation::freedStructExists(FreedStruct *fst){
