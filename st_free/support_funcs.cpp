@@ -115,6 +115,17 @@ namespace ST_free {
         }
         return NULL;
     }
+    string parseErrorMessage(StructType* parent, long index) {
+        string message = "";
 
+        message += "Parent: ";
+        if (parent && parent->hasName()) 
+            message += parent->getName();
+        else
+            message += "Unavailable";
 
+        message += " index:";
+        message += to_string(index);
+        return message;
+    }
 }

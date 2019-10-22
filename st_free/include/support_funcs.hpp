@@ -10,6 +10,7 @@ namespace ST_free{
     void generateWarning(string warn);
     void generateWarning(Instruction * Inst, Value *val);
     void generateError(Instruction *, std::string);
+    string parseErrorMessage(StructType* parent, long index);
     Value * getArgAlloca(Value *arg);
     static LoadInst * find_load_recursively(Instruction *val, int TTL);
 }

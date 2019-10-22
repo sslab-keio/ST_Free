@@ -52,7 +52,7 @@ namespace{
 
             /*** Main Warning Generator ***/
             StManage->BuildCandidateCount();
-            StManage->print();
+            // StManage->print();
             StManage->checkCorrectness();
             return false;
         }

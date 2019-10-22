@@ -38,8 +38,7 @@ namespace ST_free{
 
     void StructInformation::checkCorrectness() {
         for(CandidateValue* cand : candidates) {
-            string warningStr("MEMBER NOT FREED.(");
-            bool hasWarning = false;
+            string warningStr("MEMBER NOT FREED(");
             for(unsigned ind = 0; ind < cand->getMemberSize(); ind++){
                 if(!cand->memberIsFreed(ind)) {
 #ifdef STAGE_ONE
@@ -50,36 +49,37 @@ namespace ST_free{
                                 ){
                         // if(!this->isAllStoreGlobalVar(ind)){
                             // warningStr += "index: ";
-                            warningStr += to_string(ind);
-                            warningStr += ' ';
-                            hasWarning = true;
+                            string message = warningStr;
+                            message += parseErrorMessage(this->getStructType(), ind);
+                            message += ")";
+                            generateError(cand->getInstruction(), message);
                         }
                     }
 #endif
 #ifdef STAGE_TWO
                     if(this->isUnknown(ind)) {
                         if(this->judgeResponsibility(ind)) {
-                            warningStr += to_string(ind);
-                            warningStr += ' ';
-                            hasWarning = true;
-                            generateError(cand->getInstruction(), "Struct element is NOT Freed");
+                            string message = warningStr;
+                            message += parseErrorMessage(this->getStructType(), ind);
+                            message += ")";
+                            generateError(cand->getInstruction(), message);
                         }
                     }
 #endif
 #ifdef STAGE_PRIMITIVE
                     if(this->isPrimitive(ind)) {
-                            warningStr += to_string(ind);
-                            warningStr += ' ';
-                            hasWarning = true;
+                        string message = warningStr;
+                        message += parseErrorMessage(this->getStructType(), ind);
+                        message += ")";
+                        generateError(cand->getInstruction(), message);
                     }
 #endif
                 }
             }
-            warningStr += ')';
-            if(hasWarning) {
-                generateError(cand->getInstruction(), warningStr);
-                // this->print();
-            }
+            // warningStr += ')';
+            // if(hasWarning) {
+            //     generateError(cand->getInstruction(), warningStr);
+            // }
         }
         return;
     }

@@ -111,6 +111,7 @@ namespace ST_free{
                 outs() << "\tTotal: " << stc[ind].total << "\n";
                 outs() << "\tGV: " << stc[ind].globalVar << "\n";
             }
+            StructType* getStructType(){return strTy;}
     };
     /** Class
      * [Struct Manager]
