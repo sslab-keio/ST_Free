@@ -20,6 +20,7 @@
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/PassAnalysisSupport.h"
 #include "llvm/IR/Dominators.h"
+#include "llvm/IR/DataLayout.h"
 
 // include STL
 #include <iostream>
@@ -29,6 +30,7 @@
 #include <stack>
 #include <algorithm>
 #include <string>
+#include <ctime>
 
 #define NO_ALLOC 0
 #define ALLOCATED 1
@@ -44,3 +46,5 @@
 
 using namespace llvm;
 using namespace std;
+
+using ParentList = vector<pair<Type *, int>>;

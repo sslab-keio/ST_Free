@@ -1,7 +1,7 @@
+#pragma once
 #include "ST_free.hpp"
 #include "ValueInformation.hpp"
 #include "UniqueKeyManager.hpp"
-#pragma once
 
 namespace ST_free {
     using BasicBlockList = vector<const UniqueKey *>;

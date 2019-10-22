@@ -33,7 +33,6 @@ $(TARGETS): $(SOURCES)
 		fi
 	@echo '================================='
 	@echo 'compiling' $@ 'with file:' $(FILE)
-	head -n 1 $(SRC_DIR)/$@$(SUFFIX)
 	$(CC) $(CFLAGS) $(FILE) -o $(TGT_DIR)/$@ $(SRC_DIR)/$@$(SUFFIX) > $(LOG_DIR)/$@.log
 
 $(IRS): $(SOURCES)

@@ -14,7 +14,7 @@ namespace ST_free {
     //     UniqueKey uk(v, ty, mem);
     //     MarkedValues.push_back(uk);
     // }
-    void BasicBlockWorkList::add(const UniqueKey *UK){
+    void BasicBlockWorkList::add(const UniqueKey *UK) {
         MarkedValues.push_back(UK);
     }
     // bool BasicBlockWorkList::exists(Value * v, Type * ty, long mem){
@@ -23,7 +23,7 @@ namespace ST_free {
     //     return false;
     // }
 
-    bool BasicBlockWorkList::exists(const UniqueKey *UK){
+    bool BasicBlockWorkList::exists(const UniqueKey *UK) {
         if(find(MarkedValues.begin(), MarkedValues.end(), UK) != MarkedValues.end())
             return true;
         return false;
@@ -200,9 +200,8 @@ namespace ST_free {
     }
 
     void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt){
-        BBMap[src].setFreeList(intersectList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
-        BBMap[src].setAllocList(intersectList(this->getBasicBlockAllocList(src), this->getBasicBlockAllocList(tgt)));
-        BBMap[src].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src), this->getLiveVariables(tgt)));
+        BBMap[tgt].setFreeList(intersectList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
+        BBMap[tgt].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src), this->getLiveVariables(tgt)));
         return;
     }
 
@@ -230,6 +229,19 @@ namespace ST_free {
                 tgt.begin(), tgt.end(),
                 back_inserter(tmp)
             );
+
+//         outs() << "src\n";
+//         for (auto ele :src) {
+//             ele->print();
+//         }
+//         outs() << "tgt\n";
+//         for (auto ele :tgt) {
+//             ele->print();
+//         }
+//         outs() << "intersect\n";
+//         for(auto ele : tmp){
+//             ele->print();
+//         }
 
         return tmp;
     }

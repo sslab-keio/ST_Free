@@ -1,4 +1,5 @@
 #include "ST_free.hpp"
+#include "support_funcs.hpp"
 #pragma once
 
 using namespace std;
@@ -7,8 +8,8 @@ using namespace llvm;
 namespace ST_free {
     class UniqueKey {
         private:
-            Value * v;
-            Type * t;
+            Value* v;
+            Type* t;
             long memberNum;
         public:
             Value * getValue() const {return v;}
@@ -31,5 +32,6 @@ namespace ST_free {
         public:
             const UniqueKey* addUniqueKey(Value *val, Type *ty, long mem);
             const UniqueKey* getUniqueKey(Value *val, Type *ty, long mem); 
+            void print();
     };
 }

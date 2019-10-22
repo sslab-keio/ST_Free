@@ -13,6 +13,7 @@ add_library( StructFreeMod MODULE
     StageOneAnalyzer.cpp
     RelationshipInformation.cpp
     UniqueKeyManager.cpp
+    FreedStruct.cpp
 )
 # Use C++11 to compile our pass (i.e., supply -std=c++11).
 target_compile_features(StructFreeMod PRIVATE cxx_range_for cxx_auto_type)

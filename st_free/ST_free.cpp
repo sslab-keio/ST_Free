@@ -5,7 +5,6 @@
 #include "include/FunctionManager.hpp"
 #include "include/StructInformation.hpp"
 #include "include/LoopManager.hpp"
-
 #include "include/BaseAnalyzer.hpp"
 #include "include/StageOneAnalyzer.hpp"
 
@@ -21,7 +20,6 @@ namespace{
         virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
             AU.setPreservesAll();
             AU.addRequired<LoopInfoWrapperPass>();
-            AU.addRequired<DominatorTreeWrapperPass>();
         }
 
         /*** Main Modular ***/
@@ -32,9 +30,9 @@ namespace{
 
             // StManage->addGlobalVariableInitInfo(M);
 #ifdef STAGE_ONE
-            StageOneAnalyzer analyze(StManage, loopmap);
+            StageOneAnalyzer* analyze = new StageOneAnalyzer(StManage, loopmap, &M.getDataLayout());
 #else
-            BaseAnalyzer analyze(StManage, loopmap);
+            BaseAnalyzer* analyze = new BaseAnalyzer(StManage, loopmap, &M.getDataLayout());
 #endif
 
             /*** Generate LoopInformation ***/
@@ -49,7 +47,7 @@ namespace{
             for(Function &F: M) {
                 // outs() << i++ << "/" << M.size() << "\n";
                 if(!(F.isDeclaration()))
-                    analyze.analyze(F);
+                    analyze->analyze(F);
             }
 
             /*** Main Warning Generator ***/

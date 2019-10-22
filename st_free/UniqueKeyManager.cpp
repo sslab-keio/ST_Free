@@ -20,4 +20,10 @@ namespace ST_free {
             return NULL;
         return &(*found);
     }
+
+    void UniqueKeyManager::print(){
+        for (auto uk: ukmanage) {
+            uk.print();
+        }
+    }
 }

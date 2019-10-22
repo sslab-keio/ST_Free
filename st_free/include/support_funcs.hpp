@@ -8,9 +8,9 @@ namespace ST_free{
     Type * get_type(Type *);
     void generateWarning(Instruction *, std::string);
     void generateWarning(string warn);
+    void generateWarning(Instruction * Inst, Value *val);
     void generateError(Instruction *, std::string);
+    string parseErrorMessage(StructType* parent, long index);
     Value * getArgAlloca(Value *arg);
-    long getValueIndices(GetElementPtrInst * inst);
     static LoadInst * find_load_recursively(Instruction *val, int TTL);
-    User * getFirstUser(Value *);
 }

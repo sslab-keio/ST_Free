@@ -8,29 +8,6 @@ namespace ST_free{
             return true;
         return false;
     }
-
-    void FreedStruct::print(){
-        outs() << "\t[FreedMember]\n";
-        for(int ind = 0; ind < FreedMembers.size(); ind++){
-            outs() << "\t  [" << ind << "] ";
-            if(FreedMembers[ind])
-                outs() << "IsFreed\n";
-            else
-                outs() << "NotFreed\n";
-        }
-        return;
-    }
-
-    void FreedStruct::setStoredInLoop(int ind) {
-        if(ind < storedInLoop.size())
-            storedInLoop[ind] = true;
-    }
-    bool FreedStruct::isStoredInLoop(int ind) {
-        if(ind < storedInLoop.size())
-            return storedInLoop[ind];
-        return false;
-    }
-
     FunctionInformation* FunctionManager::getElement(Function *F){
         if(!this->exists(F))
             func_map[F] = new FunctionInformation(F);
@@ -46,69 +23,63 @@ namespace ST_free{
         }
     }
 
-    FunctionInformation::FunctionInformation(){
+    FunctionInformation::FunctionInformation() {
         stat = UNANALYZED;
     }
 
-    Function & FunctionInformation::getFunction(){
+    Function & FunctionInformation::getFunction() {
         return (Function &)(* this->F);
     }
 
-    int FunctionInformation::getStat(){
+    int FunctionInformation::getStat() {
         return this->stat;
     }
 
-    void FunctionInformation::setStat(int stat){
+    void FunctionInformation::setStat(int stat) {
         this->stat = stat;
     }
 
-    void FunctionInformation::addEndPoint(BasicBlock *B){
+    void FunctionInformation::addEndPoint(BasicBlock *B) {
         endPoint.push_back(B);
     }
-    // void FunctionInformation::addFreeValue(BasicBlock *B, Value *V) {
-    //     BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-    //     if(BInfo)
-    //         BInfo->addFree(V, V->getType(), -1);
-    //     // BBManage.add(B, V, FREED);
-    // }
 
-    void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num) {
+    void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type *stTy, long num, ParentList plist) {
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, memTy, num);
         if (UK == NULL)
             UK = this->getUniqueKeyManager()->addUniqueKey(V, memTy, num);
 
         ValueInformation * varinfo = this->getValueInfo(UK);
-        if(varinfo == NULL)
-            varinfo = this->addVariable(UK, V, memTy, stTy, num);
+        if (varinfo == NULL)
+            varinfo = this->addVariable(UK, V, memTy, stTy, num, plist);
         else
             varinfo->addStructParams(stTy, num);
         varinfo->setFreed();
 
-        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);       
-        if(BInfo){
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if (BInfo) {
             BInfo->addFree(UK);
             if(BBManage.isPredBlockCorrectlyBranched(B) 
-                    || BInfo->isLoopBlock()){
+                    || BInfo->isLoopBlock()) {
                 this->addCorrectlyFreedValue(B, UK);
             }
         }
     }
 
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type * T, long mem) {
-        const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
-        if (UK == NULL)
-            UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
+        // const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
+        // if (UK == NULL)
+        //     UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
 
-        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-        if(BInfo)
-            BInfo->addAlloc(UK);
+        // BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        // if(BInfo)
+        //     BInfo->addAlloc(UK);
         // BBManage.add(B, V, T, mem, ALLOCATED);
     }
 
     void FunctionInformation::addAllocValue(BasicBlock *B, UniqueKey *UK) {
-        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-        if(BInfo)
-            BInfo->addAlloc(UK);
+        // BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        // if(BInfo)
+        //     BInfo->addAlloc(UK);
     }
 
     bool FunctionInformation::isUnanalyzed(){
@@ -146,11 +117,12 @@ namespace ST_free{
         }
     }
 
-    void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent){
-        FreedStruct * fst = new FreedStruct(T, V, I, B, NULL);
-        if(!this->freedStructExists(fst)){
-            fst->addParent(parent);
+    void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent, bool isInStruct){
+        FreedStruct * fst = new FreedStruct(T, V, I, B, NULL, isInStruct);
+        if(!this->freedStructExists(fst)) {
             freedStruct.push_back(fst);
+        } else {
+            delete fst;
         }
     }
 
@@ -160,14 +132,14 @@ namespace ST_free{
         return false;
     }
 
-    void FunctionInformation::addParentType(Type *T, Value *V, Instruction *I, StructType * parentTy){
+    void FunctionInformation::addParentType(Type *T, Value *V, Instruction *I, StructType * parentTy, int ind){
         FreedStruct fst(T, V, I);
         auto fVal = find(freedStruct.begin(), freedStruct.end(), &fst);
         if(fVal != freedStruct.end() && parentTy != NULL)
-            (*fVal)->addParent(parentTy);
+            (*fVal)->addParent(parentTy, ind);
     }
 
-    vector<BasicBlock *> FunctionInformation::getEndPoint() const{
+    vector<BasicBlock *> FunctionInformation::getEndPoint() const {
         return endPoint;
     }
 
@@ -186,55 +158,58 @@ namespace ST_free{
     bool FunctionInformation::isArgValue(Value *v){
         return args.isInList(v);
     }
+
     void FunctionInformation::setArgFree(Value *V){
         args.setFreed(V);
     }
 
     void FunctionInformation::setArgAlloc(Value *V){
-        args.setAllocated(V);
+        // args.setAllocated(V);
     }
+
     void FunctionInformation::setStructArgFree(Value *V, int64_t num){
-        args.setFreedStructNumber(V, num);
+        // args.setFreedStructNumber(V, num);
     }
+
     void FunctionInformation::setStructArgAlloc(Value *V, int64_t num){
-        args.setAllocatedStructNumber(V, num);
+        // args.setAllocatedStructNumber(V, num);
     }
-    void FunctionInformation::setStructMemberArgFreed(Value *V, int64_t num){
-        args.setStructMemberFree(V, num);
+
+    void FunctionInformation::setStructMemberArgFreed(Value *V, ParentList indexes){
+        vector<int> ind;
+        for(auto i : indexes) {
+            if (i.second != ROOT_INDEX)
+                ind.push_back(i.second);
+        }
+        args.setFreed(V, ind);
     }
+
     void FunctionInformation::setStructMemberArgAllocated(Value *V, int64_t num){
-        args.setStructMemberAllocated(V, num);
+        // args.setStructMemberAllocated(V, num);
     }
-    bool FunctionInformation::isArgFreed(int64_t num){
-        args.isArgFreed(num);
+
+    bool FunctionInformation::isArgFreed(int64_t num) {
+        return false;
     }
+
     bool FunctionInformation::isArgAllocated(int64_t num){
-        args.isArgAllocated(num);
+        // args.isArgAllocated(num);
     }
+
     ValueInformation * FunctionInformation::addVariable(Value * val){
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, val->getType(), -1);
-        if(UK == NULL)
+        if (UK == NULL)
             UK = this->getUniqueKeyManager()->addUniqueKey(val, val->getType(), -1);
-        if(!VManage.exists(UK))
+        if (!VManage.exists(UK))
             VManage.addValueInfo(UK, val);
         return VManage.getValueInfo(UK);
     }
     
-    // ValueInformation * FunctionInformation::addVariable(Value * val, Type * memType, Type *parType, long num){
-    //     if(!VManage.exists(val, memType, num))
-    //         VManage.addValueInfo(val, memType, parType, num);
-    //     return VManage.getValueInfo(val, memType, num);
-    // }
-
-    ValueInformation * FunctionInformation::addVariable(const UniqueKey *UK, Value * val, Type * memType, Type *parType, long num){
+    ValueInformation * FunctionInformation::addVariable(const UniqueKey *UK, Value * val, Type * memType, Type *parType, long num, ParentList plist) {
         if(!VManage.exists(UK))
-            VManage.addValueInfo(UK, val, memType, parType, num);
+            VManage.addValueInfo(UK, val, memType, parType, num, plist);
         return VManage.getValueInfo(UK);
     }
-
-    // ValueInformation * FunctionInformation::getValueInfo(Value * val){
-    //     return VManage.getValueInfo(val);
-    // }
 
     ValueInformation * FunctionInformation::getValueInfo(Value * val, Type * ty, long mem){
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, ty, mem);
@@ -274,11 +249,11 @@ namespace ST_free{
     //         vinfo->incrementRefCount(ref);
     // }
 
-    LocalVarList FunctionInformation::getLocalVar() const{
+    LocalVarList FunctionInformation::getLocalVar() const {
         return localVariables;
     }
 
-    bool FunctionInformation::localVarExists(Type * T){
+    bool FunctionInformation::localVarExists(Type * T) {
         if(find_if(localVariables.begin(), localVariables.end(), [T](FreedStruct *fs) { return *fs == T; }) == localVariables.end())
             return false;
         return true;
@@ -296,6 +271,7 @@ namespace ST_free{
             return (*fs)->getFreedMember();
         return vector<bool>();
     }
+
     void FunctionInformation::copyStructMemberFreed(Type * T,vector<bool> members){
         auto fs = find_if(freedStruct.begin(), freedStruct.end(), [T](FreedStruct *f){return *f == T; });
         if(fs != freedStruct.end()){
@@ -305,14 +281,14 @@ namespace ST_free{
                 }
             }
         }
-            
     }
+
     void FunctionInformation::addBasicBlockLiveVariable(BasicBlock * B, Value *V){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
         if(BInfo)
             BInfo->addLiveVariable(V);
     }
-    bool FunctionInformation::isFreedInBasicBlock(BasicBlock *B, Value *val, Type* ty, long mem){
+    bool FunctionInformation::isFreedInBasicBlock(BasicBlock *B, Value *val, Type* ty, long mem) {
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, ty, mem);
         if(BInfo && UK)
@@ -362,6 +338,7 @@ namespace ST_free{
     bool FunctionInformation::isPredBlockCorrectlyBranched(BasicBlock *B){
         return BBManage.isPredBlockCorrectlyBranched(B);
     }
+
     void FunctionInformation::addCorrectlyFreedValue(BasicBlock * B, const UniqueKey *UK){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
         if(BInfo){
@@ -407,6 +384,7 @@ namespace ST_free{
     void FunctionInformation::updateSuccessorBlock(BasicBlock &B){
         BBManage.updateSuccessorBlock(&B);
     }
+
     void FunctionInformation::setLoopInfo(LoopInfo *li){
         LoopI = li;
     }
@@ -438,7 +416,25 @@ namespace ST_free{
     void FunctionInformation::addFunctionPointerInfo(Value *val, Function *func){
         funcPtr[val].push_back(func);
     }
+
     vector<Function *> FunctionInformation::getPointedFunctions(Value *val){
         return funcPtr[val];
+    }
+
+    void FunctionInformation::addAliasedType(Value* V, Type* T) {
+        if (aliasedType.find(V) == aliasedType.end()) 
+            aliasedType[V] = T;
+    }
+
+    Type* FunctionInformation::getAliasedType(Value *V) {
+        if (aliasedType.find(V) != aliasedType.end())
+            return aliasedType[V];
+        return NULL;
+    }
+
+    bool FunctionInformation::aliasedTypeExists(Value *V) {
+        if (aliasedType.find(V) != aliasedType.end())
+            return true;
+        return false;
     }
 }

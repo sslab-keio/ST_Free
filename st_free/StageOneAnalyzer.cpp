@@ -3,40 +3,31 @@
 namespace ST_free {
     
     void StageOneAnalyzer::analyzeInstructions(BasicBlock &B) {
-        for (Instruction &I: B){
+        for (Instruction &I: B) {
             if(this->isReturnFunc(&I))
                 getFunctionInformation()->addEndPoint(&B);
 
-            if(AllocaInst *AI = dyn_cast<AllocaInst>(&I)) {
+            if(AllocaInst *AI = dyn_cast<AllocaInst>(&I))
                 this->analyzeAllocaInst(AI, B);
-            }
-            else if (CallInst *CI = dyn_cast<CallInst>(&I)) {
+            else if (CallInst *CI = dyn_cast<CallInst>(&I))
                 this->analyzeCallInst(CI, B);
-            }
-            else if (StoreInst *SI = dyn_cast<StoreInst>(&I)) {
+            else if (StoreInst *SI = dyn_cast<StoreInst>(&I))
                 this->analyzeStoreInst(SI, B);
-            }
-            else if (BranchInst *BI = dyn_cast<BranchInst>(&I)) {
+            else if (BranchInst *BI = dyn_cast<BranchInst>(&I))
                 this->analyzeBranchInst(BI, B);
-            }
+            else if (GetElementPtrInst *GI = dyn_cast<GetElementPtrInst>(&I))
+                this->decodeGEPInst(GI);
         }
     }
 
     void StageOneAnalyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B){
-        // this->addLocalVariable(
-        //         &B,
-        //         ainst->getAllocatedType(),
-        //         ainst,
-        //         cast<Instruction>(getFirstUser(&I)),
-        //         ParentList()
-        //     );
     }
 
     void StageOneAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
         AliasElement valueEle, pointerEle;
 
         /*** Check the Pointer of StoreInst ***/
-        if(this->isStoreToStructMember(SI)){
+        if(this->isStoreToStructMember(SI)) {
             generateWarning(SI, "is Store to struct member");
             GetElementPtrInst * GEle = getStoredStruct(SI);
             if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
@@ -117,12 +108,12 @@ namespace ST_free {
 
         for(Function* called_function: funcLists) {
             if (isAllocFunction(called_function)) {
-                Value * val = getAllocatedValue(CI);
-                if(val != NULL) 
-                    if(StructType * strTy = dyn_cast<StructType>(get_type(val->getType()))) {
-                        getStructManager()->addAlloc(strTy);
-                    }
-                // this->addAlloc(CI, &B);
+                // Value * val = getAllocatedValue(CI);
+                // if(val != NULL) 
+                //     if(StructType * strTy = dyn_cast<StructType>(get_type(val->getType()))) {
+                    // getStructManager()->addAlloc(strTy);
+                //     }
+                this->addAlloc(CI, &B);
             } else if (isFreeFunction(called_function)) {
                 for (auto arguments = CI->arg_begin(); arguments != CI->arg_end(); arguments++) {
                     this->addFree(cast<Value>(arguments), CI, &B);
@@ -156,23 +147,19 @@ namespace ST_free {
                     continue;
 
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
-                if(vinfo != NULL){
-                    bool isFreed = false;
-                    if(getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
-                            || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)) {
-                        isFreed = true;
-                    }
-
-                    if(isFreed) {
+                if (vinfo != NULL) {
+                    if (getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
+                            || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
+                        ) {
                         getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
-                        if(getFunctionInformation()->isArgValue(vinfo->getValue())) {
-                            getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
+                        if (getFunctionInformation()->isArgValue(vinfo->getValue())) {
+                            getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getParents());
                         }
                     }
                 }
             }
 
-            if (!getFunctionInformation()->isArgValue(freedStruct->getValue())){
+            if (freedStruct->isInStruct() || !getFunctionInformation()->isArgValue(freedStruct->getValue())) {
                 getStructManager()->addCandidateValue(&(getFunctionInformation()->getFunction()), strTy, freedStruct);
             }
         }
