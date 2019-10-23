@@ -5,22 +5,21 @@ using namespace ST_free;
 namespace ST_free {
     /*** Iterate Use until Load Instruction ***/
     LoadInst * find_load(Instruction * val){
-        return find_load_recursively(val, 3);
+        return find_load_recursively(val, 2);
     }
 
-    static LoadInst * find_load_recursively(Instruction *val, int TTL) {
-        if(isa<LoadInst>(val))
-            return cast<LoadInst>(val);
+    static LoadInst* find_load_recursively(Instruction *I, int TTL) {
+        if(isa<LoadInst>(I))
+            return cast<LoadInst>(I);
+        else if(isa<CallInst>(I))
+            return NULL;
+        // else if(isa<BitCastInst>(I))
+        //     return NULL;
 
-        if(TTL >= 0){
-            for(Use &U : val->operands()){
-                if(Instruction * inst = dyn_cast<Instruction>(U)){
-                    if(isa<LoadInst>(inst))
-                        return cast<LoadInst>(inst);
-                    // if(isa<BitCastInst>(inst))
-                    //     generateError(inst, "Found bit cast");
-
-                    if (LoadInst * res = find_load_recursively(inst, --TTL))
+        if(TTL >= 0) {
+            for(Use &U : I->operands()) {
+                if(Instruction * inst = dyn_cast<Instruction>(U)) {
+                    if (LoadInst * res = find_load_recursively(inst, TTL - 1))
                         return res;
                 }
             }
@@ -72,13 +71,15 @@ namespace ST_free {
         return val_type;
     }
 
-    void generateWarning(Instruction * Inst, string warn){
+    void generateWarning(Instruction * Inst, string warn, bool print){
         if(const DebugLoc &Loc = Inst->getDebugLoc()){
             unsigned line = Loc.getLine();
             unsigned col = Loc.getCol();
-            DEBUG_WITH_TYPE("st_free", outs() << "[WARNING] ");
-            DEBUG_WITH_TYPE("st_free", outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ");
-            DEBUG_WITH_TYPE("st_free", outs() << warn << "\n");
+            if (print) {
+                outs() << "[WARNING] ";
+                outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
+                outs() << warn << "\n";
+            }
         }
     }
 

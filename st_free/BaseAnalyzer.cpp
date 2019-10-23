@@ -275,7 +275,7 @@ namespace ST_free {
             }
 
             if (isStructFree(val)) {
-                generateWarning(val, "Struct Free");
+                generateWarning(CI, "Struct Free", true);
                 Value * loaded_value = getStructFreedValue(val);
                 if (loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
@@ -286,6 +286,7 @@ namespace ST_free {
                 }
                 isStructRelated = true;
             } else if (isOptimizedStructFree(val)) {
+                generateWarning(CI, "Optimized Struct Free");
                 UpdateIfNull(freeValue, val);
                 UpdateIfNull(memType, getOptimizedStructFree(val));
                 if (get_type(memType)->isStructTy()) {
@@ -592,7 +593,7 @@ namespace ST_free {
         return NULL;       
     }
 
-    bool BaseAnalyzer::isStructFree(Instruction * val){
+    bool BaseAnalyzer::isStructFree(Instruction * val) {
         // if (auto BCI = dyn_cast<BitCastInst>(val)) {
         //     if(get_type(BCI->getSrcTy())->isStructTy())
         //         return true;
@@ -610,7 +611,7 @@ namespace ST_free {
         return getFunctionInformation()->getAliasedType(I);
     }
 
-    Type * BaseAnalyzer::getStructType(Instruction * val){
+    Type * BaseAnalyzer::getStructType(Instruction * val) {
         Type * tgt_type = NULL;
         LoadInst *load_inst = find_load(val);
         if (load_inst != NULL && load_inst->getOperandList() != NULL)
@@ -618,7 +619,7 @@ namespace ST_free {
         return tgt_type;
     }
 
-    bool BaseAnalyzer::isFuncPointer(Type * t){
+    bool BaseAnalyzer::isFuncPointer(Type * t) {
         Type * tgt = get_type(t);
         if(tgt->isFunctionTy())
             return true;

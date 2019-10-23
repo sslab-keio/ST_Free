@@ -6,7 +6,7 @@ namespace ST_free{
     Value * getLoadeeValue(Value *);
     Type * get_type(Value *);
     Type * get_type(Type *);
-    void generateWarning(Instruction *, std::string);
+    void generateWarning(Instruction *, std::string, bool print = false);
     void generateWarning(string warn);
     void generateWarning(Instruction * Inst, Value *val);
     void generateError(Instruction *, std::string);
