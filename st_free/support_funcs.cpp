@@ -9,6 +9,9 @@ namespace ST_free {
     }
 
     static LoadInst* find_load_recursively(Instruction *I, int TTL) {
+        if (TTL < 0)
+            return NULL;
+
         if(isa<LoadInst>(I))
             return cast<LoadInst>(I);
         else if(isa<CallInst>(I))
@@ -16,12 +19,11 @@ namespace ST_free {
         // else if(isa<BitCastInst>(I))
         //     return NULL;
 
-        if(TTL >= 0) {
-            for(Use &U : I->operands()) {
-                if(Instruction * inst = dyn_cast<Instruction>(U)) {
-                    if (LoadInst * res = find_load_recursively(inst, TTL - 1))
-                        return res;
-                }
+        for(Use &U : I->operands()) {
+            if(Instruction* inst = dyn_cast<Instruction>(U)) {
+                LoadInst* res = find_load_recursively(inst, TTL - 1);
+                if (res)
+                    return res;
             }
         }
         return NULL;
@@ -30,13 +32,11 @@ namespace ST_free {
     Value * getLoadeeValue(Value* val){
         Value *v = val;
         while (isa<LoadInst>(v) || isa<GetElementPtrInst>(v)) {
-            if(auto inst = dyn_cast<LoadInst>(v)){
+            if(auto inst = dyn_cast<LoadInst>(v))
                 v = inst->getPointerOperand();
-            } else if(auto inst = dyn_cast<GetElementPtrInst>(v)){
+            else if(auto inst = dyn_cast<GetElementPtrInst>(v))
                 v = inst->getPointerOperand();
-            }
         }
-
         return v;
     }
     /*** Retrieve Pointer Dereferance Type ***/

@@ -29,7 +29,7 @@ namespace{
             LoopManager* loopmap = new LoopManager();
 
             // StManage->addGlobalVariableInitInfo(M);
-#ifdef STAGE_ONE
+#if defined(STAGE_ONE) || defined(STAGE_PRIMITIVE)
             StageOneAnalyzer* analyze = new StageOneAnalyzer(StManage, loopmap, &M.getDataLayout());
 #else
             BaseAnalyzer* analyze = new BaseAnalyzer(StManage, loopmap, &M.getDataLayout());

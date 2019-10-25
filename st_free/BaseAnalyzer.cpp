@@ -263,24 +263,27 @@ namespace ST_free {
                 }
 
                 // index = indexes[indexes.size() - 2].second;
-                index = indexes.back().second;
-                if (auto StTy = dyn_cast<StructType>(get_type(indexes.back().first)))
-                    if(-1 < index && index < StTy->getNumElements())
-                        UpdateIfNull(memType, StTy->getElementType(index));
+                if (indexes.size() > 0) {
+                    index = indexes.back().second;
+                    if (auto StTy = dyn_cast<StructType>(get_type(indexes.back().first)))
+                        if(ROOT_INDEX < index && index < StTy->getNumElements())
+                            UpdateIfNull(memType, StTy->getElementType(index));
 
-                if (get_type(indexes.front().first)->isStructTy())
-                    UpdateIfNull(parentType, cast<StructType>(get_type(indexes.front().first)));
-                isStructRelated = true;
-                generateWarning(val, "Struct element free");
+                    if (get_type(indexes.front().first)->isStructTy())
+                        UpdateIfNull(parentType, cast<StructType>(get_type(indexes.front().first)));
+
+                    isStructRelated = true;
+                    generateWarning(val, "Struct element free");
+                }
             }
 
             if (isStructFree(val)) {
-                generateWarning(CI, "Struct Free", true);
-                Value * loaded_value = getStructFreedValue(val);
+                generateWarning(CI, "Struct Free");
+                Value *loaded_value = getStructFreedValue(val);
                 if (loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
                     UpdateIfNull(memType, getStructType(val));
-                    if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && get_type(memType)->isStructTy()) {
+                    if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && memType && get_type(memType)->isStructTy()) {
                         getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
                     }
                 }
@@ -450,7 +453,8 @@ namespace ST_free {
                 this->getStructParents(Inst, typeList);
             // typeList.push_back(pair<Type *, int>(GI->getResultElementType(), getValueIndices(GI)));
             pair<Type*, long> decoded_vals = this->decodeGEPInst(GI);
-            typeList.push_back(pair<Type *, int>(decoded_vals.first, decoded_vals.second));
+            if (decoded_vals.first != NULL && decoded_vals.second != ROOT_INDEX)
+                typeList.push_back(pair<Type *, int>(decoded_vals.first, decoded_vals.second));
         } else if(AllocaInst *AI = dyn_cast<AllocaInst>(I)) {
             // typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
         }
@@ -466,7 +470,7 @@ namespace ST_free {
 
     long BaseAnalyzer::getValueIndices(GetElementPtrInst* inst) {
         auto idx_itr = inst->idx_end() - 1;
-        long indice = 0;
+        long indice = ROOT_INDEX;
 
         // if (isa<IntegerType>(inst->getSourceElementType())) {
         //     Type *Ty = NULL;
@@ -477,8 +481,9 @@ namespace ST_free {
         //     if (get_type(Ty)->isStructTy())
         //         outs() << "\n";
         // } else {
-        if(ConstantInt *cint = dyn_cast<ConstantInt>(idx_itr->get()))
+        if(ConstantInt *cint = dyn_cast<ConstantInt>(idx_itr->get())){
             indice = cint->getSExtValue();
+        }
         // }
         return indice;
     }
@@ -611,12 +616,14 @@ namespace ST_free {
         return getFunctionInformation()->getAliasedType(I);
     }
 
-    Type * BaseAnalyzer::getStructType(Instruction * val) {
-        Type * tgt_type = NULL;
+    Type * BaseAnalyzer::getStructType(Instruction* val) {
         LoadInst *load_inst = find_load(val);
-        if (load_inst != NULL && load_inst->getOperandList() != NULL)
-            tgt_type = get_type(load_inst->getPointerOperand());
-        return tgt_type;
+        if (load_inst && load_inst->getOperandList() != NULL) {
+            Type * tgt_type = get_type(load_inst->getPointerOperandType());
+            if (tgt_type && get_type(tgt_type)->isStructTy())
+                return tgt_type;
+        }
+        return NULL;
     }
 
     bool BaseAnalyzer::isFuncPointer(Type * t) {
@@ -626,14 +633,13 @@ namespace ST_free {
         return false;
     }
 
-    Value * BaseAnalyzer::getStructFreedValue(Instruction * val) {
+    Value* BaseAnalyzer::getStructFreedValue(Instruction* val) {
         LoadInst *load_inst = find_load(val);
-        if (load_inst != NULL) {
-            if(load_inst->getOperandList() != NULL) {
-                Type * tgt_type = get_type(load_inst->getPointerOperand());
-                if (tgt_type != NULL && tgt_type->isStructTy()) {
-                    return getLoadeeValue(load_inst);
-                }
+        if (load_inst && load_inst->getOperandList() != NULL) {
+            Type * tgt_type = get_type(load_inst->getPointerOperandType());
+            if (tgt_type)
+                if(isa<StructType>(get_type(tgt_type))) {
+                return getLoadeeValue(load_inst);
             }
         }
         return NULL;
@@ -664,14 +670,17 @@ namespace ST_free {
         Type* Ty = GEle->getSourceElementType();
         long index = getValueIndices(GEle);
 
-        if (GEle->getSourceElementType()->isIntegerTy()) {
-            if(getFunctionInformation()->aliasedTypeExists(GEle->getPointerOperand()))
-                Ty = getFunctionInformation()->getAliasedType(GEle->getPointerOperand());
-            if (Ty && get_type(Ty)->isStructTy()){
-                index = getMemberIndiceFromByte(cast<StructType>(get_type(Ty)), index);
+        if(index == ROOT_INDEX) {
+            Ty = NULL;
+        } else {
+            if (GEle->getSourceElementType()->isIntegerTy()) {
+                if(getFunctionInformation()->aliasedTypeExists(GEle->getPointerOperand()))
+                    Ty = getFunctionInformation()->getAliasedType(GEle->getPointerOperand());
+                if (Ty && get_type(Ty)->isStructTy()){
+                    index = getMemberIndiceFromByte(cast<StructType>(get_type(Ty)), index);
+                }
             }
         }
-
         return pair<Type*, long>(Ty, index);
     }
 
