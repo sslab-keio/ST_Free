@@ -15,8 +15,8 @@ namespace ST_free {
                 this->analyzeStoreInst(SI, B);
             else if (BranchInst *BI = dyn_cast<BranchInst>(&I))
                 this->analyzeBranchInst(BI, B);
-            else if (GetElementPtrInst *GI = dyn_cast<GetElementPtrInst>(&I))
-                this->decodeGEPInst(GI);
+            // else if (GetElementPtrInst *GI = dyn_cast<GetElementPtrInst>(&I))
+            //     this->decodeGEPInst(GI);
         }
     }
 
@@ -31,14 +31,14 @@ namespace ST_free {
             generateWarning(SI, "is Store to struct member");
             GetElementPtrInst * GEle = getStoredStruct(SI);
             if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
-                getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
-                pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
+                getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
+                pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
 
                 if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
                     generateWarning(SI, "GolbalVariable Store");
                     getStructManager()->addGlobalVarStore(
                             cast<StructType>(GEle->getSourceElementType()), 
-                            getValueIndices(GEle)
+                            getValueIndices(GEle).back()
                         );
                     // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
                     //     if(const DebugLoc &Loc = SI->getDebugLoc()){

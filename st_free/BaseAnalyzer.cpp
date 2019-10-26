@@ -57,13 +57,13 @@ namespace ST_free {
         if(this->isStoreToStructMember(SI)) {
             generateWarning(SI, "is Store to struct");
             GetElementPtrInst * GEle = getStoredStruct(SI);
-            stManage->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle));
+            stManage->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
 
             if(isa<GlobalValue>(SI->getValueOperand())) {
                 generateWarning(SI, "GolbalVariable Store");
                 stManage->addGlobalVarStore(
                         cast<StructType>(GEle->getSourceElementType()), 
-                        getValueIndices(GEle)
+                        getValueIndices(GEle).back()
                     );
             }
 
@@ -452,9 +452,11 @@ namespace ST_free {
             if(Instruction *Inst = dyn_cast<Instruction>(GI->getPointerOperand()))
                 this->getStructParents(Inst, typeList);
             // typeList.push_back(pair<Type *, int>(GI->getResultElementType(), getValueIndices(GI)));
-            pair<Type*, long> decoded_vals = this->decodeGEPInst(GI);
-            if (decoded_vals.first != NULL && decoded_vals.second != ROOT_INDEX)
-                typeList.push_back(pair<Type *, int>(decoded_vals.first, decoded_vals.second));
+            vector<pair<Type*, long>> decoded_vals = this->decodeGEPInst(GI);
+            for (auto dec : decoded_vals) {
+                if (dec.first != NULL && dec.second != ROOT_INDEX)
+                    typeList.push_back(pair<Type *, int>(dec.first, dec.second));
+            }
         } else if(AllocaInst *AI = dyn_cast<AllocaInst>(I)) {
             // typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
         }
@@ -468,24 +470,21 @@ namespace ST_free {
         return -1;
     }
 
-    long BaseAnalyzer::getValueIndices(GetElementPtrInst* inst) {
-        auto idx_itr = inst->idx_end() - 1;
+    vector<long> BaseAnalyzer::getValueIndices(GetElementPtrInst* inst) {
+        // auto idx_itr = inst->idx_end() - 1;
         long indice = ROOT_INDEX;
+        vector<long> indices;
 
-        // if (isa<IntegerType>(inst->getSourceElementType())) {
-        //     Type *Ty = NULL;
-        //     for (auto usr:inst->user()) {
-        //         if (auto bit_cast = isa<BitCastInst>(usr))
-        //             Ty = bit_cast->getDestTy();
-        //     }
-        //     if (get_type(Ty)->isStructTy())
-        //         outs() << "\n";
-        // } else {
-        if(ConstantInt *cint = dyn_cast<ConstantInt>(idx_itr->get())){
-            indice = cint->getSExtValue();
+        for(auto idx_itr = inst->idx_begin() + 1; idx_itr != inst->idx_end(); idx_itr++) {
+            if(ConstantInt *cint = dyn_cast<ConstantInt>(idx_itr->get()))
+                indice = cint->getSExtValue();
+            else
+                indice = ROOT_INDEX;
+            
+            indices.push_back(indice);
         }
-        // }
-        return indice;
+
+        return indices;
     }
 
     GetElementPtrInst* BaseAnalyzer::getRootGEle(GetElementPtrInst *GEle) {
@@ -665,23 +664,27 @@ namespace ST_free {
         return NULL;
     }
 
-    pair<Type*, long> BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle) {
-        // Type* Ty = GEle->getResultElementType();
+    vector<pair<Type*, long>> BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle) {
         Type* Ty = GEle->getSourceElementType();
-        long index = getValueIndices(GEle);
+        vector<long> indice = getValueIndices(GEle);
+        vector<pair<Type *, long>> decoded;
 
-        if(index == ROOT_INDEX) {
-            Ty = NULL;
-        } else {
-            if (GEle->getSourceElementType()->isIntegerTy()) {
-                if(getFunctionInformation()->aliasedTypeExists(GEle->getPointerOperand()))
-                    Ty = getFunctionInformation()->getAliasedType(GEle->getPointerOperand());
-                if (Ty && get_type(Ty)->isStructTy()){
-                    index = getMemberIndiceFromByte(cast<StructType>(get_type(Ty)), index);
+        for(long ind: indice) {
+            long index = ind;
+            if(Ty && index != ROOT_INDEX) {
+                if (Ty->isIntegerTy()) {
+                    if(getFunctionInformation()->aliasedTypeExists(GEle->getPointerOperand()) && decoded.empty())
+                        Ty = getFunctionInformation()->getAliasedType(GEle->getPointerOperand());
+                    if (Ty && get_type(Ty)->isStructTy())
+                        index = getMemberIndiceFromByte(cast<StructType>(get_type(Ty)), index);
                 }
+                decoded.push_back(pair<Type *, long>(Ty, index));
+                if(auto StTy = dyn_cast<StructType>(Ty))
+                    Ty = StTy->getElementType(index);
             }
         }
-        return pair<Type*, long>(Ty, index);
+
+        return decoded;
     }
 
     Type* BaseAnalyzer::extractResultElementType(GetElementPtrInst *GEle) {

@@ -68,7 +68,7 @@ namespace ST_free {
             bool isStoreFromStructMember(StoreInst * SI);
             bool isStoreToStruct(StoreInst *SI);
             bool isStoreFromStruct(StoreInst *SI);
-            pair<Type*, long> decodeGEPInst(GetElementPtrInst *GEle);
+            vector<pair<Type*, long>> decodeGEPInst(GetElementPtrInst *GEle);
             vector<string> decodeDirectoryName(string str);
             void getStructParents(Instruction *I, vector<pair<Type *, int>> &typeList);
             /*** Determinator ***/
@@ -89,7 +89,7 @@ namespace ST_free {
             Value * getFreedValue(Instruction * val);
             Value * getAllocatedValue(Instruction *I);
             /*** Support Methods ***/
-            long getValueIndices(GetElementPtrInst * inst);
+            vector<long> getValueIndices(GetElementPtrInst * inst);
             GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
             Type* extractResultElementType(GetElementPtrInst *GEle);
         private:
