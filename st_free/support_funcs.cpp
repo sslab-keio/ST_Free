@@ -68,6 +68,8 @@ namespace ST_free {
         val_type = t;
         if (val_type->isPointerTy())
             val_type = (cast<PointerType>(val_type))->getElementType();
+        else if (val_type->isArrayTy())
+            val_type = (cast<ArrayType>(val_type))->getElementType();
         return val_type;
     }
 

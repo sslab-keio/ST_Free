@@ -12,7 +12,7 @@ namespace ST_free{
         candidateNum = 0;
         allocNum = 0;
         for(Type * ty: st->elements()){
-            if(!ty->isPointerTy())
+            if(!ty->isPointerTy() && !ty->isArrayTy())
                 memberStats[ind] = NOTPOINTERTY;
             else if(get_type(ty)->isFunctionTy())
                 memberStats[ind] = ISNOTRESPONSIBLE;
@@ -244,7 +244,7 @@ namespace ST_free{
     void StructManager::createDependencies(){
         for(auto Stmap : StructInfo){
             for(Type * member : Stmap.first->elements()){
-                if(member->isPointerTy())
+                if(member->isPointerTy() || member->isArrayTy())
                     if(auto stTy = dyn_cast<StructType>(get_type(member)))
                         this->addReferee(stTy, Stmap.first);
             }
@@ -254,7 +254,7 @@ namespace ST_free{
         for(auto Stmap : StructInfo){
             for(unsigned ind = 0; ind < Stmap.first->getNumElements(); ind++){
                 Type * member = Stmap.first->getElementType(ind);
-                if(member->isPointerTy())
+                if(member->isPointerTy() || member->isArrayTy())
                     if(auto stTy = dyn_cast<StructType>(get_type(member)))
                         if(StructInfo[stTy]->hasSingleReferee()){
                             StructInfo[Stmap.first]->setMemberStatResponsible(ind);

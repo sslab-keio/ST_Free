@@ -25,8 +25,7 @@ namespace{
         /*** Main Modular ***/
         bool runOnModule(Module &M) override {
             /*** Collect Struct Information ***/
-            StructManager* StManage = new StructManager(M.getIdentifiedStructTypes());
-            LoopManager* loopmap = new LoopManager();
+            StructManager* StManage = new StructManager(M.getIdentifiedStructTypes()); LoopManager* loopmap = new LoopManager();
 
             // StManage->addGlobalVariableInitInfo(M);
 #if defined(STAGE_ONE) || defined(STAGE_PRIMITIVE)
@@ -52,7 +51,7 @@ namespace{
 
             /*** Main Warning Generator ***/
             StManage->BuildCandidateCount();
-            // StManage->print();
+            StManage->print();
             StManage->checkCorrectness();
             return false;
         }
