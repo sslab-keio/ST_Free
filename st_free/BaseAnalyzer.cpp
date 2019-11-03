@@ -283,18 +283,18 @@ namespace ST_free {
                 if (loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
                     UpdateIfNull(memType, getStructType(val));
-                    if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && memType && get_type(memType)->isStructTy()) {
-                        getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
-                    }
+                    // if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && memType && get_type(memType)->isStructTy()) {
+                    //     getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
+                    // }
                 }
                 isStructRelated = true;
             } else if (isOptimizedStructFree(val)) {
                 generateWarning(CI, "Optimized Struct Free");
                 UpdateIfNull(freeValue, val);
                 UpdateIfNull(memType, getOptimizedStructFree(val));
-                if (get_type(memType)->isStructTy()) {
-                    getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
-                }
+                // if (get_type(memType)->isStructTy()) {
+                //     getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
+                // }
                 isStructRelated = true;
             }
 
@@ -323,7 +323,10 @@ namespace ST_free {
                         getFunctionInformation()->setStructMemberArgFreed(freeValue, indexes);
                     }
                 }
-                getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
+                ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
+                if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && memType && get_type(memType)->isStructTy()) {
+                    getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, valInfo, index != ROOT_INDEX);
+                }
             }
         }
     }

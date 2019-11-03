@@ -21,11 +21,12 @@ namespace ST_free {
             /*** FreeValue Related ***/
             // void addFreeValue(BasicBlock *B, Value *V);
             // void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
-            void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num, ParentList plist);
+            ValueInformation* addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num, ParentList plist);
             void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void addFreedStruct(Type *T, Value *V, Instruction *I);
             void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I);
-            void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent, bool isInStruct = false);
+            void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent, ValueInformation *valInfo, bool isInStruct = false);
+            // void addFreedStructValue();
             void addParentType(Type *T, Value *V, Instruction *I, StructType *parentTy, int ind);
             FreedStructList getFreedStruct() const;
             bool freedStructExists(FreedStruct *fst);

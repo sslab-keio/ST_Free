@@ -74,6 +74,11 @@ namespace ST_free{
                         generateError(cand->getInstruction(), message);
                     }
 #endif
+#ifdef STAGE_BIDIRECTIONAL
+                    if(this->isBidirectionalReferencing(cand, ind)) {
+                        // TODO: Check authority of bidirectional referenced values
+                    }
+#endif
                 }
             }
             // warningStr += ')';
@@ -85,11 +90,12 @@ namespace ST_free{
     }
 
     bool StructInformation::isBidirectionalReferencing(CandidateValue *cand, int ind){
-        // Type *parent = cand->getTopParent();
-        // Type *member = strTy->getElementType(ind);
-        // if(parent == get_type(member)){
-        //     return true;
-        // }
+        ParentList parents = cand->getFreedStruct()->getParentTypes();
+        Type *member = strTy->getElementType(ind);
+        for (pair<Type *, int> parent : parents) {
+            if (get_type(parent.first) == get_type(member))
+                return true;
+        }
         return false;
     }
 

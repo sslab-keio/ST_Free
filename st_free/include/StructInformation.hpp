@@ -12,7 +12,7 @@
 #define UNALLOCATED 5
 #define PRIMITIVE 6
 
-#define THREASHOLD 0.5
+#define THREASHOLD 0.2
 
 namespace ST_free{
     /** Class [CandidateValue]

@@ -28,7 +28,7 @@ namespace ST_free {
 
         /*** Check the Pointer of StoreInst ***/
         if(this->isStoreToStructMember(SI)) {
-            generateWarning(SI, "is Store to struct member");
+            generateWarning(SI, "is Store to struct member", true);
             GetElementPtrInst * GEle = getStoredStruct(SI);
             if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
                 getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());

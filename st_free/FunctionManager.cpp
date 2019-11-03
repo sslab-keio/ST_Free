@@ -43,7 +43,7 @@ namespace ST_free{
         endPoint.push_back(B);
     }
 
-    void FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type *stTy, long num, ParentList plist) {
+    ValueInformation* FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type *stTy, long num, ParentList plist) {
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, memTy, num);
         if (UK == NULL)
             UK = this->getUniqueKeyManager()->addUniqueKey(V, memTy, num);
@@ -63,6 +63,7 @@ namespace ST_free{
                 this->addCorrectlyFreedValue(B, UK);
             }
         }
+        return varinfo;
     }
 
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type * T, long mem) {
@@ -117,8 +118,8 @@ namespace ST_free{
         }
     }
 
-    void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent, bool isInStruct){
-        FreedStruct * fst = new FreedStruct(T, V, I, B, NULL, isInStruct);
+    void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I, StructType *parent, ValueInformation *valInfo, bool isInStruct){
+        FreedStruct * fst = new FreedStruct(T, V, I, B, valInfo, isInStruct);
         if(!this->freedStructExists(fst))
             freedStruct.push_back(fst);
         else
