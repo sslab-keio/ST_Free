@@ -92,6 +92,8 @@ namespace ST_free {
             vector<long> getValueIndices(GetElementPtrInst * inst);
             GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
             Type* extractResultElementType(GetElementPtrInst *GEle);
+            /*** connector with struct manager***/
+            bool isAuthorityChained(ParentList);
         private:
             /*** Managers and DataLayouts ***/
             FunctionManager identifier;

@@ -165,7 +165,6 @@ namespace ST_free {
                     if(isFreed) {
                         getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
                         if(getFunctionInformation()->isArgValue(vinfo->getValue())) {
-                            // getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getMemberNum());
                             getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), ParentList());
                         }
                     }
@@ -262,12 +261,13 @@ namespace ST_free {
                     indexes.push_back(addParent);
                 }
 
-                // index = indexes[indexes.size() - 2].second;
                 if (indexes.size() > 0) {
                     index = indexes.back().second;
-                    if (auto StTy = dyn_cast<StructType>(get_type(indexes.back().first)))
+                    
+                    if (auto StTy = dyn_cast<StructType>(get_type(indexes.back().first))) {
                         if(ROOT_INDEX < index && index < StTy->getNumElements())
                             UpdateIfNull(memType, StTy->getElementType(index));
+                    }
 
                     if (get_type(indexes.front().first)->isStructTy())
                         UpdateIfNull(parentType, cast<StructType>(get_type(indexes.front().first)));
@@ -283,18 +283,12 @@ namespace ST_free {
                 if (loaded_value) {
                     UpdateIfNull(freeValue, loaded_value);
                     UpdateIfNull(memType, getStructType(val));
-                    // if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && memType && get_type(memType)->isStructTy()) {
-                    //     getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
-                    // }
                 }
                 isStructRelated = true;
             } else if (isOptimizedStructFree(val)) {
                 generateWarning(CI, "Optimized Struct Free");
                 UpdateIfNull(freeValue, val);
                 UpdateIfNull(memType, getOptimizedStructFree(val));
-                // if (get_type(memType)->isStructTy()) {
-                //     getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, index != ROOT_INDEX);
-                // }
                 isStructRelated = true;
             }
 
@@ -309,7 +303,7 @@ namespace ST_free {
                 if (getFunctionInformation()->aliasExists(B, freeValue)) {
                     Value * aliasVal = getFunctionInformation()->getAlias(B, freeValue);
 
-                    if (GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)){
+                    if (GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)) {
                         generateWarning(CI, "Alias Free found");
                         if (V != aliasVal)
                             this->addFree(GEle, CI, B, true);
@@ -324,7 +318,12 @@ namespace ST_free {
                     }
                 }
                 ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
-                if (!isAlias && !getFunctionInformation()->aliasExists(B, freeValue) && memType && get_type(memType)->isStructTy()) {
+                if (!isAlias 
+                        && !getFunctionInformation()->aliasExists(B, freeValue)
+                        && memType
+                        && get_type(memType)->isStructTy()
+                        && this->isAuthorityChained(indexes)
+                    ) {
                     getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, valInfo, index != ROOT_INDEX);
                 }
             }
@@ -340,6 +339,7 @@ namespace ST_free {
         }
         if(get_type(Ty)->isStructTy()) {
             getFunctionInformation()->addAliasedType(CI, Ty);
+            getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
         // if (isStructEleAlloc(CI)) {
         //     GetElementPtrInst *inst = getAllocStructEleInfo(CI);
@@ -701,5 +701,16 @@ namespace ST_free {
             }
         }
         return Ty;
+    }
+    
+    bool BaseAnalyzer::isAuthorityChained(ParentList pt) {
+        for (pair<Type *, long> ele : pt) {
+            if (auto StTy = dyn_cast<StructType>(get_type(ele.first)))
+                if (!stManage->structHoldsAuthority(StTy, ele.second))
+                    return false;
+            else
+                return false;
+        }
+        return true;
     }
 }

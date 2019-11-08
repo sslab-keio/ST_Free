@@ -11,10 +11,11 @@
 #define NOTPOINTERTY 4
 #define UNALLOCATED 5
 #define PRIMITIVE 6
+#define SELF_DEREFERENCE 7
 
 #define THREASHOLD 0.2
 
-namespace ST_free{
+namespace ST_free {
     /** Class [CandidateValue]
      *
      * */
@@ -67,9 +68,6 @@ namespace ST_free{
             int candidateNum;
             unsigned int allocNum;
             vector<CandidateValue *> candidates;
-            bool isResponsible(int ind){return memberStats[ind] == ISRESPONSIBLE;};
-            bool isUnknown(int ind){return memberStats[ind] == ISUNKNOWN;};
-            bool isPrimitive(int ind){return memberStats[ind] == PRIMITIVE;};
             bool judgeResponsibility(int ind);
             bool isBidirectionalReferencing(CandidateValue *cand, int ind);
             unsigned int getAllocNum(){return allocNum;};
@@ -112,6 +110,10 @@ namespace ST_free{
                 outs() << "\tGV: " << stc[ind].globalVar << "\n";
             }
             StructType* getStructType(){return strTy;}
+            bool isResponsible(int ind){return memberStats[ind] == ISRESPONSIBLE;};
+            bool isUnknown(int ind){return memberStats[ind] == ISUNKNOWN;};
+            bool isPrimitive(int ind){return memberStats[ind] == PRIMITIVE;};
+            bool isSelfDereference(int ind){return memberStats[ind] == SELF_DEREFERENCE;};
     };
     /** Class
      * [Struct Manager]
@@ -134,6 +136,7 @@ namespace ST_free{
             void BuildCandidateCount();
             void checkCorrectness();
             void addGlobalVariableInitInfo(Module &M);
+            bool structHoldsAuthority(StructType *StTy, long ind);
         private:
             map<StructType *, StructInformation *> StructInfo;
             TypeRelationManager tyRel;

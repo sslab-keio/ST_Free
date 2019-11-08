@@ -12,7 +12,7 @@ namespace ST_free{
         candidateNum = 0;
         allocNum = 0;
         for(Type * ty: st->elements()){
-            if(!ty->isPointerTy() && !ty->isArrayTy())
+            if(!ty->isPointerTy() && (!ty->isArrayTy() || !ty->getArrayElementType()->isPointerTy()))
                 memberStats[ind] = NOTPOINTERTY;
             else if(get_type(ty)->isFunctionTy())
                 memberStats[ind] = ISNOTRESPONSIBLE;
@@ -21,6 +21,8 @@ namespace ST_free{
                     || get_type(ty)->isDoubleTy()
                     || get_type(ty)->isHalfTy())
                 memberStats[ind] = PRIMITIVE;
+            else if(st == get_type(ty))
+                memberStats[ind] = SELF_DEREFERENCE;
             ind++;
         }
     }
@@ -48,7 +50,6 @@ namespace ST_free{
                                 && !this->isBidirectionalReferencing(cand, ind)
                                 ){
                         // if(!this->isAllStoreGlobalVar(ind)){
-                            // warningStr += "index: ";
                             string message = warningStr;
                             message += parseErrorMessage(this->getStructType(), ind);
                             message += ")";
@@ -81,10 +82,6 @@ namespace ST_free{
 #endif
                 }
             }
-            // warningStr += ')';
-            // if(hasWarning) {
-            //     generateError(cand->getInstruction(), warningStr);
-            // }
         }
         return;
     }
@@ -190,6 +187,9 @@ namespace ST_free{
                 case PRIMITIVE:
                     outs() << "PRIMITIVE";
                     break;
+                case SELF_DEREFERENCE:
+                    outs() << "SELF_DEREFERENCE";
+                    break;
                 default:
                     outs() << "DEFAULT";
             }
@@ -249,22 +249,23 @@ namespace ST_free{
 
     void StructManager::createDependencies(){
         for(auto Stmap : StructInfo){
-            for(Type * member : Stmap.first->elements()){
-                if(member->isPointerTy() || member->isArrayTy())
+            for (unsigned i = 0; i < Stmap.first->getNumElements(); i++) {
+                if (this->get(Stmap.first)->isUnknown(i)) {
+                    Type* member = Stmap.first->getElementType(i);
                     if(auto stTy = dyn_cast<StructType>(get_type(member)))
                         this->addReferee(stTy, Stmap.first);
+                }
             }
         }
     }
-    void StructManager::changeStats(){
-        for(auto Stmap : StructInfo){
+    void StructManager::changeStats() {
+        for(auto Stmap : StructInfo) {
             for(unsigned ind = 0; ind < Stmap.first->getNumElements(); ind++){
                 Type * member = Stmap.first->getElementType(ind);
-                if(member->isPointerTy() || member->isArrayTy())
+                if(this->get(Stmap.first)->isUnknown(ind))
                     if(auto stTy = dyn_cast<StructType>(get_type(member)))
-                        if(StructInfo[stTy]->hasSingleReferee()){
+                        if(StructInfo[stTy]->hasSingleReferee())
                             StructInfo[Stmap.first]->setMemberStatResponsible(ind);
-                        }
             }
         }
     }
@@ -330,6 +331,7 @@ namespace ST_free{
             }
         }
     }
+
     void StructManager::addGlobalVariableInitInfo(Module &M){
         for(GlobalVariable &GV: M.globals()){
             if(GV.getValueType()->isStructTy() && GV.hasInitializer()){
@@ -342,5 +344,11 @@ namespace ST_free{
                 }
             }
         }
+    }
+
+    bool StructManager::structHoldsAuthority(StructType *StTy, long ind) {
+        if (this->exists(StTy) && this->get(StTy)->isResponsible(ind))
+            return true;
+        return false;
     }
 }
