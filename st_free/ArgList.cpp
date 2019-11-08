@@ -94,7 +94,7 @@ namespace ST_free{
         if (ele != arg_list.end()) {
             return distance(arg_list.begin(), ele);
         }
-        return -1;
+        return ROOT_INDEX;
     }
 
     void ArgList::setFreed(Value *V) {

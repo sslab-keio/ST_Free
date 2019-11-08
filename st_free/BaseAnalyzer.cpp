@@ -239,7 +239,7 @@ namespace ST_free {
 
     void BaseAnalyzer::addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias, ParentList additionalParents) {
         bool isStructRelated = false;
-        long index = -1;
+        long index = ROOT_INDEX;
         Value* freeValue = NULL;
         Type* memType = NULL;
         StructType* parentType = NULL;
@@ -470,7 +470,7 @@ namespace ST_free {
         const StructLayout* sl = this->getStructLayout(STy);
         if (sl != NULL)
             return sl->getElementContainingOffset(byte);
-        return -1;
+        return ROOT_INDEX;
     }
 
     vector<long> BaseAnalyzer::getValueIndices(GetElementPtrInst* inst) {

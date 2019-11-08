@@ -85,8 +85,10 @@ namespace ST_free {
         public:
             StructInformation(){};
             StructInformation(StructType * st);
+            vector<StructType *> getReferees(){return referees;}
             void addReferee(StructType * st);
             bool hasSingleReferee();
+            void changeToNonRefered(StructType *StTy);
             void setMemberStatResponsible(int num);
             void setMemberStatNotResponsible(int num);
             void setMemberStatNotAllocated(int num);
@@ -137,6 +139,7 @@ namespace ST_free {
             void checkCorrectness();
             void addGlobalVariableInitInfo(Module &M);
             bool structHoldsAuthority(StructType *StTy, long ind);
+            void markNoAlloc();
         private:
             map<StructType *, StructInformation *> StructInfo;
             TypeRelationManager tyRel;

@@ -7,7 +7,7 @@ namespace ST_free {
         public:
             ValueInformation(Value * val){
                 V = val;
-                memberNum = -1;
+                memberNum = ROOT_INDEX;
                 memberType = val->getType();
                 structType = NULL;
                 refCount = 0;
@@ -15,7 +15,7 @@ namespace ST_free {
             }
             ValueInformation(Value * val, Type * ty){
                 V = val;
-                memberNum = -1;
+                memberNum = ROOT_INDEX;
                 memberType = ty;
                 structType = NULL;
                 refCount = 0;

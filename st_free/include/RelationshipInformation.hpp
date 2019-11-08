@@ -8,7 +8,7 @@ namespace ST_free {
         int index;
         AliasElement(){
             stTy = NULL;
-            index = -1;
+            index = ROOT_INDEX;
         }
         AliasElement(StructType *st, int ind){
             stTy = st;

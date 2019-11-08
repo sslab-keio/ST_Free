@@ -227,6 +227,14 @@ namespace ST_free{
         return gvinfo[ind];
     }
 
+    void StructInformation::changeToNonRefered(StructType *StTy) {
+        for (int i = 0; i < this->getStructType()->getNumElements(); i++) {
+            if (StTy == get_type(this->getStructType()->getElementType(i))) {
+                this->setMemberStatNotAllocated(i);
+            }
+        }
+    }
+
     /*** [Struct Manager] ***/
     StructManager::StructManager(vector<StructType *> st){
         for(StructType * StrTy:st)
@@ -258,6 +266,7 @@ namespace ST_free{
             }
         }
     }
+
     void StructManager::changeStats() {
         for(auto Stmap : StructInfo) {
             for(unsigned ind = 0; ind < Stmap.first->getNumElements(); ind++){
@@ -305,7 +314,7 @@ namespace ST_free{
     }
 
     void StructManager::BuildCandidateCount(){
-        // this->checkNonAllocs();
+        this->markNoAlloc();
         for(auto Stmap : StructInfo){
             Stmap.second->BuildCandidateCount();
         }
@@ -339,7 +348,6 @@ namespace ST_free{
                 for(int i = 0; i < GV.getValueType()->getStructNumElements(); i++) {
                     if(get_type(GV.getValueType()->getStructElementType(i))->isFunctionTy() && cnst->getAggregateElement(i)){
                         this->get(cast<StructType>(GV.getValueType()))->addFunctionPtr(i, cast<Function>(cnst->getAggregateElement(i)));
-                        // outs() << *cnst->getAggregateElement(i) << "\n";
                     }
                 }
             }
@@ -350,5 +358,17 @@ namespace ST_free{
         if (this->exists(StTy) && this->get(StTy)->isResponsible(ind))
             return true;
         return false;
+    }
+
+    void StructManager::markNoAlloc() {
+        for(auto Stmap : StructInfo) {
+            if (Stmap.second->hasNoAlloc()) {
+                outs() << *Stmap.first << "\n";
+                for (StructType* StTy : Stmap.second->getReferees()) {
+                    if (this->exists(StTy))
+                        this->get(StTy)->changeToNonRefered(StTy);
+                }
+            }
+        }
     }
 }

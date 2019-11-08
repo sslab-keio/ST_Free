@@ -208,9 +208,9 @@ namespace ST_free{
     }
 
     ValueInformation * FunctionInformation::addVariable(Value * val){
-        const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, val->getType(), -1);
+        const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, val->getType(), ROOT_INDEX);
         if (UK == NULL)
-            UK = this->getUniqueKeyManager()->addUniqueKey(val, val->getType(), -1);
+            UK = this->getUniqueKeyManager()->addUniqueKey(val, val->getType(), ROOT_INDEX);
         if (!VManage.exists(UK))
             VManage.addValueInfo(UK, val);
         return VManage.getValueInfo(UK);
