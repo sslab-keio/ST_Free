@@ -44,14 +44,13 @@ namespace{
             int i = 0;
             /*** Main analysis module ***/
             for(Function &F: M) {
-                // outs() << i++ << "/" << M.size() << "\n";
                 if(!(F.isDeclaration()))
                     analyze->analyze(F);
             }
 
             /*** Main Warning Generator ***/
             StManage->BuildCandidateCount();
-            StManage->print();
+            // StManage->print();
             StManage->checkCorrectness();
             return false;
         }

@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct test{
+struct test {
     int x;
     char name[10];
-    struct ref * b;
+    struct ref *b;
 };
 
-struct ref{
+struct ref {
     int y;
 };
 
@@ -23,4 +23,3 @@ int main()
 
     return 0;
 }
-

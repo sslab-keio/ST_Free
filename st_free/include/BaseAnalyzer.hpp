@@ -54,7 +54,7 @@ namespace ST_free {
             virtual void analyzeBitCastInst(BitCastInst *BCI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
-            void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false, ParentList additionalParents = ParentList());
+            virtual void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false, ParentList additionalParents = ParentList());
             void addAlloc(CallInst *CI, BasicBlock *B);
             void addLocalVariable(BasicBlock * B, Type * T, Value * V, Instruction * I, ParentList P);
             void addPointerLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P);

@@ -363,7 +363,6 @@ namespace ST_free{
     void StructManager::markNoAlloc() {
         for(auto Stmap : StructInfo) {
             if (Stmap.second->hasNoAlloc()) {
-                outs() << *Stmap.first << "\n";
                 for (StructType* StTy : Stmap.second->getReferees()) {
                     if (this->exists(StTy))
                         this->get(StTy)->changeToNonRefered(StTy);
