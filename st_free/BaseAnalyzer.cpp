@@ -705,11 +705,10 @@ namespace ST_free {
     
     bool BaseAnalyzer::isAuthorityChained(ParentList pt) {
         for (pair<Type *, long> ele : pt) {
-            if (auto StTy = dyn_cast<StructType>(get_type(ele.first)))
+            if (auto StTy = dyn_cast<StructType>(get_type(ele.first))) {
                 if (!stManage->structHoldsAuthority(StTy, ele.second))
                     return false;
-            else
-                return false;
+            }
         }
         return true;
     }
