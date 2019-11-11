@@ -41,7 +41,6 @@ namespace{
                 }
             }
 
-            int i = 0;
             /*** Main analysis module ***/
             for(Function &F: M) {
                 if(!(F.isDeclaration()))

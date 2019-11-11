@@ -4,14 +4,19 @@ namespace ST_free{
     StructInformation::StructInformation(StructType * st){
         int ind = 0;
         strTy = st;
+
         memberStats = vector<int>(st->getNumElements(), ISUNKNOWN);
         freedCounts = vector<int>(st->getNumElements(), 0);
+
         stc = vector<storeCount>(st->getNumElements());
         funcPtr = vector<vector<Function *>>(st->getNumElements());
         gvinfo = vector<vector<globalVarInfo>>(st->getNumElements());
+
         candidateNum = 0;
         allocNum = 0;
-        for(Type * ty: st->elements()){
+        negativeCount = 0;
+
+        for(Type * ty: st->elements()) {
             if(!ty->isPointerTy() && (!ty->isArrayTy() || !ty->getArrayElementType()->isPointerTy()))
                 memberStats[ind] = NOTPOINTERTY;
             else if(get_type(ty)->isFunctionTy())
@@ -255,14 +260,12 @@ namespace ST_free{
         return false;
     }
 
-    void StructManager::createDependencies(){
+    void StructManager::createDependencies() {
         for(auto Stmap : StructInfo){
             for (unsigned i = 0; i < Stmap.first->getNumElements(); i++) {
-                if (this->get(Stmap.first)->isUnknown(i)) {
-                    Type* member = Stmap.first->getElementType(i);
-                    if(auto stTy = dyn_cast<StructType>(get_type(member)))
-                        this->addReferee(stTy, Stmap.first);
-                }
+                Type* member = Stmap.first->getElementType(i);
+                if(auto stTy = dyn_cast<StructType>(get_type(member)))
+                    this->addReferee(stTy, Stmap.first);
             }
         }
     }
@@ -280,30 +283,30 @@ namespace ST_free{
     }
 
     void StructManager::addCandidateValue(Function *F, StructType *strTy, FreedStruct * fs){
-        if(!this->exists(strTy)){
+        if(!this->exists(strTy))
             StructInfo[strTy] = new StructInformation(strTy);
-        }
+
         StructInfo[strTy]->addCandidateValue(F, fs);
     }
 
     void StructManager::addAlloc(StructType *strTy){
-        if(!this->exists(strTy)){
+        if(!this->exists(strTy))
             StructInfo[strTy] = new StructInformation(strTy);
-        }
+
         StructInfo[strTy]->incrementAllocNum();
     }
 
     void StructManager::addStore(StructType *strTy, int ind){
-        if(!this->exists(strTy)){
+        if(!this->exists(strTy))
             StructInfo[strTy] = new StructInformation(strTy);
-        }
+
         StructInfo[strTy]->incrementStoreTotal(ind);
     }
 
     void StructManager::addGlobalVarStore(StructType *strTy, int ind){
-        if(!this->exists(strTy)){
+        if(!this->exists(strTy))
             StructInfo[strTy] = new StructInformation(strTy);
-        }
+
         StructInfo[strTy]->incrementStoreGlobalVar(ind);
     }
 

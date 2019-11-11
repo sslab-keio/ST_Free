@@ -66,6 +66,7 @@ namespace ST_free {
             vector<vector<Function *>> funcPtr;
             vector<vector<globalVarInfo>> gvinfo;
             int candidateNum;
+            int negativeCount;
             unsigned int allocNum;
             vector<CandidateValue *> candidates;
             bool judgeResponsibility(int ind);
@@ -107,11 +108,15 @@ namespace ST_free {
             vector<Function *> getFunctionPtr(int ind);
             void addGVInfo(int ind, vector<string> dirs, GlobalVariable *gv);
             vector<globalVarInfo> getGVInfo(int ind);
-            void printStoreGlobalVar(int ind){
+            StructType* getStructType(){return strTy;}
+            /*** Negative Count Related ***/
+            void addNegativePoint(){negativeCount++;}
+            int getNegativePoint(){return negativeCount;}
+            void printStoreGlobalVar(int ind) {
                 outs() << "\tTotal: " << stc[ind].total << "\n";
                 outs() << "\tGV: " << stc[ind].globalVar << "\n";
             }
-            StructType* getStructType(){return strTy;}
+            /*** Status Related ***/
             bool isResponsible(int ind){return memberStats[ind] == ISRESPONSIBLE;};
             bool isUnknown(int ind){return memberStats[ind] == ISUNKNOWN;};
             bool isPrimitive(int ind){return memberStats[ind] == PRIMITIVE;};
