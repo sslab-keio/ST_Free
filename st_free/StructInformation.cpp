@@ -45,50 +45,70 @@ namespace ST_free{
 
     void StructInformation::checkCorrectness() {
         for(CandidateValue* cand : candidates) {
-            string warningStr("MEMBER NOT FREED(");
             for(unsigned ind = 0; ind < cand->getMemberSize(); ind++){
                 if(!cand->memberIsFreed(ind)) {
 #ifdef STAGE_ONE
-                    if(this->isResponsible(ind)) {
-                        if(this->judgeResponsibility(ind) 
-                                && !this->isAllStoreGlobalVar(ind)
-                                && !this->isBidirectionalReferencing(cand, ind)
-                                ){
-                        // if(!this->isAllStoreGlobalVar(ind)){
-                            string message = warningStr;
-                            message += parseErrorMessage(this->getStructType(), ind);
-                            message += ")";
-                            generateError(cand->getInstruction(), message);
-                        }
-                    }
+                    this->checkStageOne(cand, ind);
 #endif
 #ifdef STAGE_TWO
-                    if(this->isUnknown(ind)) {
-                        if(this->judgeResponsibility(ind)) {
-                            string message = warningStr;
-                            message += parseErrorMessage(this->getStructType(), ind);
-                            message += ")";
-                            generateError(cand->getInstruction(), message);
-                        }
-                    }
+                    this->checkStageTwo(cand, ind);
 #endif
 #ifdef STAGE_PRIMITIVE
-                    if(this->isPrimitive(ind)) {
-                        string message = warningStr;
-                        message += parseErrorMessage(this->getStructType(), ind);
-                        message += ")";
-                        generateError(cand->getInstruction(), message);
-                    }
+                    this->checkStagePrimitive(cand, ind);
 #endif
 #ifdef STAGE_BIDIRECTIONAL
-                    if(this->isBidirectionalReferencing(cand, ind)) {
-                        // TODO: Check authority of bidirectional referenced values
-                    }
+                    this->checkStageBidirectional(cand, ind);
 #endif
                 }
             }
         }
         return;
+    }
+
+    void StructInformation::checkStageOne(CandidateValue* cand, long ind) {
+        string warningStr("MEMBER NOT FREED(");
+        if(this->isResponsible(ind)) {
+            if(this->judgeResponsibility(ind) 
+                    && !this->isAllStoreGlobalVar(ind)
+                    && !this->isBidirectionalReferencing(cand, ind)
+                    ){
+            // if(!this->isAllStoreGlobalVar(ind)){
+                string message = warningStr;
+                message += parseErrorMessage(this->getStructType(), ind);
+                message += ")";
+                generateError(cand->getInstruction(), message);
+            }
+        }
+        return;
+    }
+
+    void StructInformation::checkStageTwo(CandidateValue* cand, long ind){
+        string warningStr("MEMBER NOT FREED(");
+        if(this->isUnknown(ind)) {
+            if(this->judgeResponsibility(ind)) {
+                string message = warningStr;
+                message += parseErrorMessage(this->getStructType(), ind);
+                message += ")";
+                generateError(cand->getInstruction(), message);
+            }
+        }
+        return;
+    }
+
+    void StructInformation::checkStagePrimitive(CandidateValue* cand, long ind){
+        string warningStr("MEMBER NOT FREED(");
+        if(this->isPrimitive(ind)) {
+            string message = warningStr;
+            message += parseErrorMessage(this->getStructType(), ind);
+            message += ")";
+            generateError(cand->getInstruction(), message);
+        }
+    }
+
+    void StructInformation::checkStageBidirectional(CandidateValue* cand, long ind){
+        if(this->isBidirectionalReferencing(cand, ind)) {
+            // TODO: Check authority of bidirectional referenced values
+        }
     }
 
     bool StructInformation::isBidirectionalReferencing(CandidateValue *cand, int ind){

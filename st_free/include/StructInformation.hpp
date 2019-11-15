@@ -13,7 +13,7 @@
 #define PRIMITIVE 6
 #define SELF_DEREFERENCE 7
 
-#define THREASHOLD 0.2
+#define THREASHOLD 0.0
 
 namespace ST_free {
     /** Class [CandidateValue]
@@ -83,6 +83,10 @@ namespace ST_free {
                     return true;
                 return false;
             }
+            void checkStageOne(CandidateValue* cand, long ind);
+            void checkStageTwo(CandidateValue* cand, long ind);
+            void checkStagePrimitive(CandidateValue* cand, long ind);
+            void checkStageBidirectional(CandidateValue* cand, long ind);
         public:
             StructInformation(){};
             StructInformation(StructType * st);
