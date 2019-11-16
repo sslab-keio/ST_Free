@@ -712,4 +712,11 @@ namespace ST_free {
         }
         return true;
     }
+
+    bool BaseAnalyzer::isAllocCast(BitCastInst *BCI) {
+        if (auto CI = dyn_cast<CallInst>(BCI->getOperand(0)))
+            if (isAllocFunction(CI->getCalledFunction())) 
+                return true;
+        return false;
+    }
 }

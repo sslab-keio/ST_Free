@@ -181,7 +181,7 @@ namespace ST_free{
         outs() << "=== StructInfo: Debug Info===\n";
         if (strTy->hasName())
             outs() << "[Struct]: " << strTy->getName() << "\n";
-        // outs() << "[AllocNum]: " << allocNum << "\n";
+        outs() << "[AllocNum]: " << allocNum << "\n";
         outs() << "[Referees] (TTL: " << referees.size() << ") \n";
         // for (StructType* ty : referees){
         //     outs() << "\t" << *ty << "\n";
@@ -221,17 +221,17 @@ namespace ST_free{
             outs() << " [" << stc[ind].globalVar << "/" << stc[ind].total << "], " << freedCounts[ind] << "\n";
         }
         outs() << "[CandidateNum]: " << candidateNum << "\n";
-        outs() << "[BugCandidates]\n";
-        if(candidates.size() == 0)
-            outs() << "Empty\n";
-        for(CandidateValue* cands: candidates){
-            outs() << "\t[Function] " << cands->getFunction()->getName() << "\n";
-            outs() << "\t[FreedStruct] " << cands->getFreedStruct()->getValue()->getName() << "\n";
-            if(cands->getFreedStruct()->getTopParent())
-                outs() << "\t[TopParent]" << *cands->getFreedStruct()->getTopParent() << "\n";
-            cands->print();
-            outs() << "******\n";
-        }
+        // outs() << "[BugCandidates]\n";
+        // if(candidates.size() == 0)
+        //     outs() << "Empty\n";
+        // for(CandidateValue* cands: candidates){
+        //     outs() << "\t[Function] " << cands->getFunction()->getName() << "\n";
+        //     outs() << "\t[FreedStruct] " << cands->getFreedStruct()->getValue()->getName() << "\n";
+        //     if(cands->getFreedStruct()->getTopParent())
+        //         outs() << "\t[TopParent]" << *cands->getFreedStruct()->getTopParent() << "\n";
+        //     cands->print();
+        //     outs() << "******\n";
+        // }
         outs() << "=============================\n";
     }
     
