@@ -32,16 +32,16 @@ namespace ST_free {
                 getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
                 pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
 
-                if (auto BCI = dyn_cast<BitCastInst>(SI->getValueOperand())) {
-                    ParentList indexes;
-                    generateWarning(SI, "is Casted Store");
-                    this->getStructParents(GEle, indexes);
-                    if (this->isAuthorityChained(indexes)
-                            && !this->isAllocCast(BCI)) {
-                        generateWarning(SI, "Single Chained", true);
-                        // Do something
-                    }
-                }
+                // if (auto BCI = dyn_cast<BitCastInst>(SI->getValueOperand())) {
+                //     ParentList indexes;
+                //     generateWarning(SI, "is Casted Store");
+                //     this->getStructParents(GEle, indexes);
+                //     if (this->isAuthorityChained(indexes)
+                //             && !this->isAllocCast(BCI)) {
+                //         generateWarning(SI, "Single Chained", true);
+                //         // Do something
+                //     }
+                // }
 
                 if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
                     generateWarning(SI, "GlobalVariable Store");

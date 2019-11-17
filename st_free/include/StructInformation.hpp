@@ -94,6 +94,7 @@ namespace ST_free {
             void addReferee(StructType * st);
             bool hasSingleReferee();
             void changeToNonRefered(StructType *StTy);
+            void setMemberStatUnknown(int num);
             void setMemberStatResponsible(int num);
             void setMemberStatNotResponsible(int num);
             void setMemberStatNotAllocated(int num);

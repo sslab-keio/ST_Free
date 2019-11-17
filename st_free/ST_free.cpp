@@ -41,6 +41,12 @@ namespace{
                 }
             }
 
+            /*** Additional analysis for Checking force casts ***/
+            for(Function &F: M) {
+                if(!(F.isDeclaration()))
+                    analyze->analyzeAdditionalUnknowns(F);
+            }
+
             /*** Main analysis module ***/
             for(Function &F: M) {
                 if(!(F.isDeclaration()))

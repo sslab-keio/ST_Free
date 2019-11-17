@@ -156,6 +156,11 @@ namespace ST_free{
             memberStats[num] = UNALLOCATED;
     }
 
+    void StructInformation::setMemberStatUnknown(int num){
+        if(num < memberStats.size())
+            memberStats[num] = ISUNKNOWN;
+    }
+
     void StructInformation::addCandidateValue(Function *F, FreedStruct *fs){
         candidates.push_back(new CandidateValue(F, fs));
         candidateNum++;

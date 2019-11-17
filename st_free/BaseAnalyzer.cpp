@@ -4,6 +4,33 @@
 #define UpdateIfNull(tgt, cand) (tgt) = ((tgt) == NULL ? (cand):(tgt))
 
 namespace ST_free {
+    void BaseAnalyzer::analyzeAdditionalUnknowns(Function &F) {
+        for (BasicBlock &B: F) {
+            for (Instruction &I: B) {
+                if (StoreInst *SI = dyn_cast<StoreInst>(&I)) {
+                    if(this->isStoreToStructMember(SI)) {
+                        GetElementPtrInst * GEle = getStoredStruct(SI);
+                        if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
+                            if (auto BCI = dyn_cast<BitCastInst>(SI->getValueOperand())) {
+                                ParentList indexes;
+                                generateWarning(SI, "is Casted Store");
+                                this->getStructParents(GEle, indexes);
+                                if (this->isAuthorityChained(indexes)
+                                        && !this->isAllocCast(BCI)) {
+                                    if (StructType *StTy = dyn_cast<StructType>(indexes.back().first)) {
+                                        generateWarning(SI, "Change back to Unknown", true);
+                                        getStructManager()->get(StTy)->setMemberStatUnknown(indexes.back().second);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
     void BaseAnalyzer::analyze(Function &F){
         setFunctionInformation(identifier.getElement(&F));
         getFunctionInformation()->setLoopInfo(loopmap->get(&F));
@@ -719,4 +746,5 @@ namespace ST_free {
                 return true;
         return false;
     }
+
 }

@@ -30,6 +30,7 @@ namespace ST_free {
                 dat_layout = dl;
             }
             void analyze(Function &F);
+            void analyzeAdditionalUnknowns(Function &F);
             void analyzeDifferentFunc(Function &);
         protected:
             /*** getter/setter ***/
