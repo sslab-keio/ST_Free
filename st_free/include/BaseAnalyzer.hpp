@@ -69,7 +69,8 @@ namespace ST_free {
             bool isStoreFromStructMember(StoreInst * SI);
             bool isStoreToStruct(StoreInst *SI);
             bool isStoreFromStruct(StoreInst *SI);
-            bool isAllocCast(BitCastInst *BCI);
+            void checkAndChangeActualAuthority(StoreInst *SI);
+            bool isAllocCast(CastInst *CI);
             vector<pair<Type*, long>> decodeGEPInst(GetElementPtrInst *GEle);
             vector<string> decodeDirectoryName(string str);
             void getStructParents(Instruction *I, vector<pair<Type *, int>> &typeList);
