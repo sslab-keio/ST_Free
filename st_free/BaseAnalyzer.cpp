@@ -343,8 +343,9 @@ namespace ST_free {
     void BaseAnalyzer::addAlloc(CallInst *CI, BasicBlock *B) {
         Type *Ty = CI->getType();
         for (User *usr:CI->users()) {
-            if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
-                Ty = BitCast->getDestTy();
+            // if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
+            if (auto CastI = dyn_cast<CastInst>(usr)) {
+                Ty = CastI->getDestTy();
             }
         }
         if(get_type(Ty)->isStructTy()) {
@@ -440,26 +441,43 @@ namespace ST_free {
     }
 
     void BaseAnalyzer::checkAndChangeActualAuthority(StoreInst *SI) {
+        vector<CastInst *> CastInsts;
         if(this->isStoreToStructMember(SI)) {
             GetElementPtrInst * GEle = getStoredStruct(SI);
             if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
                 generateWarning(SI, "Found StoreInst to struct member");
-                if (auto CI = dyn_cast<CastInst>(SI->getValueOperand())) {
-                    ParentList indexes;
-                    generateWarning(SI, "is Casted Store");
-                    this->getStructParents(GEle, indexes);
-                    if (this->isAuthorityChained(indexes)
-                            && !this->isAllocCast(CI)) {
-                        if (StructType *StTy = dyn_cast<StructType>(indexes.back().first)) {
-                            generateWarning(SI, "Change back to Unknown", true);
-                            getStructManager()->get(StTy)->setMemberStatUnknown(indexes.back().second);
-                        }
+
+                if (auto PN = dyn_cast<PHINode>(SI->getValueOperand())) {
+                    generateWarning(SI, "is PhiInst");
+                    for (int i = 0; i < PN->getNumIncomingValues(); i++) {
+                        if (auto CI = dyn_cast<CastInst>(PN->getIncomingValue(i)))
+                            CastInsts.push_back(CI);
                     }
+                } else if (auto CI = dyn_cast<CastInst>(SI->getValueOperand())) {
+                    CastInsts.push_back(CI);
                 }
+                
+                for(auto CI: CastInsts)
+                    this->changeAuthority(SI, CI, GEle);
             }
         }
     }
-
+    void BaseAnalyzer::changeAuthority(StoreInst *SI, CastInst *CI, GetElementPtrInst *GEle) {
+        ParentList indexes;
+        generateWarning(SI, "is Casted Store");
+        // if (isa<StructType>(get_type(CI->getSrcTy())))
+        //     outs() << *CI->getSrcTy() << " to " << *CI->getDestTy() << "\n";
+        this->getStructParents(GEle, indexes);
+        if (this->isAuthorityChained(vector<pair<Type *, int>>(indexes.end() - 1, indexes.end()))
+                && !this->isAllocCast(CI)) {
+            if (StructType *StTy = dyn_cast<StructType>(indexes.back().first)) {
+                generateWarning(SI, "Change back to Unknown");
+                outs() << *CI->getSrcTy() << " to " << *CI->getDestTy() << "\n";
+                getStructManager()->get(StTy)->setMemberStatUnknown(indexes.back().second);
+            }
+        }
+        return;
+    }
     // UniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){
     //     return UniqueKey(getLoadeeValue(GEle->getPointerOperand()), GEle->getResultElementType(), getValueIndices(GEle));
     // }

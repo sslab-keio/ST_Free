@@ -70,6 +70,7 @@ namespace ST_free {
             bool isStoreToStruct(StoreInst *SI);
             bool isStoreFromStruct(StoreInst *SI);
             void checkAndChangeActualAuthority(StoreInst *SI);
+            void changeAuthority(StoreInst *SI, CastInst *CI, GetElementPtrInst *GEle);
             bool isAllocCast(CastInst *CI);
             vector<pair<Type*, long>> decodeGEPInst(GetElementPtrInst *GEle);
             vector<string> decodeDirectoryName(string str);

@@ -36,9 +36,8 @@ namespace{
 
             /*** Generate LoopInformation ***/
             for(Function &F: M) {
-                if(!(F.isDeclaration())) {
+                if(!(F.isDeclaration()))
                     loopmap->add(&F, &(getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo()));
-                }
             }
 
             /*** Additional analysis for Checking force casts ***/
@@ -55,7 +54,7 @@ namespace{
 
             /*** Main Warning Generator ***/
             StManage->BuildCandidateCount();
-            StManage->print();
+            // StManage->print();
             StManage->checkCorrectness();
             return false;
         }
