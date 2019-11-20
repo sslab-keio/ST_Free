@@ -248,6 +248,7 @@ namespace ST_free {
     }
 
     void BaseAnalyzer::addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias, ParentList additionalParents) {
+        struct collectedInfo info;
         bool isStructRelated = false;
         long index = ROOT_INDEX;
         Value* freeValue = NULL;
@@ -257,6 +258,7 @@ namespace ST_free {
 
         if (Instruction * val = dyn_cast<Instruction>(V)) {
             if(isStructEleFree(val) || additionalParents.size() > 0) {
+                // this->collectStructMeberFreeInfo(val, &index, &freeValue, &memType, &parentType, &additionalParents, &indexes);
                 GetElementPtrInst *GEle = getFreeStructEleInfo(val);
                 if (GEle != NULL) {
                     this->getStructParents(GEle, indexes);
@@ -780,5 +782,38 @@ namespace ST_free {
                 return true;
         return false;
     }
+    bool BaseAnalyzer::collectStructMemberFreeInfo(Instruction *I, long index, Value *freeValue, Type *memType, StructType *parentType, ParentList additionalParents, ParentList indexes) {
+        GetElementPtrInst *GEle = getFreeStructEleInfo(I);
+        bool isStructRelated = false;
+        if (GEle != NULL) {
+            this->getStructParents(GEle, indexes);
+            GetElementPtrInst *tmpGEle = GEle;
+            if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
+                tmpGEle = getRootGEle(GEle);
+            UpdateIfNull(freeValue, getLoadeeValue(tmpGEle->getPointerOperand()));
+        }
 
+        for(auto addParent : additionalParents) {
+            indexes.push_back(addParent);
+        }
+
+        if (indexes.size() > 0) {
+            index = indexes.back().second;
+            
+            if (auto StTy = dyn_cast<StructType>(get_type(indexes.back().first))) {
+                if(ROOT_INDEX < index && index < StTy->getNumElements())
+                    UpdateIfNull(memType, StTy->getElementType(index));
+            }
+
+            if (get_type(indexes.front().first)->isStructTy())
+                UpdateIfNull(parentType, cast<StructType>(get_type(indexes.front().first)));
+
+            isStructRelated = true;
+            generateWarning(I, "Struct element free");
+        }
+        return isStructRelated;
+    }
+    // bool BaseAnalyzer::collectStructMemberFreeInfo(Instruction *I, long index, Value *freeValue, Type *memType, StructType *parentType, ParentList indexes) {
+    //     return true;
+    // }
 }

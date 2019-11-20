@@ -127,6 +127,7 @@ namespace ST_free {
             bool isPrimitive(int ind){return memberStats[ind] == PRIMITIVE;};
             bool isSelfDereference(int ind){return memberStats[ind] == SELF_DEREFERENCE;};
     };
+
     /** Class
      * [Struct Manager]
      * Manages StructInformation in a map, and controls them

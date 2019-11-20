@@ -59,6 +59,10 @@ namespace ST_free {
             void addAlloc(CallInst *CI, BasicBlock *B);
             void addLocalVariable(BasicBlock * B, Type * T, Value * V, Instruction * I, ParentList P);
             void addPointerLocalVariable(BasicBlock *B, Type * T, Value * V, Instruction * I, ParentList P);
+            bool collectStructMemberFreeInfo(Instruction *I, long index, Value *freeValue, Type *memType, StructType *parentType, ParentList additionalParents, ParentList indexes); //Simple Interfaces
+            // bool collectStructFreeInfo(); //Simple Interfaces
+            // bool collectSimpleFreeInfo(); //Simple Interfaces
+            
             /*** Argument Status ***/
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
             void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value* arg, ArgStatus *ArgStat, int ind, ParentList plist, bool isFirst = false);
@@ -98,6 +102,22 @@ namespace ST_free {
             Type* extractResultElementType(GetElementPtrInst *GEle);
             /*** connector with struct manager***/
             bool isAuthorityChained(ParentList);
+            /*** Class-protected Struct Element ***/
+            struct collectedInfo {
+                bool isStructRelated;
+                long index;
+                Value* freeValue;
+                Type* memType;
+                StructType* parentType;
+                ParentList indexes;
+                collectedInfo() {
+                    isStructRelated = false;
+                    index = ROOT_INDEX;
+                    freeValue = NULL;
+                    memType = NULL;
+                    parentType = NULL;
+                }
+            };
         private:
             /*** Managers and DataLayouts ***/
             FunctionManager identifier;
