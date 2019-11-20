@@ -323,10 +323,10 @@ namespace ST_free {
                 if (getFunctionInformation()->isArgValue(freeValue)) {
                     if (!parentType)
                         getFunctionInformation()->setArgFree(freeValue);
-                    else if (parentType && index >= 0){
+                    else if (parentType && index >= 0)
                         getFunctionInformation()->setStructMemberArgFreed(freeValue, indexes);
-                    }
                 }
+
                 ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, freeValue, memType, parentType, index, indexes);
                 if (!isAlias 
                         && !getFunctionInformation()->aliasExists(B, freeValue)
@@ -335,6 +335,20 @@ namespace ST_free {
                         && this->isAuthorityChained(indexes)
                     ) {
                     getFunctionInformation()->addFreedStruct(B, get_type(memType), freeValue, CI, parentType, valInfo, index != ROOT_INDEX);
+
+                    /*** Look for any statically allcated struct type,
+                     * and add them to freed struct as well ***/
+#if defined(OPTION_NESTED)
+                    StructType* StTy = cast<StructType>(get_type(memType));
+                    int memIndex = 0;
+                    for (auto ele : StTy->elements()) {
+                        if (ele->isStructTy()) {
+                            additionalParents.push_back(pair<Type*, int>(ele, memIndex++));
+                            this->addFree(V, CI, B, false, additionalParents);
+                            additionalParents.pop_back();
+                        }
+                    }
+#endif
                 }
             }
         }
@@ -462,17 +476,15 @@ namespace ST_free {
             }
         }
     }
+
     void BaseAnalyzer::changeAuthority(StoreInst *SI, CastInst *CI, GetElementPtrInst *GEle) {
         ParentList indexes;
         generateWarning(SI, "is Casted Store");
-        // if (isa<StructType>(get_type(CI->getSrcTy())))
-        //     outs() << *CI->getSrcTy() << " to " << *CI->getDestTy() << "\n";
         this->getStructParents(GEle, indexes);
         if (this->isAuthorityChained(vector<pair<Type *, int>>(indexes.end() - 1, indexes.end()))
                 && !this->isAllocCast(CI)) {
             if (StructType *StTy = dyn_cast<StructType>(indexes.back().first)) {
                 generateWarning(SI, "Change back to Unknown");
-                outs() << *CI->getSrcTy() << " to " << *CI->getDestTy() << "\n";
                 getStructManager()->get(StTy)->setMemberStatUnknown(indexes.back().second);
             }
         }

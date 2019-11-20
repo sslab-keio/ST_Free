@@ -124,17 +124,6 @@ namespace ST_free{
             freedStruct.push_back(fst);
         else
             delete fst;
-
-        /*** Look for any statically allcated struct type,
-         * and add them to freed struct as well ***/
-#if defined(OPTION_NESTED)
-        if (auto StTy = dyn_cast<StructType>(T)) {
-            for (auto ele : StTy->elements()) {
-                if (ele->isStructTy()) 
-                    this->addFreedStruct(B, ele, V, I, parent, true);
-            }
-        }
-#endif
     }
 
     bool FunctionInformation::freedStructExists(FreedStruct *fst){

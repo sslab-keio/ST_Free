@@ -26,6 +26,7 @@ set_target_properties(StructFreeMod PROPERTIES
 include_directories(./include)
 
 add_definitions(-DSTAGE_ONE)
+add_definitions(-DOPTION_NESTED)
 
 # Get proper shared-library behavior (where symbols are not necessarily
 # resolved when the shared library is linked) on OS X.
