@@ -35,9 +35,8 @@ namespace ST_free{
     void StructInformation::BuildCandidateCount(){
         for(CandidateValue* cand : candidates){
             for(unsigned ind = 0; ind < cand->getMemberSize(); ind++){
-                if(cand->memberIsFreed(ind)){
+                if(cand->memberIsFreed(ind))
                     this->incrementFreedCount(ind);
-                }
             }
         }
         return;
@@ -71,7 +70,7 @@ namespace ST_free{
             if(this->judgeResponsibility(ind) 
                     && !this->isAllStoreGlobalVar(ind)
                     && !this->isBidirectionalReferencing(cand, ind)
-                    ){
+                    ) {
             // if(!this->isAllStoreGlobalVar(ind)){
                 string message = warningStr;
                 message += parseErrorMessage(this->getStructType(), ind);
@@ -393,7 +392,7 @@ namespace ST_free{
             if (Stmap.second->hasNoAlloc()) {
                 for (StructType* StTy : Stmap.second->getReferees()) {
                     if (this->exists(StTy))
-                        this->get(StTy)->changeToNonRefered(StTy);
+                        this->get(StTy)->changeToNonRefered(Stmap.first);
                 }
             }
         }

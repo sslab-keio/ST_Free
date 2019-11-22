@@ -23,11 +23,23 @@ namespace ST_free {
                 stManage = stm;
                 FEle->setLoopInfo(loopmap->get(func));
                 dat_layout = dl;
+                // InstAnalysisMap = {
+                //         {Instruction::Alloca, &BaseAnalyzer::analyzeAllocaInst},
+                //         {Instruction::Call, &BaseAnalyzer::analyzeCallInst},
+                //         {Instruction::Store, &BaseAnalyzer::analyzeStoreInst}
+                //         // {Instruction::Br, &BaseAnalyzer::analyzeBranchInst}
+                //     };
             }
             BaseAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl){
                 loopmap = lmap;
                 stManage = stm;
                 dat_layout = dl;
+                // InstAnalysisMap = {
+                //         {Instruction::Alloca, &BaseAnalyzer::analyzeAllocaInst},
+                //         {Instruction::Call, &BaseAnalyzer::analyzeCallInst},
+                //         {Instruction::Store, &BaseAnalyzer::analyzeStoreInst}
+                //         // {Instruction::Br, &BaseAnalyzer::analyzeBranchInst}
+                //     };
             }
             void analyze(Function &F);
             void analyzeAdditionalUnknowns(Function &F);
@@ -79,6 +91,7 @@ namespace ST_free {
             void collectStructFreeInfo(Instruction *I, struct collectedInfo &info);
             void collectOptimizedStructFreeInfo(Instruction *I, struct collectedInfo &info);
             void collectSimpleFreeInfo(Instruction *I, struct collectedInfo &info);
+            void addNestedFree(Value *V, CallInst *CI, BasicBlock *B, struct collectedInfo &I, ParentList &additionalParents);
             /*** Argument Status ***/
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
             void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value* arg, ArgStatus *ArgStat, int ind, ParentList plist, bool isFirst = false);
@@ -118,6 +131,9 @@ namespace ST_free {
             Type* extractResultElementType(GetElementPtrInst *GEle);
             /*** connector with struct manager***/
             bool isAuthorityChained(ParentList);
+            /*** MethodMap ***/
+            typedef void (*InstAnalysisMethod)(Instruction *, BasicBlock &);
+            static map<unsigned, InstAnalysisMethod> InstAnalysisMap;
         private:
             /*** Managers and DataLayouts ***/
             FunctionManager identifier;

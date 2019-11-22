@@ -4,6 +4,13 @@
 #define UpdateIfNull(tgt, cand) (tgt) = ((tgt) == NULL ? (cand):(tgt))
 
 namespace ST_free {
+    // static map<unsigned, BaseAnalyzer::InstAnalysisMethod> BaseAnalyzer::InstAnalysisMap = {
+    //     {Instruction::Alloca, &BaseAnalyzer::analyzeAllocaInst},
+    //     {Instruction::Call, &BaseAnalyzer::analyzeCallInst},
+    //     {Instruction::Store, &BaseAnalyzer::analyzeStoreInst}
+    //     {Instruction::Br, &BaseAnalyzer::analyzeBranchInst}
+    // };
+
     void BaseAnalyzer::analyzeAdditionalUnknowns(Function &F) {
         for (BasicBlock &B: F) {
             for (Instruction &I: B) {
@@ -251,62 +258,19 @@ namespace ST_free {
         struct collectedInfo info;
 
         if (Instruction* val = dyn_cast<Instruction>(V)) {
-            if(isStructEleFree(val) || additionalParents.size() > 0) {
+            if(isStructEleFree(val) || additionalParents.size() > 0)
                 this->collectStructMemberFreeInfo(val, info, additionalParents);
-                // GetElementPtrInst *GEle = getFreeStructEleInfo(val);
-                // if (GEle != NULL) {
-                //     this->getStructParents(GEle, info.indexes);
-                //     // indexes.push_back(pair<Type*, int>(extractResultElementType(GEle), ROOT_INDEX));
-                //     GetElementPtrInst *tmpGEle = GEle;
-                //     if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
-                //         tmpGEle = getRootGEle(GEle);
-                //     UpdateIfNull(info.freeValue, getLoadeeValue(tmpGEle->getPointerOperand()));
-                // }
-
-                // for(auto addParent : additionalParents) {
-                //     info.indexes.push_back(addParent);
-                // }
-
-                // if (info.indexes.size() > 0) {
-                //     info.index = info.indexes.back().second;
-                    
-                //     if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
-                //         if(ROOT_INDEX < info.index && info.index < StTy->getNumElements())
-                //             UpdateIfNull(info.memType, StTy->getElementType(info.index));
-                //     }
-
-                //     if (get_type(info.indexes.front().first)->isStructTy())
-                //         UpdateIfNull(info.parentType, cast<StructType>(get_type(info.indexes.front().first)));
-
-                //     info.isStructRelated = true;
-                //     generateWarning(val, "Struct element free");
-                // }
-            }
 
             if (isStructFree(val)) {
                 generateWarning(CI, "Struct Free");
                 this->collectStructFreeInfo(val, info);
-                // Value *loaded_value = getStructFreedValue(val);
-                // if (loaded_value) {
-                //     UpdateIfNull(info.freeValue, loaded_value);
-                //     UpdateIfNull(info.memType, getStructType(val));
-                // }
-                // info.isStructRelated = true;
             } else if (isOptimizedStructFree(val)) {
                 this->collectOptimizedStructFreeInfo(val, info);
                 generateWarning(CI, "Optimized Struct Free");
-                // UpdateIfNull(info.freeValue, val);
-                // UpdateIfNull(info.memType, getOptimizedStructFree(val));
-                // info.isStructRelated = true;
             }
 
-            if (!info.isStructRelated) {
+            if (!info.isStructRelated)
                 this->collectSimpleFreeInfo(val, info);
-                // UpdateIfNull(info.freeValue, getFreedValue(val));
-                // if (info.freeValue != NULL)
-                //     UpdateIfNull(info.memType, info.freeValue->getType());
-                // generateWarning(val, "Value Free");
-            }
 
             if (info.freeValue) {
                 if (getFunctionInformation()->aliasExists(B, info.freeValue)) {
@@ -338,15 +302,7 @@ namespace ST_free {
                     /*** Look for any statically allcated struct type,
                      * and add them to freed struct as well ***/
 #if defined(OPTION_NESTED)
-                    StructType* StTy = cast<StructType>(get_type(info.memType));
-                    int memIndex = 0;
-                    for (auto ele : StTy->elements()) {
-                        if (ele->isStructTy()) {
-                            additionalParents.push_back(pair<Type*, int>(ele, memIndex++));
-                            this->addFree(V, CI, B, false, additionalParents);
-                            additionalParents.pop_back();
-                        }
-                    }
+                    this->addNestedFree(V, CI, B, info, additionalParents);
 #endif
                 }
             }
@@ -356,12 +312,14 @@ namespace ST_free {
     void BaseAnalyzer::addAlloc(CallInst *CI, BasicBlock *B) {
         Type *Ty = CI->getType();
         for (User *usr:CI->users()) {
-            // if (auto BitCast = dyn_cast<BitCastInst>(usr)) {
             if (auto CastI = dyn_cast<CastInst>(usr)) {
+                outs() << CastI->getOpcodeName() << "\n";
                 Ty = CastI->getDestTy();
+            } else if (auto SI = dyn_cast<StoreInst>(usr)) {
+                // Might need check?
             }
         }
-        if(get_type(Ty)->isStructTy()) {
+        if (get_type(Ty)->isStructTy()) {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
@@ -834,6 +792,20 @@ namespace ST_free {
         UpdateIfNull(info.freeValue, I);
         UpdateIfNull(info.memType, getOptimizedStructFree(I));
         info.isStructRelated = true;
+        return;
+    }
+
+    void BaseAnalyzer::addNestedFree(Value *V, CallInst *CI, BasicBlock *B, struct collectedInfo &info, ParentList &additionalParents){
+        StructType* StTy = cast<StructType>(get_type(info.memType));
+        int memIndex = 0;
+
+        for (auto ele : StTy->elements()) {
+            if (ele->isStructTy()) {
+                additionalParents.push_back(pair<Type*, int>(ele, memIndex++));
+                this->addFree(V, CI, B, false, additionalParents);
+                additionalParents.pop_back();
+            }
+        }
         return;
     }
 }
