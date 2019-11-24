@@ -4,12 +4,7 @@
 #define UpdateIfNull(tgt, cand) (tgt) = ((tgt) == NULL ? (cand):(tgt))
 
 namespace ST_free {
-    // static map<unsigned, BaseAnalyzer::InstAnalysisMethod> BaseAnalyzer::InstAnalysisMap = {
-    //     {Instruction::Alloca, &BaseAnalyzer::analyzeAllocaInst},
-    //     {Instruction::Call, &BaseAnalyzer::analyzeCallInst},
-    //     {Instruction::Store, &BaseAnalyzer::analyzeStoreInst}
-    //     {Instruction::Br, &BaseAnalyzer::analyzeBranchInst}
-    // };
+
 
     void BaseAnalyzer::analyzeAdditionalUnknowns(Function &F) {
         for (BasicBlock &B: F) {
@@ -244,8 +239,6 @@ namespace ST_free {
 
         /*** Analyze new Function ***/
         this->analyze(F);
-        // BaseAnalyzer called_function(&F, stManage, loopmap);
-        // called_function.analyze();
 
         /*** Recover FunctionInformation ***/
         Function* tempFunc = functionStack.top();
@@ -265,8 +258,8 @@ namespace ST_free {
                 generateWarning(CI, "Struct Free");
                 this->collectStructFreeInfo(val, info);
             } else if (isOptimizedStructFree(val)) {
-                this->collectOptimizedStructFreeInfo(val, info);
                 generateWarning(CI, "Optimized Struct Free");
+                this->collectOptimizedStructFreeInfo(val, info);
             }
 
             if (!info.isStructRelated)
@@ -313,7 +306,6 @@ namespace ST_free {
         Type *Ty = CI->getType();
         for (User *usr:CI->users()) {
             if (auto CastI = dyn_cast<CastInst>(usr)) {
-                outs() << CastI->getOpcodeName() << "\n";
                 Ty = CastI->getDestTy();
             } else if (auto SI = dyn_cast<StoreInst>(usr)) {
                 // Might need check?

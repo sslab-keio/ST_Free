@@ -23,23 +23,11 @@ namespace ST_free {
                 stManage = stm;
                 FEle->setLoopInfo(loopmap->get(func));
                 dat_layout = dl;
-                // InstAnalysisMap = {
-                //         {Instruction::Alloca, &BaseAnalyzer::analyzeAllocaInst},
-                //         {Instruction::Call, &BaseAnalyzer::analyzeCallInst},
-                //         {Instruction::Store, &BaseAnalyzer::analyzeStoreInst}
-                //         // {Instruction::Br, &BaseAnalyzer::analyzeBranchInst}
-                //     };
             }
             BaseAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl){
                 loopmap = lmap;
                 stManage = stm;
                 dat_layout = dl;
-                // InstAnalysisMap = {
-                //         {Instruction::Alloca, &BaseAnalyzer::analyzeAllocaInst},
-                //         {Instruction::Call, &BaseAnalyzer::analyzeCallInst},
-                //         {Instruction::Store, &BaseAnalyzer::analyzeStoreInst}
-                //         // {Instruction::Br, &BaseAnalyzer::analyzeBranchInst}
-                //     };
             }
             void analyze(Function &F);
             void analyzeAdditionalUnknowns(Function &F);
@@ -133,7 +121,12 @@ namespace ST_free {
             bool isAuthorityChained(ParentList);
             /*** MethodMap ***/
             typedef void (*InstAnalysisMethod)(Instruction *, BasicBlock &);
-            static map<unsigned, InstAnalysisMethod> InstAnalysisMap;
+            // map<unsigned, InstAnalysisMethod> InstAnalysisMap = {
+            //     make_pair(Instruction::Alloca, &BaseAnalyzer::analyzeAllocaInst),
+            //     make_pair(Instruction::Call, &BaseAnalyzer::analyzeCallInst),
+            //     make_pair(Instruction::Store, &BaseAnalyzer::analyzeStoreInst),
+            //     make_pair(Instruction::Br, &BaseAnalyzer::analyzeBranchInst)
+            // };
         private:
             /*** Managers and DataLayouts ***/
             FunctionManager identifier;
