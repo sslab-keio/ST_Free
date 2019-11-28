@@ -36,8 +36,7 @@ void freetD(struct testB * tB) {
 
 void freeC(struct testC *tC) {
     free(tC);
-}
-
+} 
 void freeA(struct testA *tA) {
     free(tA);
 

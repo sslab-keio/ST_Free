@@ -48,7 +48,6 @@ int main()
     tA->tB->tC->tD = (struct testD *)malloc(sizeof(struct testD));
 
     freetD(tA->tB);
-
     free(tA->tB->tC);
     freeA(tA);
 

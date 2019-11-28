@@ -26,6 +26,9 @@ void freeC(struct C* c){
 int main()
 {
     struct A* testA;
+    testA = (struct A *)malloc(sizeof(struct A));
+    testA->b = (struct B *)malloc(sizeof(struct B));
+    testA->b->c = (struct C *)malloc(sizeof(struct C));
 
     freeC(testA->b->c);
     freeB(testA);

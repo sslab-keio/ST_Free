@@ -23,6 +23,8 @@ struct ops ops = {
 
 int main(){
     struct A *testA;
+    testA = (struct A *)malloc(sizeof(struct A));
+    testA->testB = (struct B *)malloc(sizeof(struct B));
     testA->ops = &ops;
 
     testA->ops->releaseB(testA->testB);
