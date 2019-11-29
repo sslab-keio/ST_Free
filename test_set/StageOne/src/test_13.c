@@ -19,8 +19,8 @@ void freeB(struct A* a){
     free(a->b);
 }
 
-void freeC(struct C* c){
-    free(c);
+void freeC(struct B* b){
+    free(b->c);
 }
 
 int main()
@@ -30,7 +30,7 @@ int main()
     testA->b = (struct B *)malloc(sizeof(struct B));
     testA->b->c = (struct C *)malloc(sizeof(struct C));
 
-    freeC(testA->b->c);
+    freeC(testA->b);
     freeB(testA);
     free(testA);
 

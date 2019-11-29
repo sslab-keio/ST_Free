@@ -49,6 +49,7 @@ int main()
 
     freetD(tA->tB);
     free(tA->tB->tC);
+
     freeA(tA);
 
     return 0;
