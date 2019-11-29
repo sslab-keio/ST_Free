@@ -82,12 +82,12 @@ namespace ST_free {
             void addNestedFree(Value *V, CallInst *CI, BasicBlock *B, struct collectedInfo &I, ParentList &additionalParents);
             /*** Argument Status ***/
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
-            void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value* arg, ArgStatus *ArgStat, int ind, ParentList plist, bool isFirst = false);
+            void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value* arg, ArgStatus *ArgStat, int ind, Type* parentType, ParentList plist, bool isFirst = false);
             /*** Branch Instruction(Correctly Branched) ***/
             bool isCorrectlyBranched(BranchInst * BI);
             /*** Store Instruction related funtions ***/
-            bool isStoreToStructMember(StoreInst * SI);
-            bool isStoreFromStructMember(StoreInst * SI);
+            bool isStoreToStructMember(StoreInst *SI);
+            bool isStoreFromStructMember(StoreInst *SI);
             bool isStoreToStruct(StoreInst *SI);
             bool isStoreFromStruct(StoreInst *SI);
             void checkAndChangeActualAuthority(StoreInst *SI);

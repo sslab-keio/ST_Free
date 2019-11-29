@@ -67,21 +67,20 @@ namespace ST_free{
     }
 
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type * T, long mem) {
-        // const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
-        // if (UK == NULL)
-        //     UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
+        const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
+        if (UK == NULL)
+            UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
 
-        // BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-        // if(BInfo)
-        //     BInfo->addAlloc(UK);
-        // BBManage.add(B, V, T, mem, ALLOCATED);
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addAlloc(UK);
     }
 
-    void FunctionInformation::addAllocValue(BasicBlock *B, UniqueKey *UK) {
-        // BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-        // if(BInfo)
-        //     BInfo->addAlloc(UK);
-    }
+    // void FunctionInformation::addAllocValue(BasicBlock *B, UniqueKey *UK) {
+    //     BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+    //     if(BInfo)
+    //         BInfo->addAlloc(UK);
+    // }
 
     bool FunctionInformation::isUnanalyzed(){
         return getStat() == UNANALYZED ? true : false;

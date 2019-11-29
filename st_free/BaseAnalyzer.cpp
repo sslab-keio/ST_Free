@@ -24,7 +24,7 @@ namespace ST_free {
             return;
         getFunctionInformation()->setInProgress();
 
-        for (BasicBlock &B: F){
+        for (BasicBlock &B: F) {
             getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
             getFunctionInformation()->setLoopBlock(B);
             this->analyzeInstructions(B);
@@ -279,8 +279,9 @@ namespace ST_free {
                 if (getFunctionInformation()->isArgValue(info.freeValue)) {
                     if (!info.parentType)
                         getFunctionInformation()->setArgFree(info.freeValue);
-                    else if (info.parentType && info.index >= 0)
+                    else if (info.parentType && info.index >= 0) {
                         getFunctionInformation()->setStructMemberArgFreed(info.freeValue, info.indexes);
+                    }
                 }
 
                 ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, info.freeValue, info.memType, info.parentType, info.index, info.indexes);
@@ -308,35 +309,14 @@ namespace ST_free {
             if (auto CastI = dyn_cast<CastInst>(usr)) {
                 Ty = CastI->getDestTy();
             } else if (auto SI = dyn_cast<StoreInst>(usr)) {
-                // Might need check?
+                generateWarning(CI, "struct store");
             }
         }
         if (get_type(Ty)->isStructTy()) {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
-        // if (isStructEleAlloc(CI)) {
-        //     GetElementPtrInst *inst = getAllocStructEleInfo(CI);
-
-        //     if (inst != NULL) {
-        //         if (getFunctionInformation()->isArgValue(getLoadeeValue(inst->getPointerOperand())))
-        //             getFunctionInformation()->setArgAlloc(getLoadeeValue(inst->getPointerOperand()));
-
-        //         // getFunctionInformation()->addAllocValue(
-        //         //         B,
-        //         //         getLoadeeValue(inst->getPointerOperand()),
-        //         //         inst->getResultElementType()
-        //         //         );
-        //         generateWarning(CI, "Struct element malloc");
-        //     }
-        // } else {
-        //     Value * val = getAllocatedValue(CI);
-        //     if (getFunctionInformation()->isArgValue(val))
-        //         getFunctionInformation()->setArgAlloc(val);
-        //     this->addPointerLocalVariable(B, val->getType(), val, CI, ParentList());
-        //     // getFunctionInformation()->addAllocValue(B, val, val->getType());
-        //     generateWarning(CI, "Value malloc");
-        // }
+        getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
         return;
     }
 
@@ -352,15 +332,15 @@ namespace ST_free {
 
         for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();arguments++, ind++) {
             ArgStatus *args = DF->getArgList()->getArgStatus(ind);
-            this->copyArgStatusRecursively(Func, CI, B, cast<Value>(arguments), args, ind, ParentList(), true);
+            this->copyArgStatusRecursively(Func, CI, B, cast<Value>(arguments), args, ind, NULL, ParentList(), true);
         }
         return;
     }
 
-    void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value *arg, ArgStatus *ArgStat, int ind, ParentList plist, bool isFirst) {
+    void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value *arg, ArgStatus *ArgStat, int ind, Type* ParentType, ParentList plist, bool isFirst) {
         if (ArgStat && ArgStat->isStruct()) {
             if (!isFirst)
-                plist.push_back(pair<Type *, int>(ArgStat->getType(), ind));
+                plist.push_back(pair<Type *, int>(ParentType, ind));
 
             if (ArgStat->isFreed()) {
                 this->addFree(arg, CI, &B, false, plist);
@@ -370,13 +350,13 @@ namespace ST_free {
             }
 
             for (int index = 0; index < ArgStat->size(); index++) {
-                this->copyArgStatusRecursively(Func, CI, B, arg, ArgStat->getStatus(index), index, plist);
+                this->copyArgStatusRecursively(Func, CI, B, arg, ArgStat->getStatus(index), index, get_type(ArgStat->getType()), plist);
             }
         }
     }
 
     bool BaseAnalyzer::isStoreToStructMember(StoreInst * SI) {
-        if(GetElementPtrInst * gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())) {
+        if(GetElementPtrInst *gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())) {
             if(isa<StructType>(gEle->getSourceElementType())) {
                 return true;
             }
@@ -384,7 +364,7 @@ namespace ST_free {
         return false;
     }
 
-    bool BaseAnalyzer::isStoreFromStructMember(StoreInst * SI){
+    bool BaseAnalyzer::isStoreFromStructMember(StoreInst * SI) {
         if(getStoredStructEle(SI))
             return true;
         return false;

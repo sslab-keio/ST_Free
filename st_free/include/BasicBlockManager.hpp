@@ -76,7 +76,7 @@ namespace ST_free {
         public:
             /*** getter ***/
             void set(BasicBlock *B);
-            BasicBlockInformation * get(BasicBlock *B);
+            BasicBlockInformation* get(BasicBlock *B);
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);
             BasicBlockList getBasicBlockAllocList(BasicBlock *src);
             LiveVariableList getLiveVariables(BasicBlock *B);
@@ -87,10 +87,12 @@ namespace ST_free {
             // void copyCorrectlyFreedToPrev(BasicBlock *src);
             void updateSuccessorBlock(BasicBlock *src);
             void intersect(BasicBlock *src, BasicBlock *tgt);
+            void unite(BasicBlock *src, BasicBlock *tgt);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
         private:
             map<BasicBlock *,BasicBlockInformation> BBMap;
             BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
+            BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
             LiveVariableList intersectLiveVariables(LiveVariableList src, LiveVariableList tgt);
             bool exists(BasicBlock *B);
     };

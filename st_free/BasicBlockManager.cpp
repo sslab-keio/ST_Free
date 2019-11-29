@@ -117,7 +117,7 @@ namespace ST_free {
     //     allocList.add(v, ty, mem);
     // }
 
-    void BasicBlockInformation::addAlloc(const UniqueKey *UK){
+    void BasicBlockInformation::addAlloc(const UniqueKey *UK) {
         allocList.add(UK);
     }
 
@@ -188,6 +188,7 @@ namespace ST_free {
                 isFirst = false;
             } else {
                 this->intersect(PredBB, B);
+                this->unite(PredBB, B);
                 this->copyCorrectlyFreed(PredBB, B);
             }
         }
@@ -202,6 +203,11 @@ namespace ST_free {
     void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt].setFreeList(intersectList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
         BBMap[tgt].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src), this->getLiveVariables(tgt)));
+        return;
+    }
+
+    void BasicBlockManager::unite(BasicBlock *src, BasicBlock *tgt){
+        BBMap[tgt].setAllocList(uniteList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
         return;
     }
 
@@ -229,22 +235,22 @@ namespace ST_free {
                 tgt.begin(), tgt.end(),
                 back_inserter(tmp)
             );
-
-//         outs() << "src\n";
-//         for (auto ele :src) {
-//             ele->print();
-//         }
-//         outs() << "tgt\n";
-//         for (auto ele :tgt) {
-//             ele->print();
-//         }
-//         outs() << "intersect\n";
-//         for(auto ele : tmp){
-//             ele->print();
-//         }
-
         return tmp;
     }
+
+    BasicBlockList BasicBlockManager::uniteList(BasicBlockList src, BasicBlockList tgt) {
+        BasicBlockList tmp;
+        llvm::sort(src.begin(), src.end());
+        llvm::sort(tgt.begin(), tgt.end());
+
+        set_union(
+                src.begin(), src.end(),
+                tgt.begin(), tgt.end(),
+                back_inserter(tmp)
+            );
+        return tmp;
+    }
+
     LiveVariableList BasicBlockManager::intersectLiveVariables(LiveVariableList src, LiveVariableList tgt){
         LiveVariableList tmp;
         llvm::sort(src.begin(), src.end());
