@@ -15,6 +15,8 @@ namespace ST_free {
                 this->analyzeStoreInst(SI, B);
             else if (BranchInst *BI = dyn_cast<BranchInst>(&I))
                 this->analyzeBranchInst(BI, B);
+            else if (ReturnInst *RI = dyn_cast<ReturnInst>(&I))
+                this->analyzeReturnInst(RI, B);
         }
     }
 
@@ -152,9 +154,10 @@ namespace ST_free {
 
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
                 if (vinfo != NULL) {
-                    if (
-                            // !getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)
-                            getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
+                    // if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX))
+                    //     generateWarning(freedStruct->getInst(), "Allocated and Freed", true);
+                    if (!getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)
+                            || getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
                             || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
                         ) {
                         getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());

@@ -50,6 +50,8 @@ namespace ST_free {
                 this->analyzeStoreInst(SI, B);
             else if (BranchInst *BI = dyn_cast<BranchInst>(&I))
                 this->analyzeBranchInst(BI, B);
+            else if (ReturnInst *RI = dyn_cast<ReturnInst>(&I))
+                this->analyzeReturnInst(RI, B);
         }
     }
 
@@ -125,6 +127,56 @@ namespace ST_free {
             Value *V = BCI->getOperand(0);
             getFunctionInformation()->addAliasedType(V, tgtTy);
         }
+        return;
+    }
+
+    void BaseAnalyzer::analyzeReturnInst(ReturnInst *RI, BasicBlock &B) {
+        vector<BasicBlock *> correctBB;
+        vector<BasicBlock *> errorBB;
+        Type *RetTy = B.getParent()->getReturnType();
+        if (RetTy->isIntegerTy()) {
+            if (RI->getNumOperands() <= 0)
+                return;
+            Value *V = RI->getReturnValue();
+            if(auto CInt = dyn_cast<Constant>(V)) {
+                generateWarning(RI, "Const Int");
+            }
+
+            if(auto LI = dyn_cast<LoadInst>(V)) {
+                for (auto usr: LI->getPointerOperand()->users()) {
+                    if (auto SI = dyn_cast<StoreInst>(usr)) {
+                        if (auto CInt = dyn_cast<ConstantInt>(SI->getValueOperand())) {
+                            generateWarning(RI, "Storing constant value to ret");
+                            if (CInt->getSExtValue() != NO_ERROR) {
+                                generateWarning(RI, "ERROR RETURN");
+                                errorBB.push_back(SI->getParent());
+                            } else {
+                                generateWarning(RI, "CORRECT RETURN");
+                                correctBB.push_back(SI->getParent());
+                            }
+                        }
+                    }
+                }
+            } else if(auto PHI = dyn_cast<PHINode>(V)) {
+                generateWarning(RI, "PHINode Instruction");
+                for (unsigned i = 0; i < PHI->getNumIncomingValues(); i++) {
+                    Value *inval = PHI->getIncomingValue(i);
+                    if (auto CInt = dyn_cast<ConstantInt>(inval)) {
+                        generateWarning(RI, "Storing constant value to ret from phi");
+                        if (CInt->getSExtValue() != NO_ERROR) {
+                            generateWarning(RI, "ERROR RETURN");
+                            errorBB.push_back(PHI->getIncomingBlock(i));
+                        } else {
+                            generateWarning(RI, "CORRECT RETURN");
+                            correctBB.push_back(PHI->getIncomingBlock(i));
+                        }
+                    }
+                }
+            }
+        } else if(RetTy->isPointerTy()) {
+            //TODO: add support to pointers 
+        }
+
         return;
     }
     
@@ -291,7 +343,14 @@ namespace ST_free {
                         && get_type(info.memType)->isStructTy()
                         && this->isAuthorityChained(info.indexes)
                     ) {
-                    getFunctionInformation()->addFreedStruct(B, get_type(info.memType), info.freeValue, CI, info.parentType, valInfo, info.index != ROOT_INDEX);
+                    getFunctionInformation()->addFreedStruct(
+                            B,
+                            get_type(info.memType),
+                            info.freeValue, CI, 
+                            info.parentType,
+                            valInfo,
+                            info.index != ROOT_INDEX
+                        );
 
                     /*** Look for any statically allcated struct type,
                      * and add them to freed struct as well ***/
@@ -316,7 +375,7 @@ namespace ST_free {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
-        getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
+        // getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
         return;
     }
 

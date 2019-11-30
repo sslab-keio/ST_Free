@@ -67,8 +67,9 @@ namespace ST_free {
             virtual void analyzeAllocaInst(AllocaInst * AI, BasicBlock &B);
             virtual void analyzeStoreInst(StoreInst * SI, BasicBlock &B);
             virtual void analyzeCallInst(CallInst *CI, BasicBlock &B);
-            virtual void analyzeBranchInst(BranchInst * BI, BasicBlock &B);
+            virtual void analyzeBranchInst(BranchInst *BI, BasicBlock &B);
             virtual void analyzeBitCastInst(BitCastInst *BCI, BasicBlock &B);
+            virtual void analyzeReturnInst(ReturnInst *RI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
             virtual void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false, ParentList additionalParents = ParentList());

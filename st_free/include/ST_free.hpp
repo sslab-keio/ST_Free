@@ -21,6 +21,7 @@
 #include "llvm/PassAnalysisSupport.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/IR/Constant.h"
 
 // include STL
 #include <iostream>
@@ -42,7 +43,9 @@
 
 #define DEBUG_TYPE "st_free"
 
-#define ROOT_INDEX -1
+#define ROOT_INDEX INT_MIN 
+
+#define NO_ERROR 0
 
 using namespace llvm;
 using namespace std;

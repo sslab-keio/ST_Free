@@ -3,7 +3,7 @@
 
 using namespace ST_free;
 
-const vector<string> alloc_funcs = {"malloc", "calloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc", "vzalloc"};
+const vector<string> alloc_funcs = {"malloc", "calloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc", "vzalloc", "kzalloc_node", "kmalloc_array", "kmem_cache_alloc", "kmem_cache_alloc_node"};
 const vector<string> free_funcs = {"free", "kfree", "kzfree", "vfree", "kvfree"};
 
 namespace ST_free {
@@ -12,7 +12,7 @@ namespace ST_free {
             string name = F->getName();
             auto itr = find_if(alloc_funcs.begin(), alloc_funcs.end(),
                     [name](string str) {
-                        size_t ind = str.find('.');
+                        size_t ind = name.find(".");
                         string tgt = ind != string::npos ? name.substr(0, ind) : name; 
                         return str.compare(tgt) == 0;
                     }
@@ -28,7 +28,7 @@ namespace ST_free {
             string name = F->getName();
             auto itr = find_if(free_funcs.begin(), free_funcs.end(),
                     [name](string str) {
-                        size_t ind = str.find('.');
+                        size_t ind = name.find(".");
                         string tgt = ind != string::npos ? name.substr(0, ind) : name; 
                         return str.compare(tgt) == 0;
                     }
