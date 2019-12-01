@@ -28,6 +28,10 @@ namespace ST_free {
             getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
             getFunctionInformation()->setLoopBlock(B);
             this->analyzeInstructions(B);
+            // outs() << "===" << F.getName() <<  " " << B.getName() <<"===\n";
+            // for (auto ele : getFunctionInformation()->getAllocList(&B)) {
+            //     outs() << *ele->getType() << "\n";
+            // }
             getFunctionInformation()->updateSuccessorBlock(B);
         }
 
@@ -375,7 +379,7 @@ namespace ST_free {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
-        // getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
+        getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
         return;
     }
 
@@ -412,6 +416,12 @@ namespace ST_free {
                 this->copyArgStatusRecursively(Func, CI, B, arg, ArgStat->getStatus(index), index, get_type(ArgStat->getType()), plist);
             }
         }
+    }
+
+    void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
+        FunctionInformation *DF = identifier.getElement(&Func);
+        // TODO: copy allocated types from other function 
+        return;
     }
 
     bool BaseAnalyzer::isStoreToStructMember(StoreInst * SI) {

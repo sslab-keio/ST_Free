@@ -84,6 +84,7 @@ namespace ST_free {
             /*** Argument Status ***/
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
             void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value* arg, ArgStatus *ArgStat, int ind, Type* parentType, ParentList plist, bool isFirst = false);
+            void copyAllocatedStatus(Function &Func, BasicBlock &B);
             /*** Branch Instruction(Correctly Branched) ***/
             bool isCorrectlyBranched(BranchInst * BI);
             /*** Store Instruction related funtions ***/

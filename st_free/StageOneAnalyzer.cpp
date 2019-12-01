@@ -127,6 +127,7 @@ namespace ST_free {
             } else {
                 this->analyzeDifferentFunc((Function &)(*called_function));
                 this->copyArgStatus((Function &)(*called_function), CI, B);
+                this->copyAllocatedStatus((Function &)(*called_function), B);
             }
         }
     }
@@ -153,11 +154,12 @@ namespace ST_free {
                     continue;
 
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
+                // if (!getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
+                //     generateWarning(freedStruct->getInst(), "Not Allocated");
+                //     getFunctionInformation()->setStructMemberFreed(freedStruct, ind);
+                // }
                 if (vinfo != NULL) {
-                    // if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX))
-                    //     generateWarning(freedStruct->getInst(), "Allocated and Freed", true);
-                    if (!getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)
-                            || getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
+                    if (getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
                             || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
                         ) {
                         getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
