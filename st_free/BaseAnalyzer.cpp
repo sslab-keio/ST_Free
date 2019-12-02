@@ -420,7 +420,9 @@ namespace ST_free {
 
     void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
         FunctionInformation *DF = identifier.getElement(&Func);
-        // TODO: copy allocated types from other function 
+        for (auto ele : DF->getAllocatedInReturn()) {
+            getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
+        }
         return;
     }
 

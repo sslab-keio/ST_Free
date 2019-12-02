@@ -76,11 +76,11 @@ namespace ST_free{
             BInfo->addAlloc(UK);
     }
 
-    // void FunctionInformation::addAllocValue(BasicBlock *B, UniqueKey *UK) {
-    //     BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
-    //     if(BInfo)
-    //         BInfo->addAlloc(UK);
-    // }
+    void FunctionInformation::addAllocValue(BasicBlock *B, UniqueKey *UK) {
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addAlloc(UK);
+    }
 
     bool FunctionInformation::isUnanalyzed(){
         return getStat() == UNANALYZED ? true : false;
@@ -435,5 +435,12 @@ namespace ST_free{
         if (aliasedType.find(V) != aliasedType.end())
             return true;
         return false;
+    }
+
+    BasicBlockList FunctionInformation::getAllocatedInReturn() {
+        for (BasicBlock * B: this->getEndPoint()) {
+            return this->getAllocList(B);
+        }
+        return BasicBlockList();
     }
 }

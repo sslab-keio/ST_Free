@@ -105,6 +105,8 @@ namespace ST_free {
             void addAliasedType(Value* V, Type* T);
             Type* getAliasedType(Value *V);
             bool aliasedTypeExists(Value *V);
+            /*** get Allocated ***/
+            BasicBlockList getAllocatedInReturn();
         private:
             /*** Private Variables ***/
             static UniqueKeyManager UKManage;
