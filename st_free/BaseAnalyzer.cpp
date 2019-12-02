@@ -135,8 +135,6 @@ namespace ST_free {
     }
 
     void BaseAnalyzer::analyzeReturnInst(ReturnInst *RI, BasicBlock &B) {
-        vector<BasicBlock *> correctBB;
-        vector<BasicBlock *> errorBB;
         Type *RetTy = B.getParent()->getReturnType();
         if (RetTy->isIntegerTy()) {
             if (RI->getNumOperands() <= 0)
@@ -153,10 +151,10 @@ namespace ST_free {
                             generateWarning(RI, "Storing constant value to ret");
                             if (CInt->getSExtValue() != NO_ERROR) {
                                 generateWarning(RI, "ERROR RETURN");
-                                errorBB.push_back(SI->getParent());
+                                getFunctionInformation()->addErrorBlock(SI->getParent());
                             } else {
                                 generateWarning(RI, "CORRECT RETURN");
-                                correctBB.push_back(SI->getParent());
+                                getFunctionInformation()->addSuccessBlock(SI->getParent());
                             }
                         }
                     }
@@ -169,10 +167,10 @@ namespace ST_free {
                         generateWarning(RI, "Storing constant value to ret from phi");
                         if (CInt->getSExtValue() != NO_ERROR) {
                             generateWarning(RI, "ERROR RETURN");
-                            errorBB.push_back(PHI->getIncomingBlock(i));
+                            getFunctionInformation()->addErrorBlock(PHI->getIncomingBlock(i));
                         } else {
                             generateWarning(RI, "CORRECT RETURN");
-                            correctBB.push_back(PHI->getIncomingBlock(i));
+                            getFunctionInformation()->addSuccessBlock(PHI->getIncomingBlock(i));
                         }
                     }
                 }

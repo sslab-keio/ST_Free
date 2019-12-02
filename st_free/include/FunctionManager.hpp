@@ -18,6 +18,10 @@ namespace ST_free {
             /*** EndPoints ***/
             void addEndPoint(BasicBlock *B);
             vector<BasicBlock *> getEndPoint() const;
+            void addSuccessBlock(BasicBlock *B);
+            vector<BasicBlock *> getSuccessBlock() const;
+            void addErrorBlock(BasicBlock *B);
+            vector<BasicBlock *> getErrorBlock() const;
             /*** FreeValue Related ***/
             // void addFreeValue(BasicBlock *B, Value *V);
             // void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
@@ -114,6 +118,8 @@ namespace ST_free {
             int stat;
             ArgList args;
             vector<BasicBlock *> endPoint;
+            vector<BasicBlock *> successBlock;
+            vector<BasicBlock *> errorBlock;
             LocalVarList localVariables;
             FreedStructList freedStruct;
             BasicBlockManager BBManage;

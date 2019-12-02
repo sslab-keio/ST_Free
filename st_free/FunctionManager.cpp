@@ -43,6 +43,14 @@ namespace ST_free{
         endPoint.push_back(B);
     }
 
+    void FunctionInformation::addSuccessBlock(BasicBlock *B) {
+        successBlock.push_back(B);
+    }
+
+    void FunctionInformation::addErrorBlock(BasicBlock *B) {
+        errorBlock.push_back(B);
+    }
+
     ValueInformation* FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type *stTy, long num, ParentList plist) {
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, memTy, num);
         if (UK == NULL)
@@ -140,6 +148,14 @@ namespace ST_free{
 
     vector<BasicBlock *> FunctionInformation::getEndPoint() const {
         return endPoint;
+    }
+
+    vector<BasicBlock *> FunctionInformation::getSuccessBlock() const {
+        return successBlock;
+    }
+
+    vector<BasicBlock *> FunctionInformation::getErrorBlock() const {
+        return errorBlock;
     }
 
     FreedStructList FunctionInformation::getFreedStruct() const{
