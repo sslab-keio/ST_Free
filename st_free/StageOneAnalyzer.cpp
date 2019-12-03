@@ -7,23 +7,16 @@ namespace ST_free {
             if(this->isReturnFunc(&I))
                 getFunctionInformation()->addEndPoint(&B);
 
-            if(AllocaInst *AI = dyn_cast<AllocaInst>(&I))
-                this->analyzeAllocaInst(AI, B);
-            else if (CallInst *CI = dyn_cast<CallInst>(&I))
-                this->analyzeCallInst(CI, B);
-            else if (StoreInst *SI = dyn_cast<StoreInst>(&I))
-                this->analyzeStoreInst(SI, B);
-            else if (BranchInst *BI = dyn_cast<BranchInst>(&I))
-                this->analyzeBranchInst(BI, B);
-            else if (ReturnInst *RI = dyn_cast<ReturnInst>(&I))
-                this->analyzeReturnInst(RI, B);
+            if (InstAnalysisMap.find(I.getOpcode()) != InstAnalysisMap.end())
+                (this->*InstAnalysisMap[I.getOpcode()])(&I, B);
         }
     }
 
-    void StageOneAnalyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B){
+    void StageOneAnalyzer::analyzeAllocaInst(Instruction* AI, BasicBlock &B){
     }
 
-    void StageOneAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B){
+    void StageOneAnalyzer::analyzeStoreInst(Instruction *I, BasicBlock &B){
+        StoreInst *SI = cast<StoreInst>(I);
         AliasElement valueEle, pointerEle;
 
         /*** Check the Pointer of StoreInst ***/
@@ -92,7 +85,9 @@ namespace ST_free {
         // }
     }
      
-    void StageOneAnalyzer::analyzeCallInst(CallInst *CI, BasicBlock &B) {
+    void StageOneAnalyzer::analyzeCallInst(Instruction *I, BasicBlock &B) {
+        CallInst *CI = cast<CallInst>(I);
+
         vector<Function *> funcLists;
         if (CI->isIndirectCall()) {
             if (LoadInst *LI = dyn_cast<LoadInst>(CI->getCalledValue())) {
@@ -132,7 +127,9 @@ namespace ST_free {
         }
     }
 
-    void StageOneAnalyzer::analyzeBranchInst(BranchInst * BI, BasicBlock &B){
+    void StageOneAnalyzer::analyzeBranchInst(Instruction* I, BasicBlock &B){
+        BranchInst *BI = cast<BranchInst>(I);
+
         if(this->isCorrectlyBranched(BI)) {
             generateWarning(BI, "Correctly Branched");
             getFunctionInformation()->setCorrectlyBranched(&B);

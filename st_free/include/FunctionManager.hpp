@@ -111,6 +111,8 @@ namespace ST_free {
             bool aliasedTypeExists(Value *V);
             /*** get Allocated ***/
             BasicBlockList getAllocatedInReturn();
+            BasicBlockList getAllocatedInSuccess();
+            BasicBlockList getAllocatedInError();
         private:
             /*** Private Variables ***/
             static UniqueKeyManager UKManage;

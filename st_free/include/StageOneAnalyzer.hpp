@@ -11,9 +11,9 @@ namespace ST_free {
             void checkAvailability();
             /*** Instruction Analysis ***/
             void analyzeInstructions(BasicBlock &B);
-            void analyzeAllocaInst(AllocaInst * AI, BasicBlock &B);
-            void analyzeStoreInst(StoreInst * SI, BasicBlock &B);
-            void analyzeCallInst(CallInst *CI, BasicBlock &B);
-            void analyzeBranchInst(BranchInst * BI, BasicBlock &B);
+            void analyzeAllocaInst(Instruction *AI, BasicBlock &B);
+            void analyzeStoreInst(Instruction *SI, BasicBlock &B);
+            void analyzeCallInst(Instruction *CI, BasicBlock &B);
+            void analyzeBranchInst(Instruction *BI, BasicBlock &B);
     };
 }

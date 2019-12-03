@@ -46,20 +46,12 @@ namespace ST_free {
             if(this->isReturnFunc(&I))
                 getFunctionInformation()->addEndPoint(&B);
 
-            if(AllocaInst *AI = dyn_cast<AllocaInst>(&I))
-                this->analyzeAllocaInst(AI, B);
-            else if (CallInst *CI = dyn_cast<CallInst>(&I))
-                this->analyzeCallInst(CI, B);
-            else if (StoreInst *SI = dyn_cast<StoreInst>(&I))
-                this->analyzeStoreInst(SI, B);
-            else if (BranchInst *BI = dyn_cast<BranchInst>(&I))
-                this->analyzeBranchInst(BI, B);
-            else if (ReturnInst *RI = dyn_cast<ReturnInst>(&I))
-                this->analyzeReturnInst(RI, B);
+            if (InstAnalysisMap.find(I.getOpcode()) != InstAnalysisMap.end())
+                (this->*InstAnalysisMap[I.getOpcode()])(&I, B);
         }
     }
 
-    void BaseAnalyzer::analyzeAllocaInst(AllocaInst * AI, BasicBlock &B) {
+    void BaseAnalyzer::analyzeAllocaInst(Instruction* AI, BasicBlock &B) {
         // this->addLocalVariable(
         //         &B,
         //         ainst->getAllocatedType(),
@@ -69,7 +61,8 @@ namespace ST_free {
         //     );
     }
 
-    void BaseAnalyzer::analyzeStoreInst(StoreInst * SI, BasicBlock &B) {
+    void BaseAnalyzer::analyzeStoreInst(Instruction* I, BasicBlock &B) {
+        StoreInst *SI = cast<StoreInst>(I);
         // if(this->isStoreToStruct(SI)){
         // }
         if(this->isStoreToStructMember(SI)) {
@@ -99,7 +92,9 @@ namespace ST_free {
         }
     }
      
-    void BaseAnalyzer::analyzeCallInst(CallInst *CI, BasicBlock &B) {
+    void BaseAnalyzer::analyzeCallInst(Instruction *I, BasicBlock &B) {
+        CallInst *CI = cast<CallInst>(I);
+
         if (Function* called_function = CI->getCalledFunction()) {
             if (isAllocFunction(called_function)) {
                 Value * val = getAllocatedValue(CI);
@@ -119,13 +114,16 @@ namespace ST_free {
         }
     }
 
-    void BaseAnalyzer::analyzeBranchInst(BranchInst * BI, BasicBlock &B){
+    void BaseAnalyzer::analyzeBranchInst(Instruction* I, BasicBlock &B){
+        BranchInst *BI = cast<BranchInst>(I);
         if(this->isCorrectlyBranched(BI)) {
             generateWarning(BI, "Correctly Branched");
             getFunctionInformation()->setCorrectlyBranched(&B);
         }
     }
-    void BaseAnalyzer::analyzeBitCastInst(BitCastInst *BCI, BasicBlock &B) {
+    void BaseAnalyzer::analyzeBitCastInst(Instruction *I, BasicBlock &B) {
+        BitCastInst *BCI = cast<BitCastInst>(I);
+
         Type *tgtTy = get_type(BCI->getDestTy());
         if (get_type(BCI->getSrcTy())->isIntegerTy() && tgtTy->isStructTy()) {
             Value *V = BCI->getOperand(0);
@@ -134,7 +132,9 @@ namespace ST_free {
         return;
     }
 
-    void BaseAnalyzer::analyzeReturnInst(ReturnInst *RI, BasicBlock &B) {
+    void BaseAnalyzer::analyzeReturnInst(Instruction *I, BasicBlock &B) {
+        ReturnInst *RI = cast<ReturnInst>(I);
+
         Type *RetTy = B.getParent()->getReturnType();
         if (RetTy->isIntegerTy()) {
             if (RI->getNumOperands() <= 0)
@@ -175,7 +175,7 @@ namespace ST_free {
                     }
                 }
             }
-        } else if(RetTy->isPointerTy()) {
+        } else if (RetTy->isPointerTy()) {
             //TODO: add support to pointers 
         }
 
@@ -377,6 +377,7 @@ namespace ST_free {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
+        // ICmpInst *icmp = this->findAllocICmp(CI);
         getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
         return;
     }
@@ -848,5 +849,25 @@ namespace ST_free {
             }
         }
         return;
+    }
+
+    ICmpInst* BaseAnalyzer::findAllocICmp(Instruction *I) {
+        ICmpInst* icmp = NULL;
+
+        for (auto usr : I->users()) {
+            if (auto ip = dyn_cast<ICmpInst>(usr)) {
+                icmp = ip;
+                break;
+            } else if (auto BCI = dyn_cast<BitCastInst>(usr)) {
+                icmp = findAllocICmp(BCI);
+            } else if (auto SI = dyn_cast<StoreInst>(usr)) {
+                for (auto si_usr: SI->getPointerOperand()->users()) {
+                    if (auto tmpI = dyn_cast<Instruction>(si_usr)) {
+                        icmp = findAllocICmp(tmpI);
+                    }
+                }
+            }
+        }
+        return icmp;
     }
 }

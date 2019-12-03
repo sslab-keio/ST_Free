@@ -23,11 +23,19 @@ namespace ST_free {
                 stManage = stm;
                 FEle->setLoopInfo(loopmap->get(func));
                 dat_layout = dl;
+                InstAnalysisMap[Instruction::Call] = &BaseAnalyzer::analyzeCallInst;
+                InstAnalysisMap[Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
+                InstAnalysisMap[Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
+                InstAnalysisMap[Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
             }
             BaseAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl){
                 loopmap = lmap;
                 stManage = stm;
                 dat_layout = dl;
+                InstAnalysisMap[Instruction::Call] = &BaseAnalyzer::analyzeCallInst;
+                InstAnalysisMap[Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
+                InstAnalysisMap[Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
+                InstAnalysisMap[Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
             }
             void analyze(Function &F);
             void analyzeAdditionalUnknowns(Function &F);
@@ -64,12 +72,12 @@ namespace ST_free {
             virtual void checkAvailability();
             /*** Instruction Analysis ***/
             virtual void analyzeInstructions(BasicBlock &B);
-            virtual void analyzeAllocaInst(AllocaInst * AI, BasicBlock &B);
-            virtual void analyzeStoreInst(StoreInst * SI, BasicBlock &B);
-            virtual void analyzeCallInst(CallInst *CI, BasicBlock &B);
-            virtual void analyzeBranchInst(BranchInst *BI, BasicBlock &B);
-            virtual void analyzeBitCastInst(BitCastInst *BCI, BasicBlock &B);
-            virtual void analyzeReturnInst(ReturnInst *RI, BasicBlock &B);
+            virtual void analyzeAllocaInst(Instruction * AI, BasicBlock &B);
+            virtual void analyzeStoreInst(Instruction* SI, BasicBlock &B);
+            virtual void analyzeCallInst(Instruction *CI, BasicBlock &B);
+            virtual void analyzeBranchInst(Instruction *BI, BasicBlock &B);
+            virtual void analyzeBitCastInst(Instruction *BCI, BasicBlock &B);
+            virtual void analyzeReturnInst(Instruction *RI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
             virtual void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false, ParentList additionalParents = ParentList());
@@ -121,14 +129,11 @@ namespace ST_free {
             Type* extractResultElementType(GetElementPtrInst *GEle);
             /*** connector with struct manager***/
             bool isAuthorityChained(ParentList);
+            /*** find icmp ***/
+            ICmpInst* findAllocICmp(Instruction *I);
             /*** MethodMap ***/
-            typedef void (*InstAnalysisMethod)(Instruction *, BasicBlock &);
-            // map<unsigned, InstAnalysisMethod> InstAnalysisMap = {
-            //     make_pair(Instruction::Alloca, &BaseAnalyzer::analyzeAllocaInst),
-            //     make_pair(Instruction::Call, &BaseAnalyzer::analyzeCallInst),
-            //     make_pair(Instruction::Store, &BaseAnalyzer::analyzeStoreInst),
-            //     make_pair(Instruction::Br, &BaseAnalyzer::analyzeBranchInst)
-            // };
+            // typedef void (*InstAnalysisMethod)(Instruction *, BasicBlock &);
+            map<unsigned, void (ST_free::BaseAnalyzer::*)(Instruction*, BasicBlock&)> InstAnalysisMap;
         private:
             /*** Managers and DataLayouts ***/
             FunctionManager identifier;

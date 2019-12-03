@@ -459,4 +459,19 @@ namespace ST_free{
         }
         return BasicBlockList();
     }
+
+    BasicBlockList FunctionInformation::getAllocatedInSuccess() {
+        for (BasicBlock * B: this->getEndPoint()) {
+            return this->getAllocList(B);
+        }
+        return BasicBlockList();
+    }
+
+    BasicBlockList FunctionInformation::getAllocatedInError() {
+        //TODO: Take union
+        for (BasicBlock * B: this->getErrorBlock()) {
+            return this->getAllocList(B);
+        }
+        return BasicBlockList();
+    }
 }
