@@ -19,6 +19,9 @@ namespace ST_free {
         StoreInst *SI = cast<StoreInst>(I);
         AliasElement valueEle, pointerEle;
 
+        if (CallInst* CI = this->getStoreFromCall(SI))
+            this->getFunctionInformation()->getBasicBlockInformation(&B)->addStoredCallValues(SI->getPointerOperand(), CI);
+
         /*** Check the Pointer of StoreInst ***/
         if(this->isStoreToStructMember(SI)) {
             generateWarning(SI, "is Store to struct member");
@@ -129,6 +132,11 @@ namespace ST_free {
 
     void StageOneAnalyzer::analyzeBranchInst(Instruction* I, BasicBlock &B){
         BranchInst *BI = cast<BranchInst>(I);
+        if (BI->isConditional()) {
+            if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
+                this->analyzeCondition(ICI, B);
+            }
+        }
 
         if(this->isCorrectlyBranched(BI)) {
             generateWarning(BI, "Correctly Branched");

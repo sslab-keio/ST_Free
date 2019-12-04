@@ -225,7 +225,7 @@ namespace ST_free {
         // }
     // }
 
-    BasicBlockList BasicBlockManager::intersectList(BasicBlockList src, BasicBlockList tgt){
+    BasicBlockList BasicBlockManager::intersectList(BasicBlockList src, BasicBlockList tgt) {
         BasicBlockList tmp;
         llvm::sort(src.begin(), src.end());
         llvm::sort(tgt.begin(), tgt.end());
@@ -306,10 +306,38 @@ namespace ST_free {
 
     void BasicBlockManager::updateSuccessorBlock(BasicBlock *src){
         for(BasicBlock * SucBB : successors(src)){
-            if(this->exists(SucBB)){
+            if(this->exists(SucBB)) {
                 // this->intersect(src, SucBB);
                 this->copyCorrectlyFreed(src, SucBB);
             }
         }
+    }
+
+    void BasicBlockInformation::addStoredCallValues(Value *v, CallInst *CI)  {
+        storedCallValues.push_back(pair<Value *, CallInst *>(v, CI));
+    }
+
+    vector<pair<Value *, CallInst *>> BasicBlockInformation::getStoredCallValues() {
+        return storedCallValues;
+    }
+
+    bool BasicBlockInformation::isCallValues(Value *V) {
+        auto fele = find_if(storedCallValues.begin(), storedCallValues.end(),
+                [V](pair<Value*, CallInst*> &p) {
+                    return p.first == V;
+                });
+        if (fele != storedCallValues.end())
+            return true;
+        return false;
+    }
+
+    CallInst *BasicBlockInformation::getCallInstForVal(Value *V) {
+        auto fele = find_if(storedCallValues.begin(), storedCallValues.end(),
+                [V](pair<Value*, CallInst*> &p) {
+                    return p.first == V;
+                });
+        if (fele != storedCallValues.end())
+            return (*fele).second;
+        return NULL;
     }
 }

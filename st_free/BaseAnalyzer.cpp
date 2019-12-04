@@ -61,6 +61,49 @@ namespace ST_free {
         //     );
     }
 
+    void BaseAnalyzer::analyzeICmpInst(Instruction *I, BasicBlock &B) {
+        ICmpInst* ICI = cast<ICmpInst>(I);
+        BranchInst* BI = NULL; 
+        Type *Ty = NULL;
+
+        if (isa<ConstantPointerNull>(ICI->getOperand(1))
+                || isa<ConstantInt>(ICI->getOperand(1))) {
+
+            Value *comVal = ICI->getOperand(0);
+            if(auto LI = dyn_cast<LoadInst>(comVal)) {
+                comVal = LI->getPointerOperand();
+            }
+
+            if (auto GEle = dyn_cast<GetElementPtrInst>(comVal)) {
+                GEle = getRootGEle(GEle);
+                comVal = getLoadeeValue(GEle->getPointerOperand());
+            }
+
+            Ty = comVal->getType();
+            if (this->getFunctionInformation()->getBasicBlockInformation(&B)->isCallValues(comVal)) {
+                if (auto Alloca = dyn_cast<AllocaInst>(comVal)) {
+                    Ty = Alloca->getAllocatedType();
+                }
+            }
+
+            if(auto CI = dyn_cast<CallInst>(comVal)) {
+                Ty = CI->getType();
+                for (auto usr : CI->users()) {
+                    if (auto CastI = dyn_cast<CastInst>(usr))
+                        Ty = CastI->getDestTy();
+                }
+            }
+
+            if (Ty->isIntegerTy()) {
+            }
+
+            if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty, ROOT_INDEX)) {
+            }
+        }
+
+        return;
+    }
+
     void BaseAnalyzer::analyzeStoreInst(Instruction* I, BasicBlock &B) {
         StoreInst *SI = cast<StoreInst>(I);
         // if(this->isStoreToStruct(SI)){
@@ -121,6 +164,7 @@ namespace ST_free {
             getFunctionInformation()->setCorrectlyBranched(&B);
         }
     }
+
     void BaseAnalyzer::analyzeBitCastInst(Instruction *I, BasicBlock &B) {
         BitCastInst *BCI = cast<BitCastInst>(I);
 
@@ -423,6 +467,16 @@ namespace ST_free {
             getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
         }
         return;
+    }
+
+    CallInst* BaseAnalyzer::getStoreFromCall(StoreInst *SI) {
+        Value *val = SI->getValueOperand();
+        if (auto BCI = dyn_cast<CastInst>(val)) {
+            val = BCI->getOperand(0);
+        }
+        if (CallInst* CI = dyn_cast<CallInst>(val))
+            return CI;
+        return NULL;
     }
 
     bool BaseAnalyzer::isStoreToStructMember(StoreInst * SI) {
@@ -784,7 +838,6 @@ namespace ST_free {
         GetElementPtrInst *GEle = getFreeStructEleInfo(I);
         if (GEle != NULL) {
             this->getStructParents(GEle, info.indexes);
-            // indexes.push_back(pair<Type*, int>(extractResultElementType(GEle), ROOT_INDEX));
             GetElementPtrInst *tmpGEle = GEle;
             if (isa<GetElementPtrInst>(GEle->getPointerOperand()))
                 tmpGEle = getRootGEle(GEle);
@@ -869,5 +922,57 @@ namespace ST_free {
             }
         }
         return icmp;
+    }
+
+    void BaseAnalyzer::analyzeCondition(Instruction *I, BasicBlock &B) {
+        ICmpInst* ICI = cast<ICmpInst>(I);
+        Value *comVal = this->getComparedValue(ICI);
+
+        if(isa<ConstantInt>(ICI->getOperand(1))) {
+            generateWarning(I, "Compare with Int");
+            CallInst *CI = this->getFunctionInformation()->getBasicBlockInformation(&B)->getCallInstForVal(comVal);
+            if (CI) {
+                generateWarning(I, "Error code for CallInst");
+                //TODO: Collect all allocation
+            }
+        } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
+            generateWarning(I, "Compare with NULL");
+            Type *Ty = this->getComparedType(comVal, B);
+            if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty, ROOT_INDEX)) {
+                //TODO: check for Allocated BasicBlock
+            }
+        }
+        return;
+    }
+
+    Value* BaseAnalyzer::getComparedValue(ICmpInst *ICI) {
+        Value *comVal = ICI->getOperand(0);
+        if(auto LI = dyn_cast<LoadInst>(comVal)) {
+            comVal = LI->getPointerOperand();
+        }
+
+        if (auto GEle = dyn_cast<GetElementPtrInst>(comVal)) {
+            GEle = getRootGEle(GEle);
+            comVal = getLoadeeValue(GEle->getPointerOperand());
+        }
+        return comVal;
+    }
+
+    Type* BaseAnalyzer::getComparedType(Value *comVal, BasicBlock &B) {
+        Type* Ty = comVal->getType();
+        if (this->getFunctionInformation()->getBasicBlockInformation(&B)->isCallValues(comVal)) {
+            if (auto Alloca = dyn_cast<AllocaInst>(comVal)) {
+                Ty = Alloca->getAllocatedType();
+            }
+        }
+
+        if(auto CI = dyn_cast<CallInst>(comVal)) {
+            Ty = CI->getType();
+            for (auto usr : CI->users()) {
+                if (auto CastI = dyn_cast<CastInst>(usr))
+                    Ty = CastI->getDestTy();
+            }
+        }
+        return Ty;
     }
 }

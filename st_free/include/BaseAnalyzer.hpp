@@ -27,6 +27,7 @@ namespace ST_free {
                 InstAnalysisMap[Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
                 InstAnalysisMap[Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
                 InstAnalysisMap[Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
+                // InstAnalysisMap[Instruction::ICmp] = &BaseAnalyzer::analyzeICmpInst;
             }
             BaseAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl){
                 loopmap = lmap;
@@ -36,6 +37,7 @@ namespace ST_free {
                 InstAnalysisMap[Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
                 InstAnalysisMap[Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
                 InstAnalysisMap[Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
+                // InstAnalysisMap[Instruction::ICmp] = &BaseAnalyzer::analyzeICmpInst;
             }
             void analyze(Function &F);
             void analyzeAdditionalUnknowns(Function &F);
@@ -77,6 +79,7 @@ namespace ST_free {
             virtual void analyzeCallInst(Instruction *CI, BasicBlock &B);
             virtual void analyzeBranchInst(Instruction *BI, BasicBlock &B);
             virtual void analyzeBitCastInst(Instruction *BCI, BasicBlock &B);
+            virtual void analyzeICmpInst(Instruction *ICI, BasicBlock &B);
             virtual void analyzeReturnInst(Instruction *RI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
@@ -95,7 +98,11 @@ namespace ST_free {
             void copyAllocatedStatus(Function &Func, BasicBlock &B);
             /*** Branch Instruction(Correctly Branched) ***/
             bool isCorrectlyBranched(BranchInst * BI);
+            void analyzeCondition(Instruction *I, BasicBlock &B);
+            Value* getComparedValue(ICmpInst *ICI);
+            Type* getComparedType(Value *V, BasicBlock &B);
             /*** Store Instruction related funtions ***/
+            CallInst *getStoreFromCall(StoreInst *SI);
             bool isStoreToStructMember(StoreInst *SI);
             bool isStoreFromStructMember(StoreInst *SI);
             bool isStoreToStruct(StoreInst *SI);
@@ -132,7 +139,6 @@ namespace ST_free {
             /*** find icmp ***/
             ICmpInst* findAllocICmp(Instruction *I);
             /*** MethodMap ***/
-            // typedef void (*InstAnalysisMethod)(Instruction *, BasicBlock &);
             map<unsigned, void (ST_free::BaseAnalyzer::*)(Instruction*, BasicBlock&)> InstAnalysisMap;
         private:
             /*** Managers and DataLayouts ***/

@@ -60,6 +60,10 @@ namespace ST_free {
             bool aliasExists(Value *);
             Value* getAlias(Value *);
             void setAlias(Value* src, Value* dest); //dest <- src
+            void addStoredCallValues(Value *v, CallInst *CI);
+            vector<pair<Value *, CallInst *>> getStoredCallValues();
+            bool isCallValues(Value *V);
+            CallInst *getCallInstForVal(Value *V);
         private:
             /*** BasicBlock Lists ***/
             BasicBlockWorkList freeList;
@@ -67,6 +71,7 @@ namespace ST_free {
             BasicBlockWorkList correctlyFreed;
             LiveVariableList liveVariables;
             Aliases aliasMap;
+            vector<pair<Value *, CallInst *>> storedCallValues;
             /*** BasicBlock Status ***/
             bool correctlyBranched;
             bool predCorrectlyBranched;
