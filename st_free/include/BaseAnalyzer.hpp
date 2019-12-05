@@ -98,10 +98,11 @@ namespace ST_free {
             void copyAllocatedStatus(Function &Func, BasicBlock &B);
             /*** Branch Instruction(Correctly Branched) ***/
             bool isCorrectlyBranched(BranchInst * BI);
-            BasicBlockWorkList analyzeCondition(Instruction *I, BasicBlock &B);
+            BasicBlockWorkList getErrorValues(Instruction *I, BasicBlock &B, int errcode);
             Value* getComparedValue(ICmpInst *ICI);
             Type* getComparedType(Value *V, BasicBlock &B);
             int getErrorOperand(ICmpInst *ICI);
+            BasicBlockList getErrorAllocInCalledFunction(CallInst *CI, int errcode);
             /*** Store Instruction related funtions ***/
             CallInst *getStoreFromCall(StoreInst *SI);
             bool isStoreToStructMember(StoreInst *SI);

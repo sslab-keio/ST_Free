@@ -47,8 +47,8 @@ namespace ST_free{
         successBlock.push_back(B);
     }
 
-    void FunctionInformation::addErrorBlock(BasicBlock *B) {
-        errorBlock.push_back(B);
+    void FunctionInformation::addErrorBlock(int64_t errcode, BasicBlock *B) {
+        errorBlock.push_back(pair<int64_t, BasicBlock *>(errcode, B));
     }
 
     ValueInformation* FunctionInformation::addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type *stTy, long num, ParentList plist) {
@@ -154,7 +154,7 @@ namespace ST_free{
         return successBlock;
     }
 
-    vector<BasicBlock *> FunctionInformation::getErrorBlock() const {
+    vector<pair<int64_t, BasicBlock *>> FunctionInformation::getErrorBlock() const {
         return errorBlock;
     }
 
@@ -475,11 +475,38 @@ namespace ST_free{
         return BasicBlockList();
     }
 
-    BasicBlockList FunctionInformation::getAllocatedInError() {
-        //TODO: Take union
-        for (BasicBlock * B: this->getErrorBlock()) {
-            return this->getAllocList(B);
+    BasicBlockList FunctionInformation::getAllocatedInError(int errcode) {
+        BasicBlockList BBL = BasicBlockList();
+        for (pair<int64_t, BasicBlock*> p: this->getErrorBlock()) {
+            if (errcode == 0 || p.first == errcode)
+                uniteList(BBL, diffList(getAllocList(p.second), getFreeList(p.second)));
         }
-        return BasicBlockList();
+        return BBL;
+    }
+
+    BasicBlockList FunctionInformation::uniteList(BasicBlockList src, BasicBlockList tgt) {
+        BasicBlockList tmp;
+        llvm::sort(src.begin(), src.end());
+        llvm::sort(tgt.begin(), tgt.end());
+
+        set_union(
+                src.begin(), src.end(),
+                tgt.begin(), tgt.end(),
+                back_inserter(tmp)
+            );
+        return tmp;
+    }
+
+    BasicBlockList FunctionInformation::diffList(BasicBlockList src, BasicBlockList tgt) {
+        BasicBlockList tmp;
+        llvm::sort(src.begin(), src.end());
+        llvm::sort(tgt.begin(), tgt.end());
+
+        set_difference(
+                src.begin(), src.end(),
+                tgt.begin(), tgt.end(),
+                back_inserter(tmp)
+            );
+        return tmp;
     }
 }

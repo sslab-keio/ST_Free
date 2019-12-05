@@ -145,8 +145,9 @@ namespace ST_free {
                         if (auto CInt = dyn_cast<ConstantInt>(SI->getValueOperand())) {
                             generateWarning(RI, "Storing constant value to ret");
                             if (CInt->getSExtValue() != NO_ERROR) {
+                                int64_t errcode = CInt->getSExtValue();
                                 generateWarning(RI, "ERROR RETURN");
-                                getFunctionInformation()->addErrorBlock(SI->getParent());
+                                getFunctionInformation()->addErrorBlock(errcode, SI->getParent());
                             } else {
                                 generateWarning(RI, "CORRECT RETURN");
                                 getFunctionInformation()->addSuccessBlock(SI->getParent());
@@ -161,8 +162,9 @@ namespace ST_free {
                     if (auto CInt = dyn_cast<ConstantInt>(inval)) {
                         generateWarning(RI, "Storing constant value to ret from phi");
                         if (CInt->getSExtValue() != NO_ERROR) {
+                            int64_t errcode =CInt->getSExtValue();
                             generateWarning(RI, "ERROR RETURN");
-                            getFunctionInformation()->addErrorBlock(PHI->getIncomingBlock(i));
+                            getFunctionInformation()->addErrorBlock(errcode, PHI->getIncomingBlock(i));
                         } else {
                             generateWarning(RI, "CORRECT RETURN");
                             getFunctionInformation()->addSuccessBlock(PHI->getIncomingBlock(i));
@@ -875,7 +877,7 @@ namespace ST_free {
         return icmp;
     }
 
-    BasicBlockWorkList BaseAnalyzer::analyzeCondition(Instruction *I, BasicBlock &B) {
+    BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B, int errcode) {
         BasicBlockWorkList BList;
         ICmpInst* ICI = cast<ICmpInst>(I);
         Value *comVal = this->getComparedValue(ICI);
@@ -884,8 +886,9 @@ namespace ST_free {
             generateWarning(I, "Compare with Int: Error Code");
             CallInst *CI = this->getFunctionInformation()->getBasicBlockInformation(&B)->getCallInstForVal(comVal);
             if (CI) {
-                generateWarning(I, "Error code for CallInst");
-                //TODO: Collect all allocation
+                for (auto ele : this->getErrorAllocInCalledFunction(CI, errcode)) {
+                    BList.add(ele);
+                }
             }
         } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
             generateWarning(I, "Compare with NULL: Look at allocation");
@@ -930,8 +933,16 @@ namespace ST_free {
 
     int BaseAnalyzer::getErrorOperand(ICmpInst *ICI) {
         int operand = -1;
-        if(isa<ConstantInt>(ICI->getOperand(1))) {
-
+        if(auto ConstI = dyn_cast<ConstantInt>(ICI->getOperand(1))) {
+            if (ConstI->isZero()) {
+                //TODO: check for each case
+                if (ICI->getPredicate() == CmpInst::ICMP_EQ
+                        || ICI->getPredicate() == CmpInst::ICMP_SGE)
+                    operand = 1;
+                else if (ICI->getPredicate() == CmpInst::ICMP_NE
+                        || ICI->getPredicate() == CmpInst::ICMP_SLT)
+                    operand = 0;
+            }
         } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
             if (ICI->getPredicate() == CmpInst::ICMP_EQ)
                 operand = 0;
@@ -939,5 +950,10 @@ namespace ST_free {
                 operand = 1;
         }
         return operand;
+    }
+
+    BasicBlockList BaseAnalyzer::getErrorAllocInCalledFunction(CallInst *CI, int errcode) {
+        Function *DF = CI->getCalledFunction();
+        return this->getFunctionManager()->getElement(DF)->getAllocatedInError(errcode);
     }
 }

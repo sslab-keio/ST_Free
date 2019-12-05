@@ -20,8 +20,8 @@ namespace ST_free {
             vector<BasicBlock *> getEndPoint() const;
             void addSuccessBlock(BasicBlock *B);
             vector<BasicBlock *> getSuccessBlock() const;
-            void addErrorBlock(BasicBlock *B);
-            vector<BasicBlock *> getErrorBlock() const;
+            void addErrorBlock(int64_t err, BasicBlock *B);
+            vector<pair<int64_t, BasicBlock *>> getErrorBlock() const;
             /*** FreeValue Related ***/
             // void addFreeValue(BasicBlock *B, Value *V);
             // void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
@@ -113,7 +113,9 @@ namespace ST_free {
             /*** get Allocated ***/
             BasicBlockList getAllocatedInReturn();
             BasicBlockList getAllocatedInSuccess();
-            BasicBlockList getAllocatedInError();
+            BasicBlockList getAllocatedInError(int errcode);
+            BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
+            BasicBlockList diffList(BasicBlockList src, BasicBlockList tgt);
         private:
             /*** Private Variables ***/
             static UniqueKeyManager UKManage;
@@ -122,7 +124,7 @@ namespace ST_free {
             ArgList args;
             vector<BasicBlock *> endPoint;
             vector<BasicBlock *> successBlock;
-            vector<BasicBlock *> errorBlock;
+            vector<pair<int64_t, BasicBlock *>> errorBlock;
             LocalVarList localVariables;
             FreedStructList freedStruct;
             BasicBlockManager BBManage;

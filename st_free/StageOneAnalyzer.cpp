@@ -135,9 +135,11 @@ namespace ST_free {
         if (BI->isConditional()) {
             if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
                 int op = this->getErrorOperand(ICI);
+                int errcode = 0;
+
                 if (op >= 0) {
                     BasicBlock *errBlock = BI->getSuccessor(op);
-                    for(auto ele: this->analyzeCondition(ICI, B).getList()) {
+                    for(auto ele: this->getErrorValues(ICI, B, errcode).getList()) {
                         this->getFunctionInformation()
                             ->getBasicBlockInformation(&B)
                             ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
