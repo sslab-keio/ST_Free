@@ -4,8 +4,6 @@
 #define UpdateIfNull(tgt, cand) (tgt) = ((tgt) == NULL ? (cand):(tgt))
 
 namespace ST_free {
-
-
     void BaseAnalyzer::analyzeAdditionalUnknowns(Function &F) {
         for (BasicBlock &B: F) {
             for (Instruction &I: B) {
@@ -16,7 +14,7 @@ namespace ST_free {
         return;
     }
 
-    void BaseAnalyzer::analyze(Function &F){
+    void BaseAnalyzer::analyze(Function &F) {
         setFunctionInformation(identifier.getElement(&F));
         getFunctionInformation()->setLoopInfo(loopmap->get(&F));
 
@@ -52,13 +50,6 @@ namespace ST_free {
     }
 
     void BaseAnalyzer::analyzeAllocaInst(Instruction* AI, BasicBlock &B) {
-        // this->addLocalVariable(
-        //         &B,
-        //         ainst->getAllocatedType(),
-        //         ainst,
-        //         cast<Instruction>(getFirstUser(&I)),
-        //         ParentList()
-        //     );
     }
 
     void BaseAnalyzer::analyzeICmpInst(Instruction *I, BasicBlock &B) {
@@ -924,25 +915,27 @@ namespace ST_free {
         return icmp;
     }
 
-    void BaseAnalyzer::analyzeCondition(Instruction *I, BasicBlock &B) {
+    BasicBlockWorkList BaseAnalyzer::analyzeCondition(Instruction *I, BasicBlock &B) {
+        BasicBlockWorkList BList;
         ICmpInst* ICI = cast<ICmpInst>(I);
         Value *comVal = this->getComparedValue(ICI);
 
         if(isa<ConstantInt>(ICI->getOperand(1))) {
-            generateWarning(I, "Compare with Int");
+            generateWarning(I, "Compare with Int: Error Code");
             CallInst *CI = this->getFunctionInformation()->getBasicBlockInformation(&B)->getCallInstForVal(comVal);
             if (CI) {
                 generateWarning(I, "Error code for CallInst");
                 //TODO: Collect all allocation
             }
         } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
-            generateWarning(I, "Compare with NULL");
+            generateWarning(I, "Compare with NULL: Look at allocation");
             Type *Ty = this->getComparedType(comVal, B);
             if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty, ROOT_INDEX)) {
-                //TODO: check for Allocated BasicBlock
+                // this->getFunctionInformation()->getBasicBlockInformation(&B)->
+                BList.add(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(NULL, Ty, ROOT_INDEX));
             }
         }
-        return;
+        return BList;
     }
 
     Value* BaseAnalyzer::getComparedValue(ICmpInst *ICI) {
@@ -974,5 +967,18 @@ namespace ST_free {
             }
         }
         return Ty;
+    }
+
+    int BaseAnalyzer::getErrorOperand(ICmpInst *ICI) {
+        int operand = -1;
+        if(isa<ConstantInt>(ICI->getOperand(1))) {
+
+        } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
+            if (ICI->getPredicate() == CmpInst::ICMP_EQ)
+                operand = 0;
+            else if (ICI->getPredicate() == CmpInst::ICMP_NE)
+                operand = 1;
+        }
+        return operand;
     }
 }

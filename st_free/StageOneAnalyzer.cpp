@@ -134,7 +134,15 @@ namespace ST_free {
         BranchInst *BI = cast<BranchInst>(I);
         if (BI->isConditional()) {
             if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
-                this->analyzeCondition(ICI, B);
+                int op = this->getErrorOperand(ICI);
+                if (op >= 0) {
+                    BasicBlock *errBlock = BI->getSuccessor(op);
+                    for(auto ele: this->analyzeCondition(ICI, B).getList()) {
+                        this->getFunctionInformation()
+                            ->getBasicBlockInformation(&B)
+                            ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
+                    }
+                }
             }
         }
 

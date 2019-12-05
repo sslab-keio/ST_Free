@@ -191,6 +191,7 @@ namespace ST_free {
                 this->unite(PredBB, B);
                 this->copyCorrectlyFreed(PredBB, B);
             }
+            // this->diff(PredBB, B);
         }
         return;
     }
@@ -207,7 +208,12 @@ namespace ST_free {
     }
 
     void BasicBlockManager::unite(BasicBlock *src, BasicBlock *tgt){
-        BBMap[tgt].setAllocList(uniteList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
+        BBMap[tgt].setAllocList(uniteList(this->getBasicBlockAllocList(src), this->getBasicBlockAllocList(tgt)));
+        return;
+    }
+
+    void BasicBlockManager::diff(BasicBlock *src, BasicBlock *tgt){
+        BBMap[tgt].setAllocList(diffList(this->getBasicBlockAllocList(tgt), this->get(src)->getRemoveAllocs(tgt).getList()));
         return;
     }
 
@@ -244,6 +250,19 @@ namespace ST_free {
         llvm::sort(tgt.begin(), tgt.end());
 
         set_union(
+                src.begin(), src.end(),
+                tgt.begin(), tgt.end(),
+                back_inserter(tmp)
+            );
+        return tmp;
+    }
+
+    BasicBlockList BasicBlockManager::diffList(BasicBlockList src, BasicBlockList tgt) {
+        BasicBlockList tmp;
+        llvm::sort(src.begin(), src.end());
+        llvm::sort(tgt.begin(), tgt.end());
+
+        set_difference(
                 src.begin(), src.end(),
                 tgt.begin(), tgt.end(),
                 back_inserter(tmp)
@@ -339,5 +358,19 @@ namespace ST_free {
         if (fele != storedCallValues.end())
             return (*fele).second;
         return NULL;
+    }
+    void BasicBlockInformation::addRemoveAlloc(BasicBlock *B, UniqueKey *UK) {
+        if (!B || !UK)
+            return;
+        if (removeAllocs.find(B) == removeAllocs.end())
+            removeAllocs[B] = BasicBlockWorkList();
+        removeAllocs[B].add(UK);
+        return;
+    }
+
+    BasicBlockWorkList BasicBlockInformation::getRemoveAllocs(BasicBlock *B){
+        if (removeAllocs.find(B) != removeAllocs.end())
+            return removeAllocs[B];
+        return BasicBlockWorkList();
     }
 }

@@ -64,6 +64,8 @@ namespace ST_free {
             vector<pair<Value *, CallInst *>> getStoredCallValues();
             bool isCallValues(Value *V);
             CallInst *getCallInstForVal(Value *V);
+            void addRemoveAlloc(BasicBlock *B, UniqueKey *UK);
+            BasicBlockWorkList getRemoveAllocs(BasicBlock *B);
         private:
             /*** BasicBlock Lists ***/
             BasicBlockWorkList freeList;
@@ -72,6 +74,7 @@ namespace ST_free {
             LiveVariableList liveVariables;
             Aliases aliasMap;
             vector<pair<Value *, CallInst *>> storedCallValues;
+            map<BasicBlock *, BasicBlockWorkList> removeAllocs;
             /*** BasicBlock Status ***/
             bool correctlyBranched;
             bool predCorrectlyBranched;
@@ -93,11 +96,13 @@ namespace ST_free {
             void updateSuccessorBlock(BasicBlock *src);
             void intersect(BasicBlock *src, BasicBlock *tgt);
             void unite(BasicBlock *src, BasicBlock *tgt);
+            void diff(BasicBlock *src, BasicBlock *tgt);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
         private:
             map<BasicBlock *,BasicBlockInformation> BBMap;
             BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
             BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
+            BasicBlockList diffList(BasicBlockList src, BasicBlockList tgt);
             LiveVariableList intersectLiveVariables(LiveVariableList src, LiveVariableList tgt);
             bool exists(BasicBlock *B);
     };
