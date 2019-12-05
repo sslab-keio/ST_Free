@@ -280,6 +280,14 @@ namespace ST_free{
             (*fs)->setFreedMember(num);
         }
     }
+
+    void FunctionInformation::setStructMemberAllocated(FreedStruct *fstruct, int64_t num){
+        auto fs = find(freedStruct.begin(), freedStruct.end(), fstruct);
+        if(fs != freedStruct.end()) {
+            (*fs)->setAllocatedMember(num);
+        }
+    }
+
     vector<bool> FunctionInformation::getStructMemberFreed(Type * T){
         auto fs = find_if(freedStruct.begin(), freedStruct.end(),  [T](FreedStruct *f) { return *f == T; });
         if(fs != freedStruct.end())

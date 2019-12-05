@@ -166,11 +166,13 @@ namespace ST_free {
                         || alreadyFreed[ind])
                     continue;
 
+                // Add to Allocated
+                if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
+                    generateWarning(freedStruct->getInst(), "Allocated");
+                    getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
+                }
+
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
-                // if (!getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
-                //     generateWarning(freedStruct->getInst(), "Not Allocated");
-                //     getFunctionInformation()->setStructMemberFreed(freedStruct, ind);
-                // }
                 if (vinfo != NULL) {
                     if (getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
                             || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)

@@ -70,6 +70,7 @@ namespace ST_free{
             if(this->judgeResponsibility(ind) 
                     && !this->isAllStoreGlobalVar(ind)
                     && !this->isBidirectionalReferencing(cand, ind)
+                    && cand->memberIsAllocated(ind)
                     ) {
             // if(!this->isAllStoreGlobalVar(ind)){
                 string message = warningStr;
@@ -238,6 +239,45 @@ namespace ST_free{
         // }
         outs() << "=============================\n";
     }
+
+    // void StructInformation::printjson(){
+    //     if (strTy->hasName())
+    //         outs() << "\"Struct\": \"" << strTy->getName() << "\"\n";
+    //     outs() << "[Elements]\n";
+    //     for(int ind = 0; ind < strTy->getNumElements(); ind++){
+    //         outs() << "\t[" << ind << "]: " << *strTy->getElementType(ind) << " ";
+    //         switch(memberStats[ind]){
+    //             case ISRESPONSIBLE:
+    //                 outs() << "ISRESPONSIBLE";
+    //                 break;
+    //             case ISNOTRESPONSIBLE:
+    //                 outs() << "ISNOTRESPONSIBLE";
+    //                 break;
+    //             case ISUNKNOWN:
+    //                 outs() << "ISUNKNOWN ";
+    //                 if(this->judgeResponsibility(ind))
+    //                     outs() << "(Judged Responsible)";
+    //                 else
+    //                     outs() << "(Judged Not Responsible)";
+    //                 break;
+    //             case NOTPOINTERTY:
+    //                 outs() << "NOTPOINTERTY";
+    //                 break;
+    //             case UNALLOCATED:
+    //                 outs() << "UNALLOCATED";
+    //                 break;
+    //             case PRIMITIVE:
+    //                 outs() << "PRIMITIVE";
+    //                 break;
+    //             case SELF_DEREFERENCE:
+    //                 outs() << "SELF_DEREFERENCE";
+    //                 break;
+    //             default:
+    //                 outs() << "DEFAULT";
+    //         }
+    //         outs() << " [" << stc[ind].globalVar << "/" << stc[ind].total << "], " << freedCounts[ind] << "\n";
+    //     }
+    // }
     
     void StructInformation::addFunctionPtr(int ind, Function *func){
         funcPtr[ind].push_back(func);

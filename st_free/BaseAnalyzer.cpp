@@ -53,46 +53,6 @@ namespace ST_free {
     }
 
     void BaseAnalyzer::analyzeICmpInst(Instruction *I, BasicBlock &B) {
-        ICmpInst* ICI = cast<ICmpInst>(I);
-        BranchInst* BI = NULL; 
-        Type *Ty = NULL;
-
-        if (isa<ConstantPointerNull>(ICI->getOperand(1))
-                || isa<ConstantInt>(ICI->getOperand(1))) {
-
-            Value *comVal = ICI->getOperand(0);
-            if(auto LI = dyn_cast<LoadInst>(comVal)) {
-                comVal = LI->getPointerOperand();
-            }
-
-            if (auto GEle = dyn_cast<GetElementPtrInst>(comVal)) {
-                GEle = getRootGEle(GEle);
-                comVal = getLoadeeValue(GEle->getPointerOperand());
-            }
-
-            Ty = comVal->getType();
-            if (this->getFunctionInformation()->getBasicBlockInformation(&B)->isCallValues(comVal)) {
-                if (auto Alloca = dyn_cast<AllocaInst>(comVal)) {
-                    Ty = Alloca->getAllocatedType();
-                }
-            }
-
-            if(auto CI = dyn_cast<CallInst>(comVal)) {
-                Ty = CI->getType();
-                for (auto usr : CI->users()) {
-                    if (auto CastI = dyn_cast<CastInst>(usr))
-                        Ty = CastI->getDestTy();
-                }
-            }
-
-            if (Ty->isIntegerTy()) {
-            }
-
-            if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty, ROOT_INDEX)) {
-            }
-        }
-
-        return;
     }
 
     void BaseAnalyzer::analyzeStoreInst(Instruction* I, BasicBlock &B) {
@@ -931,7 +891,6 @@ namespace ST_free {
             generateWarning(I, "Compare with NULL: Look at allocation");
             Type *Ty = this->getComparedType(comVal, B);
             if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty, ROOT_INDEX)) {
-                // this->getFunctionInformation()->getBasicBlockInformation(&B)->
                 BList.add(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(NULL, Ty, ROOT_INDEX));
             }
         }

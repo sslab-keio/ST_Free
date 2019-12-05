@@ -74,6 +74,7 @@ namespace ST_free {
             void setArgFree(Value *V);
             void setArgAlloc(Value *V);
             void setStructMemberFreed(FreedStruct * fstruct, int64_t num);
+            void setStructMemberAllocated(FreedStruct * fstruct, int64_t num);
             vector<bool> getStructMemberFreed(Type * T);
             void copyStructMemberFreed(Type * T, vector<bool> members);
             void setStructArgFree(Value *V, int64_t num);

@@ -27,6 +27,7 @@ namespace ST_free {
                 V=val;
                 I=Inst;
                 FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                AllocatedMembers = vector<bool>(Ty->getStructNumElements(), false);
                 storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
                 valInfo = vinfo;
                 freedBlock = freedB;
@@ -37,6 +38,7 @@ namespace ST_free {
                 V=val;
                 I=Inst;
                 FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
+                AllocatedMembers = vector<bool>(Ty->getStructNumElements(), false);
                 storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
                 valInfo = vinfo;
                 freedBlock = freedB;
@@ -70,6 +72,7 @@ namespace ST_free {
                 return T != uk.getType() && V != uk.getValue();
             }
             bool memberIsFreed(int ind) {return ind < FreedMembers.size() ? FreedMembers[ind]:false;}
+            bool memberIsAllocated(int ind) {return ind < AllocatedMembers.size() ? AllocatedMembers[ind]:false;}
             unsigned memberSize() {return FreedMembers.size();}
             void setStoredInLoop(int ind);
             bool isStoredInLoop(int ind);
@@ -80,7 +83,9 @@ namespace ST_free {
             Instruction * getInst() const {return I;}
             ValueInformation *getValueInformation() {return valInfo;}
             void setFreedMember(int64_t num){FreedMembers[num] = true;};
+            void setAllocatedMember(int64_t num){AllocatedMembers[num] = true;};
             vector<bool> getFreedMember() const{return FreedMembers;};
+            vector<bool> getAllocatedMember() const{return AllocatedMembers;};
             BasicBlock * getFreedBlock() const{return freedBlock;};
             void addParent(StructType *st, int ind){ParentType.push_back(pair<Type*, int>(st, ind));}
             // Type *getTopParent(){return this->getValueInformation()->getTopParent();}
@@ -94,6 +99,7 @@ namespace ST_free {
             Instruction *I;
             vector<bool> storedInLoop;
             vector<bool> FreedMembers;
+            vector<bool> AllocatedMembers;
             ValueInformation * valInfo;
             BasicBlock * freedBlock;
             bool inStruct;

@@ -29,6 +29,7 @@ namespace ST_free {
             Function *getFunction(){return F;};
             unsigned getMemberSize(){return fst->memberSize();};
             bool memberIsFreed(unsigned ind){return fst->memberIsFreed(ind);};
+            bool memberIsAllocated(unsigned ind){return fst->memberIsAllocated(ind);};
             bool memberIsStoredInLoop(unsigned ind){return fst->isStoredInLoop(ind);};
             Instruction *getInstruction(){return fst->getInst();}
             Type *getTopParent(){return fst->getTopParent();}

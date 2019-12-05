@@ -174,7 +174,7 @@ namespace ST_free {
         return false;
     }
 
-    void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint){
+    void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint) {
         bool isFirst = true;
         if(this->exists(B))
             return;
@@ -191,7 +191,7 @@ namespace ST_free {
                 this->unite(PredBB, B);
                 this->copyCorrectlyFreed(PredBB, B);
             }
-            // this->diff(PredBB, B);
+            this->diff(PredBB, B);
         }
         return;
     }
