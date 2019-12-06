@@ -32,24 +32,19 @@ struct testB* alloctB() {
 }
 
 int allocation(struct testA *tA) {
-    int error;
     tA = (struct testA *)malloc(sizeof(struct testA));
     if (tA == NULL) {
-        error = -1;
-        goto err1;
+        return -1;
     }
 
     tA->tB = alloctB();
     if (tA->tB == NULL) {
-        error = -2;
-        goto err2;
+        free(tA);
+        return -2;
     }
 
-    return 0;
-err2:
     free(tA);
-err1:
-    return error;
+    return 0;
 }
 
 int main()
