@@ -103,6 +103,8 @@ namespace ST_free {
             Type* getComparedType(Value *V, BasicBlock &B);
             int getErrorOperand(ICmpInst *ICI);
             BasicBlockList getErrorAllocInCalledFunction(CallInst *CI, int errcode);
+            void checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,Value *inval);
+            void checkErrorInstruction(Value *v);
             /*** Store Instruction related funtions ***/
             CallInst *getStoreFromCall(StoreInst *SI);
             bool isStoreToStructMember(StoreInst *SI);

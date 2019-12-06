@@ -135,43 +135,8 @@ namespace ST_free {
             if (RI->getNumOperands() <= 0)
                 return;
             Value *V = RI->getReturnValue();
-            if(auto CInt = dyn_cast<Constant>(V)) {
-                generateWarning(RI, "Const Int");
-            }
+            this->checkErrorInstruction(V);
 
-            if(auto LI = dyn_cast<LoadInst>(V)) {
-                for (auto usr: LI->getPointerOperand()->users()) {
-                    if (auto SI = dyn_cast<StoreInst>(usr)) {
-                        if (auto CInt = dyn_cast<ConstantInt>(SI->getValueOperand())) {
-                            generateWarning(RI, "Storing constant value to ret");
-                            if (CInt->getSExtValue() != NO_ERROR) {
-                                int64_t errcode = CInt->getSExtValue();
-                                generateWarning(RI, "ERROR RETURN");
-                                getFunctionInformation()->addErrorBlock(errcode, SI->getParent());
-                            } else {
-                                generateWarning(RI, "CORRECT RETURN");
-                                getFunctionInformation()->addSuccessBlock(SI->getParent());
-                            }
-                        }
-                    }
-                }
-            } else if(auto PHI = dyn_cast<PHINode>(V)) {
-                generateWarning(RI, "PHINode Instruction");
-                for (unsigned i = 0; i < PHI->getNumIncomingValues(); i++) {
-                    Value *inval = PHI->getIncomingValue(i);
-                    if (auto CInt = dyn_cast<ConstantInt>(inval)) {
-                        generateWarning(RI, "Storing constant value to ret from phi");
-                        if (CInt->getSExtValue() != NO_ERROR) {
-                            int64_t errcode =CInt->getSExtValue();
-                            generateWarning(RI, "ERROR RETURN");
-                            getFunctionInformation()->addErrorBlock(errcode, PHI->getIncomingBlock(i));
-                        } else {
-                            generateWarning(RI, "CORRECT RETURN");
-                            getFunctionInformation()->addSuccessBlock(PHI->getIncomingBlock(i));
-                        }
-                    }
-                }
-            }
         } else if (RetTy->isPointerTy()) {
             //TODO: add support to pointers 
         }
@@ -955,5 +920,44 @@ namespace ST_free {
     BasicBlockList BaseAnalyzer::getErrorAllocInCalledFunction(CallInst *CI, int errcode) {
         Function *DF = CI->getCalledFunction();
         return this->getFunctionManager()->getElement(DF)->getAllocatedInError(errcode);
+    }
+
+    void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B, Value *inval) {
+        if (auto CInt = dyn_cast<ConstantInt>(inval)) {
+            generateWarning(I, "Storing constant value to ret");
+            int64_t errcode = CInt->getSExtValue();
+            if (errcode != NO_ERROR) {
+                generateWarning(I, "ERROR RETURN");
+                getFunctionInformation()->addErrorBlock(errcode, B);
+            } else {
+                generateWarning(I, "CORRECT RETURN");
+                getFunctionInformation()->addSuccessBlock(B);
+            }
+        } else {
+            if (auto LI = dyn_cast<LoadInst>(inval)) {
+                 this->checkErrorInstruction(LI);
+            }
+        }
+        return;
+    }
+
+    void BaseAnalyzer::checkErrorInstruction(Value *V) {
+        if(auto CInt = dyn_cast<Constant>(V)) {
+            // generateWarning(RI, "Const Int");
+        }
+        if(auto LI = dyn_cast<LoadInst>(V)) {
+            // generateWarning(RI, "Load Instruction");
+            for (auto usr: LI->getPointerOperand()->users()) {
+                if (auto SI = dyn_cast<StoreInst>(usr)) {
+                    this->checkErrorCodeAndAddBlock(SI, SI->getParent(), SI->getValueOperand());
+                }
+            }
+        } else if(auto PHI = dyn_cast<PHINode>(V)) {
+            // generateWarning(RI, "PHINode Instruction");
+            for (unsigned i = 0; i < PHI->getNumIncomingValues(); i++) {
+                this->checkErrorCodeAndAddBlock(PHI, PHI->getIncomingBlock(i), PHI->getIncomingValue(i));
+            }
+        }
+        return;
     }
 }
