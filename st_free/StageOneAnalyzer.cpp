@@ -130,7 +130,7 @@ namespace ST_free {
         }
     }
 
-    void StageOneAnalyzer::analyzeBranchInst(Instruction* I, BasicBlock &B){
+    void StageOneAnalyzer::analyzeBranchInst(Instruction* I, BasicBlock &B) {
         BranchInst *BI = cast<BranchInst>(I);
         if (BI->isConditional()) {
             if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {

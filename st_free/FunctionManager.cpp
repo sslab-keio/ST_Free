@@ -478,9 +478,13 @@ namespace ST_free{
     BasicBlockList FunctionInformation::getAllocatedInError(int errcode) {
         BasicBlockList BBL = BasicBlockList();
         for (pair<int64_t, BasicBlock*> p: this->getErrorBlock()) {
-            outs() << p.first << "\n";
-            if (errcode == 0 || p.first == errcode)
-                BBL = uniteList(BBL, diffList(getAllocList(p.second), getFreeList(p.second)));
+            if (errcode == 0 || p.first == errcode) {
+                BasicBlockList tmpBBL = diffList(getAllocList(p.second), getFreeList(p.second));
+                for (auto endBlock:this->getEndPoint()) {
+                    // tmpBBL = diffList(tmpBBL, getBasicBlockInformation(p.second)->getRemoveAllocs(endBlock).getList());
+                }
+                BBL = uniteList(BBL, tmpBBL);
+            }
         }
         return BBL;
     }

@@ -339,7 +339,6 @@ namespace ST_free {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
-        // ICmpInst *icmp = this->findAllocICmp(CI);
         getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
         return;
     }
@@ -848,9 +847,15 @@ namespace ST_free {
         Value *comVal = this->getComparedValue(ICI);
 
         if(isa<ConstantInt>(ICI->getOperand(1))) {
+            CallInst *CI = NULL;
             generateWarning(I, "Compare with Int: Error Code");
-            CallInst *CI = this->getFunctionInformation()->getBasicBlockInformation(&B)->getCallInstForVal(comVal);
+            if (auto comValCI = dyn_cast<CallInst>(comVal)) {
+                CI = comValCI;
+            } else {
+                CI = this->getFunctionInformation()->getBasicBlockInformation(&B)->getCallInstForVal(comVal);
+            }
             if (CI) {
+                generateWarning(CI, "Error Code", true);
                 for (auto ele : this->getErrorAllocInCalledFunction(CI, errcode)) {
                     BList.add(ele);
                 }
@@ -919,6 +924,7 @@ namespace ST_free {
 
     BasicBlockList BaseAnalyzer::getErrorAllocInCalledFunction(CallInst *CI, int errcode) {
         Function *DF = CI->getCalledFunction();
+        generateWarning(CI, "Called Error");
         return this->getFunctionManager()->getElement(DF)->getAllocatedInError(errcode);
     }
 
@@ -934,28 +940,34 @@ namespace ST_free {
                 getFunctionInformation()->addSuccessBlock(B);
             }
         } else {
-            if (auto LI = dyn_cast<LoadInst>(inval)) {
-                 this->checkErrorInstruction(LI);
-            }
+            // if (auto Inst = dyn_cast<Instruction>(inval)) {
+            //     generateWarning(Inst, Inst->getOpcodeName());
+            // }
+             // this->checkErrorInstruction(inval);
         }
         return;
     }
 
     void BaseAnalyzer::checkErrorInstruction(Value *V) {
-        if(auto CInt = dyn_cast<Constant>(V)) {
+        if (auto CInt = dyn_cast<Constant>(V)) {
             // generateWarning(RI, "Const Int");
         }
-        if(auto LI = dyn_cast<LoadInst>(V)) {
-            // generateWarning(RI, "Load Instruction");
+        // if (!V) {
+        //     return;
+        // }
+        if (auto LI = dyn_cast<LoadInst>(V)) {
+            generateWarning(LI, "Load Instruction");
             for (auto usr: LI->getPointerOperand()->users()) {
                 if (auto SI = dyn_cast<StoreInst>(usr)) {
-                    this->checkErrorCodeAndAddBlock(SI, SI->getParent(), SI->getValueOperand());
+                    if (V != SI->getValueOperand())
+                        this->checkErrorCodeAndAddBlock(SI, SI->getParent(), SI->getValueOperand());
                 }
             }
         } else if(auto PHI = dyn_cast<PHINode>(V)) {
-            // generateWarning(RI, "PHINode Instruction");
+            generateWarning(PHI, "PHINode Instruction");
             for (unsigned i = 0; i < PHI->getNumIncomingValues(); i++) {
-                this->checkErrorCodeAndAddBlock(PHI, PHI->getIncomingBlock(i), PHI->getIncomingValue(i));
+                if (V != PHI->getIncomingValue(i))
+                    this->checkErrorCodeAndAddBlock(PHI, PHI->getIncomingBlock(i), PHI->getIncomingValue(i));
             }
         }
         return;
