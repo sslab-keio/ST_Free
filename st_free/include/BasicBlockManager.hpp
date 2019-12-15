@@ -12,6 +12,7 @@ namespace ST_free {
             // void add(Value * v, Type * t, long mem);
             void add(const UniqueKey *UK);
             bool exists(const UniqueKey *UK);
+            bool typeExists(Type *T);
             // bool exists(Value * v, Type *t, long mem);
             BasicBlockList getList() const;
             void setList(BasicBlockList);
@@ -20,7 +21,6 @@ namespace ST_free {
     };
 
     using LiveVariableList = vector<Value *>;
-    using Aliases = map<Value *, Value *>;
     class BasicBlockInformation {
         public:
             BasicBlockInformation();
@@ -37,6 +37,8 @@ namespace ST_free {
             // bool AllocExists(Value *v, Type *ty, long mem);
             bool AllocExists(const UniqueKey *UK);
             void setAllocList(BasicBlockList);
+            void setDMZList(BasicBlockList);
+            BasicBlockWorkList getDMZList() const;
             /*** Live Variable Methods ***/
             void setLiveVariables(LiveVariableList);
             void addLiveVariable(Value * v);
@@ -57,9 +59,6 @@ namespace ST_free {
             /*** Utilities ***/
             BasicBlockWorkList getWorkList(int mode) const;
             LiveVariableList getLiveVariables() const;
-            bool aliasExists(Value *);
-            Value* getAlias(Value *);
-            void setAlias(Value* src, Value* dest); //dest <- src
             void addStoredCallValues(Value *v, CallInst *CI);
             vector<pair<Value *, CallInst *>> getStoredCallValues();
             bool isCallValues(Value *V);
@@ -71,8 +70,8 @@ namespace ST_free {
             BasicBlockWorkList freeList;
             BasicBlockWorkList allocList;
             BasicBlockWorkList correctlyFreed;
+            BasicBlockWorkList dmzList;
             LiveVariableList liveVariables;
-            Aliases aliasMap;
             vector<pair<Value *, CallInst *>> storedCallValues;
             map<BasicBlock *, BasicBlockWorkList> removeAllocs;
             /*** BasicBlock Status ***/
@@ -87,6 +86,8 @@ namespace ST_free {
             BasicBlockInformation* get(BasicBlock *B);
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);
             BasicBlockList getBasicBlockAllocList(BasicBlock *src);
+            BasicBlockList getBasicBlockDMZList(BasicBlock *src);
+            BasicBlockList getBasicBlockRemoveAllocList(BasicBlock *src, BasicBlock *tgt);
             LiveVariableList getLiveVariables(BasicBlock *B);
             /*** Mediator ***/
             void CollectInInfo(BasicBlock *B, bool isEntryPoint);
@@ -97,6 +98,8 @@ namespace ST_free {
             void intersect(BasicBlock *src, BasicBlock *tgt);
             void unite(BasicBlock *src, BasicBlock *tgt);
             void diff(BasicBlock *src, BasicBlock *tgt);
+            void nullCheckedToFree(BasicBlock *src, BasicBlock *tgt);
+            void addFreeInfoFromDMZToPreds(BasicBlock *src);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
         private:
             map<BasicBlock *,BasicBlockInformation> BBMap;

@@ -29,6 +29,16 @@ namespace ST_free {
         return false;
     }
 
+    bool BasicBlockWorkList::typeExists(Type *T) {
+        auto foundVal = find_if(MarkedValues.begin(), MarkedValues.end(),
+                [T](const UniqueKey *UK) {
+                    return UK->getType() == T;
+                });
+        if(foundVal != MarkedValues.end())
+            return true;
+        return false;
+    }
+
     void BasicBlockWorkList::setList(BasicBlockList v){
         MarkedValues = BasicBlockList(v);
     }
@@ -51,6 +61,10 @@ namespace ST_free {
         if(mode == FREED)
             return freeList;
         return allocList;
+    }
+
+    BasicBlockWorkList BasicBlockInformation::getDMZList() const {
+        return dmzList;
     }
 
     BasicBlockList BasicBlockWorkList::getList() const {
@@ -139,6 +153,10 @@ namespace ST_free {
         allocList.setList(v);
     }
 
+    void BasicBlockInformation::setDMZList(BasicBlockList v){
+        dmzList.setList(v);
+    }
+
     void BasicBlockInformation::addLiveVariable(Value *v){
         liveVariables.push_back(v);
     }
@@ -148,24 +166,6 @@ namespace ST_free {
     }
     void BasicBlockInformation::setLiveVariables(LiveVariableList lvl){
         liveVariables = LiveVariableList(lvl);
-    }
-
-    bool BasicBlockInformation::aliasExists(Value *vinfo){
-        if(aliasMap.find(vinfo) != aliasMap.end())
-            return true;
-        return false;
-    }
-
-    Value* BasicBlockInformation::getAlias(Value *vinfo){
-        if(this->aliasExists(vinfo)){
-            return aliasMap[vinfo];
-        }
-        return NULL;
-    }
-
-    void BasicBlockInformation::setAlias(Value *src, Value *tgt){
-        if(!this->aliasExists(tgt))
-            aliasMap[tgt] = src;
     }
 
     bool BasicBlockManager::exists(BasicBlock *B){
@@ -182,13 +182,14 @@ namespace ST_free {
         if(isEntryPoint)
             this->set(B);
 
+        this->addFreeInfoFromDMZToPreds(B);
         for (BasicBlock* PredBB: predecessors(B)) {
             if(isFirst) {
                 this->copy(PredBB, B);
                 isFirst = false;
             } else {
-                this->intersect(PredBB, B);
                 this->unite(PredBB, B);
+                this->intersect(PredBB, B);
                 this->copyCorrectlyFreed(PredBB, B);
             }
             this->diff(PredBB, B);
@@ -198,22 +199,59 @@ namespace ST_free {
 
     void BasicBlockManager::copy(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt] = BasicBlockInformation(BBMap[src]);
+        BBMap[tgt].setDMZList(this->getBasicBlockRemoveAllocList(src, tgt));
         return;
     }
 
     void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt].setFreeList(intersectList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
-        BBMap[tgt].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src), this->getLiveVariables(tgt)));
+        // BBMap[tgt].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src), this->getLiveVariables(tgt)));
         return;
     }
 
     void BasicBlockManager::unite(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt].setAllocList(uniteList(this->getBasicBlockAllocList(src), this->getBasicBlockAllocList(tgt)));
+        BBMap[tgt].setDMZList(uniteList(this->getBasicBlockDMZList(tgt), this->getBasicBlockRemoveAllocList(src, tgt)));
         return;
     }
 
     void BasicBlockManager::diff(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt].setAllocList(diffList(this->getBasicBlockAllocList(tgt), this->get(src)->getRemoveAllocs(tgt).getList()));
+        return;
+    }
+
+    void BasicBlockManager::nullCheckedToFree(BasicBlock *src, BasicBlock *tgt){
+        outs() << this->get(tgt)->getDMZList().getList().size() << "\n";
+        for (auto ele : this->getBasicBlockFreeList(src)) {
+            if (this->get(tgt)->getDMZList().typeExists(ele->getType())) {
+                outs() << *ele->getType() << "!\n";
+            }
+            // auto freedVal = find(this->getBasicBlockDMZList(tgt).begin(),
+            //         this->getBasicBlockDMZList(tgt).end(),
+            //         ele);
+            // if (freedVal != this->getBasicBlockAllocList(tgt).end()) {
+            //     outs() << *ele->getType() << "!\n";
+            // }
+        }
+        return;
+    }
+
+    void BasicBlockManager::addFreeInfoFromDMZToPreds(BasicBlock *src) {
+        BasicBlockList freeUnite;
+        for (BasicBlock* PredBB: predecessors(src)) {
+            freeUnite = uniteList(freeUnite, this->getBasicBlockFreeList(PredBB));
+        }
+
+        for (BasicBlock* PredBB: predecessors(src)) {
+            BasicBlockInformation *BBInfo = this->get(PredBB);
+            if (BBInfo) {
+                for (auto ele : freeUnite) {
+                    if (BBInfo->getDMZList().typeExists(ele->getType())) {
+                        BBInfo->addFree(ele);
+                    }
+                }
+            }
+        }
         return;
     }
 
@@ -295,6 +333,18 @@ namespace ST_free {
         if(this->exists(src)){
             return BBMap[src].getWorkList(ALLOCATED).getList();
         }
+        return BasicBlockList();
+    }
+
+    BasicBlockList BasicBlockManager::getBasicBlockDMZList(BasicBlock *src) {
+        if(this->exists(src))
+            return BBMap[src].getDMZList().getList();
+        return BasicBlockList();
+    }
+
+    BasicBlockList BasicBlockManager::getBasicBlockRemoveAllocList(BasicBlock *src, BasicBlock *tgt) {
+        if(this->exists(src))
+            return BBMap[src].getRemoveAllocs(tgt).getList();
         return BasicBlockList();
     }
 

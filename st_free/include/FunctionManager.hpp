@@ -8,6 +8,7 @@
 namespace ST_free {
     using FreedStructList = vector<FreedStruct *>;
     using LocalVarList = vector<FreedStruct *>;
+    using Aliases = map<Value *, Value *>;
     struct FunctionInformation {
         public:
             /*** Costructor ***/
@@ -60,9 +61,9 @@ namespace ST_free {
             void setCorrectlyBranched(BasicBlock *B);
             bool isCorrectlyBranched(BasicBlock *B);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
-            void setAliasInBasicBlock(BasicBlock *B, Value *srcinfo, Value *tgtinfo);
-            bool aliasExists(BasicBlock *B, Value * src);
-            Value * getAlias(BasicBlock *B, Value *src);
+            void setAlias(Value *srcinfo, Value *tgtinfo);
+            bool aliasExists(Value * src);
+            Value* getAlias(Value *src);
             // void copyCorrectlyFreedValueInLoop(BasicBlock &B);
             void updateSuccessorBlock(BasicBlock &B);
             /*** Loop Related ***/
@@ -132,6 +133,7 @@ namespace ST_free {
             LoopInfo * LoopI;
             map<Value *, vector<Function *>> funcPtr;
             map<Value *, Type*> aliasedType;
+            Aliases aliasMap;
             /*** Private Methods ***/
             int getStat();
             void setStat(int);

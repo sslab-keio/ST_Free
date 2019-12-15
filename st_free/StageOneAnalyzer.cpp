@@ -24,9 +24,10 @@ namespace ST_free {
 
         /*** Check the Pointer of StoreInst ***/
         if(this->isStoreToStructMember(SI)) {
-            generateWarning(SI, "is Store to struct member");
+            // generateWarning(SI, "is Store to struct member", true);
             GetElementPtrInst * GEle = getStoredStruct(SI);
             if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
+                generateWarning(SI, "is Store to struct member");
                 getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
                 pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
 
@@ -45,8 +46,7 @@ namespace ST_free {
                     generateWarning(SI, "GlobalVariable Store");
                     getStructManager()->addGlobalVarStore(
                             cast<StructType>(GEle->getSourceElementType()), 
-                            getValueIndices(GEle).back()
-                        );
+                            getValueIndices(GEle).back());
                     // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
                     //     if(const DebugLoc &Loc = SI->getDebugLoc()){
                     //         vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
@@ -57,7 +57,7 @@ namespace ST_free {
 
                 if(LoadInst *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
                     if(isa<AllocaInst>(LI->getPointerOperand())) {
-                        getFunctionInformation()->setAliasInBasicBlock(&B, GEle, LI->getPointerOperand());
+                        getFunctionInformation()->setAlias(GEle, LI->getPointerOperand());
                     }
                 }
             }
@@ -70,7 +70,7 @@ namespace ST_free {
             generateWarning(SI, "is Store from struct member");
             GetElementPtrInst * GEle = getStoredStructEle(SI);
             if(GEle != NULL && isa<AllocaInst>(SI->getPointerOperand())) {
-                getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getPointerOperand());
+                getFunctionInformation()->setAlias(GEle, SI->getPointerOperand());
             }
         } else if(this->isStoreFromStruct(SI)) {
             generateWarning(SI, "is Store from struct");

@@ -27,8 +27,9 @@ namespace ST_free {
             getFunctionInformation()->setLoopBlock(B);
             this->analyzeInstructions(B);
             // outs() << "===" << F.getName() <<  " " << B.getName() <<"===\n";
-            // for (auto ele : getFunctionInformation()->getAllocList(&B)) {
+            // for (auto ele : getFunctionInformation()->getFreeList(&B)) {
             //     outs() << *ele->getType() << "\n";
+            //     outs() << "\t" << ele->getNum() << "\n";
             // }
             getFunctionInformation()->updateSuccessorBlock(B);
         }
@@ -73,7 +74,7 @@ namespace ST_free {
             }
 
             if(isa<AllocaInst>(SI->getValueOperand())) {
-                getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getValueOperand());
+                getFunctionInformation()->setAlias(GEle, SI->getValueOperand());
             }
         }
 
@@ -81,7 +82,7 @@ namespace ST_free {
             generateWarning(SI, "is Store from struct");
             GetElementPtrInst * GEle = getStoredStructEle(SI);
             if(isa<AllocaInst>(SI->getPointerOperand())) {
-                getFunctionInformation()->setAliasInBasicBlock(&B, GEle, SI->getPointerOperand());
+                getFunctionInformation()->setAlias(GEle, SI->getPointerOperand());
             }
         }
     }
@@ -282,11 +283,11 @@ namespace ST_free {
                 this->collectSimpleFreeInfo(val, info);
 
             if (info.freeValue) {
-                if (getFunctionInformation()->aliasExists(B, info.freeValue)) {
-                    Value * aliasVal = getFunctionInformation()->getAlias(B, info.freeValue);
+                if (getFunctionInformation()->aliasExists(info.freeValue)) {
+                    Value * aliasVal = getFunctionInformation()->getAlias(info.freeValue);
 
                     if (GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)) {
-                        generateWarning(CI, "Alias Free found");
+                        generateWarning(CI, "Alias Free found", true);
                         if (V != aliasVal)
                             this->addFree(GEle, CI, B, true);
                     }
@@ -302,7 +303,7 @@ namespace ST_free {
 
                 ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, info.freeValue, info.memType, info.parentType, info.index, info.indexes);
                 if (!isAlias 
-                        && !getFunctionInformation()->aliasExists(B, info.freeValue)
+                        && !getFunctionInformation()->aliasExists(info.freeValue)
                         && info.memType
                         && get_type(info.memType)->isStructTy()
                         && this->isAuthorityChained(info.indexes)
@@ -339,6 +340,7 @@ namespace ST_free {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
+        this->getAllocStructEleInfo(CI);
         getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
         return;
     }
@@ -855,7 +857,7 @@ namespace ST_free {
                 CI = this->getFunctionInformation()->getBasicBlockInformation(&B)->getCallInstForVal(comVal);
             }
             if (CI) {
-                generateWarning(CI, "Error Code", true);
+                generateWarning(CI, "Error Code");
                 for (auto ele : this->getErrorAllocInCalledFunction(CI, errcode)) {
                     BList.add(ele);
                 }

@@ -334,6 +334,14 @@ namespace ST_free{
         return false;
     }
 
+//     bool FunctionInformation::isAllocatedInBasicBlock(BasicBlock *B, Type* ty){
+//         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+//         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(*ty);
+//         if(BInfo && UK)
+//             return BInfo->AllocExists(UK);
+//         return false;
+//     }
+
     bool FunctionInformation::isAllocatedInBasicBlock(BasicBlock *B, const UniqueKey *UK){
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
         if(BInfo)
@@ -412,23 +420,22 @@ namespace ST_free{
         LoopI = li;
     }
 
-    void FunctionInformation::setAliasInBasicBlock(BasicBlock *B, Value *srcinfo, Value *tgtinfo){
-        BasicBlockInformation * BInfo = this->getBasicBlockInformation(B);
-        if(BInfo)
-            BInfo->setAlias(srcinfo, tgtinfo);
+    void FunctionInformation::setAlias(Value *src, Value *tgt){
+        if(!this->aliasExists(tgt)) {
+            aliasMap[tgt] = src;
+        }
     }
 
-    bool FunctionInformation::aliasExists(BasicBlock *B, Value *src){
-        BasicBlockInformation * BInfo = this->getBasicBlockInformation(B);
-        if(BInfo)
-            return BInfo->aliasExists(src);
+    bool FunctionInformation::aliasExists(Value *src){
+        if(aliasMap.find(src) != aliasMap.end())
+            return true;
         return false;
     }
 
-    Value * FunctionInformation::getAlias(BasicBlock *B, Value *src){
-        BasicBlockInformation * BInfo = this->getBasicBlockInformation(B);
-        if(BInfo)
-            return BInfo->getAlias(src);
+    Value* FunctionInformation::getAlias(Value *src){
+        if(this->aliasExists(src)){
+            return aliasMap[src];
+        }
         return NULL;
     }
 

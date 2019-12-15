@@ -25,6 +25,12 @@ namespace ST_free {
                 }
                 return v < uk.getValue();
             }
+            bool operator<(const Type& T) const {
+                return t < &T;
+            }
+            bool operator<(Type* T) const {
+                return t < T;
+            }
     };
     class UniqueKeyManager {
         private:
@@ -32,6 +38,7 @@ namespace ST_free {
         public:
             const UniqueKey* addUniqueKey(Value *val, Type *ty, long mem);
             const UniqueKey* getUniqueKey(Value *val, Type *ty, long mem); 
+            // const UniqueKey* getUniqueKey(Type *ty); 
             void print();
     };
 }
