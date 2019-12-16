@@ -50,6 +50,8 @@ namespace ST_free {
             bool isCorrectlyBranched();
             void setLoopBlock();
             bool isLoopBlock();
+            void setErrorHandlingBlock();
+            bool isErrorHandlingBlock();
             /*** CorrectlyFreed ***/
             // void addCorrectlyFreedValue(Value * V, Type * T, long mem);
             void addCorrectlyFreedValue(const UniqueKey *UK);
@@ -78,6 +80,7 @@ namespace ST_free {
             bool correctlyBranched;
             bool predCorrectlyBranched;
             bool loopBlock;
+            bool errorHandlingBlock;
     };
     class BasicBlockManager {
         public:
@@ -98,9 +101,9 @@ namespace ST_free {
             void intersect(BasicBlock *src, BasicBlock *tgt);
             void unite(BasicBlock *src, BasicBlock *tgt);
             void diff(BasicBlock *src, BasicBlock *tgt);
-            void nullCheckedToFree(BasicBlock *src, BasicBlock *tgt);
             void addFreeInfoFromDMZToPreds(BasicBlock *src);
             bool isPredBlockCorrectlyBranched(BasicBlock *B);
+            bool checkIfErrorBlock(BasicBlock *B);
         private:
             map<BasicBlock *,BasicBlockInformation> BBMap;
             BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);

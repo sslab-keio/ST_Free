@@ -26,11 +26,6 @@ namespace ST_free {
             getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
             getFunctionInformation()->setLoopBlock(B);
             this->analyzeInstructions(B);
-            // outs() << "===" << F.getName() <<  " " << B.getName() <<"===\n";
-            // for (auto ele : getFunctionInformation()->getFreeList(&B)) {
-            //     outs() << *ele->getType() << "\n";
-            //     outs() << "\t" << ele->getNum() << "\n";
-            // }
             getFunctionInformation()->updateSuccessorBlock(B);
         }
 
@@ -287,7 +282,7 @@ namespace ST_free {
                     Value * aliasVal = getFunctionInformation()->getAlias(info.freeValue);
 
                     if (GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)) {
-                        generateWarning(CI, "Alias Free found", true);
+                        generateWarning(CI, "Alias Free found");
                         if (V != aliasVal)
                             this->addFree(GEle, CI, B, true);
                     }
@@ -364,10 +359,12 @@ namespace ST_free {
 
     void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value *arg, ArgStatus *ArgStat, int ind, Type* ParentType, ParentList plist, bool isFirst) {
         if (ArgStat && ArgStat->isStruct()) {
+            generateWarning(CI, "Args is Struct");
             if (!isFirst)
                 plist.push_back(pair<Type *, int>(ParentType, ind));
 
             if (ArgStat->isFreed()) {
+                generateWarning(CI, "Copy Args Stat");
                 this->addFree(arg, CI, &B, false, plist);
                 Type *T = get_type(ArgStat->getType());
                 if (isa<StructType>(T))
@@ -399,10 +396,11 @@ namespace ST_free {
     }
 
     bool BaseAnalyzer::isStoreToStructMember(StoreInst * SI) {
-        if(GetElementPtrInst *gEle = dyn_cast<GetElementPtrInst>(SI->getPointerOperand())) {
-            if(isa<StructType>(gEle->getSourceElementType())) {
-                return true;
-            }
+        Value *v = SI->getPointerOperand();
+        if (auto BCI = dyn_cast<CastInst>(v))
+            v = BCI->getOperand(0);
+        if(GetElementPtrInst *gEle = dyn_cast<GetElementPtrInst>(v)) {
+            return true;
         }
         return false;
     }
@@ -694,7 +692,7 @@ namespace ST_free {
         return NULL;
     }
 
-    GetElementPtrInst * BaseAnalyzer::getStoredStruct(StoreInst *SI){
+    GetElementPtrInst * BaseAnalyzer::getStoredStruct(StoreInst *SI) {
         if(GetElementPtrInst * gepi = dyn_cast<GetElementPtrInst>(SI->getPointerOperand()))
             return gepi;
         return NULL;
@@ -937,9 +935,6 @@ namespace ST_free {
             if (errcode != NO_ERROR) {
                 generateWarning(I, "ERROR RETURN");
                 getFunctionInformation()->addErrorBlock(errcode, B);
-            } else {
-                generateWarning(I, "CORRECT RETURN");
-                getFunctionInformation()->addSuccessBlock(B);
             }
         } else {
             // if (auto Inst = dyn_cast<Instruction>(inval)) {
@@ -954,9 +949,6 @@ namespace ST_free {
         if (auto CInt = dyn_cast<Constant>(V)) {
             // generateWarning(RI, "Const Int");
         }
-        // if (!V) {
-        //     return;
-        // }
         if (auto LI = dyn_cast<LoadInst>(V)) {
             generateWarning(LI, "Load Instruction");
             for (auto usr: LI->getPointerOperand()->users()) {

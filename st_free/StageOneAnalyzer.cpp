@@ -24,42 +24,45 @@ namespace ST_free {
 
         /*** Check the Pointer of StoreInst ***/
         if(this->isStoreToStructMember(SI)) {
-            // generateWarning(SI, "is Store to struct member", true);
+            generateWarning(SI, "is Store to struct member");
             GetElementPtrInst * GEle = getStoredStruct(SI);
-            if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
-                generateWarning(SI, "is Store to struct member");
-                getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
-                pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
+            if(GEle) {
+                if(isa<StructType>(GEle->getSourceElementType())) {
+                    getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
+                    pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
 
-                // if (auto BCI = dyn_cast<BitCastInst>(SI->getValueOperand())) {
-                //     ParentList indexes;
-                //     generateWarning(SI, "is Casted Store");
-                //     this->getStructParents(GEle, indexes);
-                //     if (this->isAuthorityChained(indexes)
-                //             && !this->isAllocCast(BCI)) {
-                //         generateWarning(SI, "Single Chained", true);
-                //         // Do something
-                //     }
-                // }
-
-                if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
-                    generateWarning(SI, "GlobalVariable Store");
-                    getStructManager()->addGlobalVarStore(
-                            cast<StructType>(GEle->getSourceElementType()), 
-                            getValueIndices(GEle).back());
-                    // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
-                    //     if(const DebugLoc &Loc = SI->getDebugLoc()){
-                    //         vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
-                    //         getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
+                    // if (auto BCI = dyn_cast<BitCastInst>(SI->getValueOperand())) {
+                    //     ParentList indexes;
+                    //     generateWarning(SI, "is Casted Store");
+                    //     this->getStructParents(GEle, indexes);
+                    //     if (this->isAuthorityChained(indexes)
+                    //             && !this->isAllocCast(BCI)) {
+                    //         generateWarning(SI, "Single Chained", true);
+                    //         // Do something
                     //     }
                     // }
-                }
 
-                if(LoadInst *LI = dyn_cast<LoadInst>(SI->getValueOperand())) {
-                    if(isa<AllocaInst>(LI->getPointerOperand())) {
-                        getFunctionInformation()->setAlias(GEle, LI->getPointerOperand());
+                    if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
+                        generateWarning(SI, "GlobalVariable Store");
+                        getStructManager()->addGlobalVarStore(
+                                cast<StructType>(GEle->getSourceElementType()), 
+                                getValueIndices(GEle).back());
+                        // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
+                        //     if(const DebugLoc &Loc = SI->getDebugLoc()){
+                        //         vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
+                        //         getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
+                        //     }
+                        // }
                     }
                 }
+                Value *addVal = SI->getValueOperand();
+                if(LoadInst *LI = dyn_cast<LoadInst>(addVal)) {
+                    generateWarning(SI, "is Store to struct member");
+                    if(isa<AllocaInst>(LI->getPointerOperand()))
+                        addVal = LI->getPointerOperand();
+                }
+                if (addVal)
+                    getFunctionInformation()->setAlias(GEle, addVal);
             }
         } else if(this->isStoreToStruct(SI)) {
             generateWarning(SI, "is Store To Struct");

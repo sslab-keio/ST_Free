@@ -46,6 +46,7 @@ namespace ST_free {
     BasicBlockInformation::BasicBlockInformation(){
         correctlyBranched = false;
         loopBlock = false;
+        errorHandlingBlock = false;
     }
 
     BasicBlockInformation::BasicBlockInformation(const BasicBlockInformation& BStat){
@@ -55,6 +56,7 @@ namespace ST_free {
         correctlyFreed = BasicBlockWorkList(BStat.getCorrectlyFreedValues());
         correctlyBranched = false;
         loopBlock = false;
+        errorHandlingBlock = false;
     }
 
     BasicBlockWorkList BasicBlockInformation::getWorkList(int mode) const {
@@ -89,6 +91,14 @@ namespace ST_free {
 
     bool BasicBlockInformation::isLoopBlock(){
         return loopBlock;
+    }
+
+    void BasicBlockInformation::setErrorHandlingBlock(){
+        errorHandlingBlock = true;
+    }
+
+    bool BasicBlockInformation::isErrorHandlingBlock(){
+        return errorHandlingBlock;
     }
 
     bool BasicBlockInformation::isCorrectlyBranched(){
@@ -182,6 +192,9 @@ namespace ST_free {
         if(isEntryPoint)
             this->set(B);
 
+        if(this->checkIfErrorBlock(B))
+            BBMap[B].setErrorHandlingBlock();
+
         this->addFreeInfoFromDMZToPreds(B);
         for (BasicBlock* PredBB: predecessors(B)) {
             if(isFirst) {
@@ -220,22 +233,6 @@ namespace ST_free {
         return;
     }
 
-    void BasicBlockManager::nullCheckedToFree(BasicBlock *src, BasicBlock *tgt){
-        outs() << this->get(tgt)->getDMZList().getList().size() << "\n";
-        for (auto ele : this->getBasicBlockFreeList(src)) {
-            if (this->get(tgt)->getDMZList().typeExists(ele->getType())) {
-                outs() << *ele->getType() << "!\n";
-            }
-            // auto freedVal = find(this->getBasicBlockDMZList(tgt).begin(),
-            //         this->getBasicBlockDMZList(tgt).end(),
-            //         ele);
-            // if (freedVal != this->getBasicBlockAllocList(tgt).end()) {
-            //     outs() << *ele->getType() << "!\n";
-            // }
-        }
-        return;
-    }
-
     void BasicBlockManager::addFreeInfoFromDMZToPreds(BasicBlock *src) {
         BasicBlockList freeUnite;
         for (BasicBlock* PredBB: predecessors(src)) {
@@ -247,6 +244,7 @@ namespace ST_free {
             if (BBInfo) {
                 for (auto ele : freeUnite) {
                     if (BBInfo->getDMZList().typeExists(ele->getType())) {
+                        generateWarning(&(src->front()), "Type Exists");
                         BBInfo->addFree(ele);
                     }
                 }
@@ -422,5 +420,19 @@ namespace ST_free {
         if (removeAllocs.find(B) != removeAllocs.end())
             return removeAllocs[B];
         return BasicBlockWorkList();
+    }
+
+    bool BasicBlockManager::checkIfErrorBlock(BasicBlock *B) {
+        bool tempErrorBlock = true;
+
+        if (!(B->hasNPredecessorsOrMore(1)))
+            tempErrorBlock = false;
+
+        for (BasicBlock *PredBB : predecessors(B)) {
+            if (this->getBasicBlockRemoveAllocList(PredBB, B).size() == 0 &&
+                    !(this->exists(PredBB) && !this->get(PredBB)->isErrorHandlingBlock()))
+                tempErrorBlock = false;
+        }
+        return tempErrorBlock;
     }
 }
