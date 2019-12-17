@@ -20,6 +20,7 @@ namespace ST_free {
 
         if(!getFunctionInformation()->isUnanalyzed())
             return;
+
         getFunctionInformation()->setInProgress();
 
         for (BasicBlock &B: F) {
@@ -263,8 +264,10 @@ namespace ST_free {
         struct collectedInfo info;
 
         if (Instruction* val = dyn_cast<Instruction>(V)) {
-            if(isStructEleFree(val) || additionalParents.size() > 0)
+            if(isStructEleFree(val) || additionalParents.size() > 0) {
+                generateWarning(CI, "Is Struct Element Free");
                 this->collectStructMemberFreeInfo(val, info, additionalParents);
+            }
 
             if (isStructFree(val)) {
                 generateWarning(CI, "Struct Free");
@@ -289,9 +292,11 @@ namespace ST_free {
                 }
 
                 if (getFunctionInformation()->isArgValue(info.freeValue)) {
+                    generateWarning(CI, "Add Free Arg");
                     if (!info.parentType)
                         getFunctionInformation()->setArgFree(info.freeValue);
                     else if (info.parentType && info.index >= 0) {
+                        generateWarning(CI, "parentType add free arg", true);
                         getFunctionInformation()->setStructMemberArgFreed(info.freeValue, info.indexes);
                     }
                 }
@@ -776,6 +781,7 @@ namespace ST_free {
             if (get_type(info.indexes.front().first)->isStructTy())
                 UpdateIfNull(info.parentType, cast<StructType>(get_type(info.indexes.front().first)));
 
+            UpdateIfNull(info.freeValue, getStructFreedValue(I));
             info.isStructRelated = true;
             generateWarning(I, "Struct element free");
         }
