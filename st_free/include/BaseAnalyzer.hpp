@@ -129,8 +129,8 @@ namespace ST_free {
             bool isFuncPointer(Type * t);
             GetElementPtrInst* getAllocStructEleInfo(Instruction *);
             GetElementPtrInst* getFreeStructEleInfo(Instruction *);
-            GetElementPtrInst*  getStoredStructEle(StoreInst * SI);
-            GetElementPtrInst*  getStoredStruct(StoreInst * SI);
+            GetElementPtrInst* getStoredStructEle(StoreInst * SI);
+            GetElementPtrInst* getStoredStruct(StoreInst * SI);
             Type * getStructType(Instruction * val);
             Value * getFreedValue(Instruction * val);
             Value * getAllocatedValue(Instruction *I);

@@ -265,7 +265,7 @@ namespace ST_free {
 
         if (Instruction* val = dyn_cast<Instruction>(V)) {
             if(isStructEleFree(val) || additionalParents.size() > 0) {
-                generateWarning(CI, "Is Struct Element Free");
+                generateWarning(CI, "Struct Element Free");
                 this->collectStructMemberFreeInfo(val, info, additionalParents);
             }
 
@@ -281,6 +281,7 @@ namespace ST_free {
                 this->collectSimpleFreeInfo(val, info);
 
             if (info.freeValue) {
+                generateWarning(CI, "Add Free");
                 if (getFunctionInformation()->aliasExists(info.freeValue)) {
                     Value * aliasVal = getFunctionInformation()->getAlias(info.freeValue);
 
@@ -296,10 +297,15 @@ namespace ST_free {
                     if (!info.parentType)
                         getFunctionInformation()->setArgFree(info.freeValue);
                     else if (info.parentType && info.index >= 0) {
-                        generateWarning(CI, "parentType add free arg", true);
+                        generateWarning(CI, "parentType add free arg");
                         getFunctionInformation()->setStructMemberArgFreed(info.freeValue, info.indexes);
                     }
                 }
+
+//                 generateWarning(CI, "Adding Free", true);
+//                 if (info.memType) outs() << *info.memType << "\n";
+//                 if (info.parentType) outs() << *info.parentType << "\n";
+//                 outs() << info.index << "\n";
 
                 ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, info.freeValue, info.memType, info.parentType, info.index, info.indexes);
                 if (!isAlias 
@@ -369,7 +375,7 @@ namespace ST_free {
                 plist.push_back(pair<Type *, int>(ParentType, ind));
 
             if (ArgStat->isFreed()) {
-                generateWarning(CI, "Copy Args Stat");
+                generateWarning(CI, "Copy Args Stat", true);
                 this->addFree(arg, CI, &B, false, plist);
                 Type *T = get_type(ArgStat->getType());
                 if (isa<StructType>(T))
@@ -664,6 +670,7 @@ namespace ST_free {
         return NULL;
     }
 
+    
     bool BaseAnalyzer::isFuncPointer(Type * t) {
         Type * tgt = get_type(t);
         if(tgt->isFunctionTy())
@@ -679,6 +686,13 @@ namespace ST_free {
                 if(isa<StructType>(get_type(tgt_type))) {
                 return getLoadeeValue(load_inst);
             }
+        } else{
+            Value *V = val;
+            if (auto *BCI = dyn_cast<BitCastInst>(val))
+                V = BCI->getOperand(0);
+
+            if (this->getFunctionInformation()->getAliasedType(V))
+                return V;
         }
         return NULL;
     }

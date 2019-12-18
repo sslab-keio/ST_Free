@@ -4,7 +4,7 @@ using namespace ST_free;
 
 namespace ST_free {
     /*** Iterate Use until Load Instruction ***/
-    LoadInst * find_load(Instruction * val){
+    LoadInst * find_load(Instruction* val){
         return find_load_recursively(val, 2);
     }
 
