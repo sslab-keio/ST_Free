@@ -125,6 +125,7 @@ namespace ST_free {
             bool isOptimizedStructFree(Instruction *I);
             Type* getOptimizedStructFree(Instruction *I);
             Value* getStructFreedValue(Instruction * val);
+            Value* getCalledStructFreedValue(Instruction * val);
             bool isHeapValue(Value *);
             bool isFuncPointer(Type * t);
             GetElementPtrInst* getAllocStructEleInfo(Instruction *);

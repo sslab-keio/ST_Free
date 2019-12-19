@@ -686,13 +686,26 @@ namespace ST_free {
                 if(isa<StructType>(get_type(tgt_type))) {
                 return getLoadeeValue(load_inst);
             }
-        } else{
+        }
+        return NULL;
+    }
+
+    Value* BaseAnalyzer::getCalledStructFreedValue(Instruction* val) {
+        LoadInst *load_inst = find_load(val);
+        if (load_inst && load_inst->getOperandList() != NULL) {
+            Type * tgt_type = get_type(load_inst->getPointerOperandType());
+            if (tgt_type)
+                if(isa<StructType>(get_type(tgt_type))) {
+                return getLoadeeValue(load_inst);
+            }
+        } else {
             Value *V = val;
             if (auto *BCI = dyn_cast<BitCastInst>(val))
                 V = BCI->getOperand(0);
 
-            if (this->getFunctionInformation()->getAliasedType(V))
-                return V;
+            if (this->getFunctionInformation()->aliasedTypeExists(V))
+                if(isa<StructType>(get_type(this->getFunctionInformation()->getAliasedType(V))))
+                    return V;
         }
         return NULL;
     }
@@ -795,7 +808,7 @@ namespace ST_free {
             if (get_type(info.indexes.front().first)->isStructTy())
                 UpdateIfNull(info.parentType, cast<StructType>(get_type(info.indexes.front().first)));
 
-            UpdateIfNull(info.freeValue, getStructFreedValue(I));
+            UpdateIfNull(info.freeValue, getCalledStructFreedValue(I));
             info.isStructRelated = true;
             generateWarning(I, "Struct element free");
         }
