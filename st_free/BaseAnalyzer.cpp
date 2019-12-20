@@ -346,8 +346,9 @@ namespace ST_free {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
-        this->getAllocStructEleInfo(CI);
+        // this->getAllocStructEleInfo(CI);
         getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
+        getFunctionInformation()->addAllocValue(B, CI, Ty, ROOT_INDEX);
         return;
     }
 
@@ -375,7 +376,7 @@ namespace ST_free {
                 plist.push_back(pair<Type *, int>(ParentType, ind));
 
             if (ArgStat->isFreed()) {
-                generateWarning(CI, "Copy Args Stat", true);
+                generateWarning(CI, "Copy Args Stat");
                 this->addFree(arg, CI, &B, false, plist);
                 Type *T = get_type(ArgStat->getType());
                 if (isa<StructType>(T))
@@ -678,7 +679,7 @@ namespace ST_free {
         return false;
     }
 
-    Value* BaseAnalyzer::getStructFreedValue(Instruction* val) {
+    Value* BaseAnalyzer::getStructFreedValue(Instruction* val, bool isUserDefCalled) {
         LoadInst *load_inst = find_load(val);
         if (load_inst && load_inst->getOperandList() != NULL) {
             Type * tgt_type = get_type(load_inst->getPointerOperandType());
@@ -686,19 +687,7 @@ namespace ST_free {
                 if(isa<StructType>(get_type(tgt_type))) {
                 return getLoadeeValue(load_inst);
             }
-        }
-        return NULL;
-    }
-
-    Value* BaseAnalyzer::getCalledStructFreedValue(Instruction* val) {
-        LoadInst *load_inst = find_load(val);
-        if (load_inst && load_inst->getOperandList() != NULL) {
-            Type * tgt_type = get_type(load_inst->getPointerOperandType());
-            if (tgt_type)
-                if(isa<StructType>(get_type(tgt_type))) {
-                return getLoadeeValue(load_inst);
-            }
-        } else {
+        } else if (isUserDefCalled) {
             Value *V = val;
             if (auto *BCI = dyn_cast<BitCastInst>(val))
                 V = BCI->getOperand(0);
@@ -708,6 +697,10 @@ namespace ST_free {
                     return V;
         }
         return NULL;
+    }
+
+    Value* BaseAnalyzer::getCalledStructFreedValue(Instruction* val) {
+        return this->getStructFreedValue(val, true);
     }
 
     Value * BaseAnalyzer::getFreedValue(Instruction * val) {
@@ -793,9 +786,8 @@ namespace ST_free {
             UpdateIfNull(info.freeValue, getLoadeeValue(tmpGEle->getPointerOperand()));
         }
 
-        for(auto addParent : additionalParents) {
+        for(auto addParent : additionalParents)
             info.indexes.push_back(addParent);
-        }
 
         if (info.indexes.size() > 0) {
             info.index = info.indexes.back().second;
@@ -817,7 +809,7 @@ namespace ST_free {
 
     void BaseAnalyzer::collectSimpleFreeInfo(Instruction *I, struct BaseAnalyzer::collectedInfo &info) {
         UpdateIfNull(info.freeValue, getFreedValue(I));
-        if (info.freeValue != NULL)
+        if (info.freeValue)
             UpdateIfNull(info.memType, info.freeValue->getType());
         generateWarning(I, "Value Free");
         return;
@@ -904,7 +896,11 @@ namespace ST_free {
     }
 
     Value* BaseAnalyzer::getComparedValue(ICmpInst *ICI) {
-        Value *comVal = ICI->getOperand(0);
+        return this->decodeComparedValue(ICI->getOperand(0));
+    }
+
+    Value* BaseAnalyzer::decodeComparedValue(Value *V) {
+        Value* comVal = V;
         if(auto LI = dyn_cast<LoadInst>(comVal)) {
             comVal = LI->getPointerOperand();
         }

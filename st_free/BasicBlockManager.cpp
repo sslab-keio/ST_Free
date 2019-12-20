@@ -39,6 +39,16 @@ namespace ST_free {
         return false;
     }
 
+    bool BasicBlockWorkList::valueExists(Value *V) {
+        auto foundVal = find_if(MarkedValues.begin(), MarkedValues.end(),
+                [V](const UniqueKey *UK) {
+                    return UK->getValue() == V;
+                });
+        if(foundVal != MarkedValues.end())
+            return true;
+        return false;
+    }
+
     void BasicBlockWorkList::setList(BasicBlockList v){
         MarkedValues = BasicBlockList(v);
     }

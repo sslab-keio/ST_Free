@@ -4,4 +4,5 @@
 namespace ST_free {
     bool isAllocFunction(Function *);
     bool isFreeFunction(Function *);
+    bool isIsErrFunction(Function *);
 }

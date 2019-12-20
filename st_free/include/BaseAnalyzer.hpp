@@ -100,6 +100,7 @@ namespace ST_free {
             bool isCorrectlyBranched(BranchInst * BI);
             BasicBlockWorkList getErrorValues(Instruction *I, BasicBlock &B, int errcode);
             Value* getComparedValue(ICmpInst *ICI);
+            Value* decodeComparedValue(Value *V);
             Type* getComparedType(Value *V, BasicBlock &B);
             int getErrorOperand(ICmpInst *ICI);
             BasicBlockList getErrorAllocInCalledFunction(CallInst *CI, int errcode);
@@ -124,7 +125,7 @@ namespace ST_free {
             bool isStructFree(Instruction *);
             bool isOptimizedStructFree(Instruction *I);
             Type* getOptimizedStructFree(Instruction *I);
-            Value* getStructFreedValue(Instruction * val);
+            Value* getStructFreedValue(Instruction * val, bool isUserDefCalled = false);
             Value* getCalledStructFreedValue(Instruction * val);
             bool isHeapValue(Value *);
             bool isFuncPointer(Type * t);

@@ -13,6 +13,7 @@ namespace ST_free {
             void add(const UniqueKey *UK);
             bool exists(const UniqueKey *UK);
             bool typeExists(Type *T);
+            bool valueExists(Value *V);
             // bool exists(Value * v, Type *t, long mem);
             BasicBlockList getList() const;
             void setList(BasicBlockList);

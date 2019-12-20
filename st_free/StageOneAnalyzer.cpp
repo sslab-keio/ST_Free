@@ -31,17 +31,6 @@ namespace ST_free {
                     getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
                     pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
 
-                    // if (auto BCI = dyn_cast<BitCastInst>(SI->getValueOperand())) {
-                    //     ParentList indexes;
-                    //     generateWarning(SI, "is Casted Store");
-                    //     this->getStructParents(GEle, indexes);
-                    //     if (this->isAuthorityChained(indexes)
-                    //             && !this->isAllocCast(BCI)) {
-                    //         generateWarning(SI, "Single Chained", true);
-                    //         // Do something
-                    //     }
-                    // }
-
                     if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
                         generateWarning(SI, "GlobalVariable Store");
                         getStructManager()->addGlobalVarStore(
@@ -56,6 +45,12 @@ namespace ST_free {
                     }
                 }
                 Value *addVal = SI->getValueOperand();
+
+                if (addVal) {
+                    if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).valueExists(addVal))
+                        generateWarning(I, "Found alloc alias");
+                }
+
                 if(LoadInst *LI = dyn_cast<LoadInst>(addVal)) {
                     generateWarning(SI, "is Store to struct member");
                     if(isa<AllocaInst>(LI->getPointerOperand()))
@@ -148,6 +143,26 @@ namespace ST_free {
                             ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
                     }
                 }
+            } else if (CallInst* CI = dyn_cast<CallInst>(BI->getCondition())) {
+                if (CI->getCalledFunction()
+                        && isIsErrFunction(CI->getCalledFunction())) {
+                    generateWarning(CI, "Calling IS_ERR()");
+                    BasicBlock *errBlock = BI->getSuccessor(0);
+
+                    Type *Ty = this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), (BasicBlock &)(*errBlock));
+                    if (this->getFunctionInformation()->isAllocatedInBasicBlock(errBlock, NULL, Ty, ROOT_INDEX)) {
+                        this->getFunctionInformation()
+                            ->getBasicBlockInformation(&B)
+                            ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(NULL, Ty, ROOT_INDEX)));
+                    }
+                    // for(auto ele: this->getErrorValues(ICI, B, 0).getList()) {
+                    //     this->getFunctionInformation()
+                    //         ->getBasicBlockInformation(&B)
+                    //         ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
+                    // }
+                    // TODO: add support to IS_ERR check
+                }
+
             }
         }
 
