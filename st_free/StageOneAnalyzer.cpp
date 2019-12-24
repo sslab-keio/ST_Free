@@ -15,7 +15,7 @@ namespace ST_free {
     void StageOneAnalyzer::analyzeAllocaInst(Instruction* AI, BasicBlock &B){
     }
 
-    void StageOneAnalyzer::analyzeStoreInst(Instruction *I, BasicBlock &B){
+    void StageOneAnalyzer::analyzeStoreInst(Instruction *I, BasicBlock &B) {
         StoreInst *SI = cast<StoreInst>(I);
         AliasElement valueEle, pointerEle;
 
@@ -25,39 +25,51 @@ namespace ST_free {
         /*** Check the Pointer of StoreInst ***/
         if(this->isStoreToStructMember(SI)) {
             generateWarning(SI, "is Store to struct member");
-            GetElementPtrInst* GEle = getStoredStruct(SI);
-            if(GEle) {
-                if(isa<StructType>(GEle->getSourceElementType())) {
-                    getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
-                    pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
+            if(GetElementPtrInst* GEle = getStoredStruct(SI)) {
+                generateWarning(SI, "found GetElementPtrInst");
+                ParentList plist;
+                this->getStructParents(GEle, plist);
+                if(plist.size() > 0
+                        && isa<StructType>(GEle->getSourceElementType())) {
+                    // getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
+                    // pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
 
-                    if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
-                        generateWarning(SI, "GlobalVariable Store");
-                        getStructManager()->addGlobalVarStore(
-                                cast<StructType>(GEle->getSourceElementType()), 
-                                getValueIndices(GEle).back());
-                        // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
-                        //     if(const DebugLoc &Loc = SI->getDebugLoc()){
-                        //         vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
-                        //         getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
-                        //     }
-                        // }
-                    }
+                    // if(GlobalVariable *GV = dyn_cast<GlobalVariable>(SI->getValueOperand())) {
+                    //     generateWarning(SI, "GlobalVariable Store");
+                    //     getStructManager()->addGlobalVarStore(
+                    //             cast<StructType>(GEle->getSourceElementType()), 
+                    //             getValueIndices(GEle).back());
+                    //     // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
+                    //     //     if(const DebugLoc &Loc = SI->getDebugLoc()){
+                    //     //         vector<string> dirs = this->decodeDirectoryName(string(Loc->getFilename()));
+                    //     //         getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle), dirs, GV);
+                    //     //     }
+                    //     // }
+                    // }
                 }
+
                 Value *addVal = SI->getValueOperand();
-
-                if (addVal) {
-                    if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).valueExists(addVal))
-                        generateWarning(I, "Found alloc alias");
-                }
-
                 if(LoadInst *LI = dyn_cast<LoadInst>(addVal)) {
                     generateWarning(SI, "is Store to struct member");
                     if(isa<AllocaInst>(LI->getPointerOperand()))
                         addVal = LI->getPointerOperand();
                 }
-                if (addVal)
-                    getFunctionInformation()->setAlias(GEle, addVal);
+
+                if (addVal) {
+                    Value * aliasVal = getFunctionInformation()->getAlias(addVal);
+                    if (aliasVal != GEle)
+                        getFunctionInformation()->setAlias(GEle, addVal);
+                    if(plist.size() > 0) {
+                        if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).valueExists(addVal)) {
+                            generateWarning(I, "Found alloc alias");
+                            if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
+                                if(ROOT_INDEX < plist.back().second && plist.back().second < StTy->getNumElements()) {
+                                    getFunctionInformation()->addAllocValue(&B, addVal, StTy->getElementType(plist.back().second), plist.back().second);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         } else if(this->isStoreToStruct(SI)) {
             generateWarning(SI, "is Store To Struct");
@@ -149,12 +161,12 @@ namespace ST_free {
                     generateWarning(CI, "Calling IS_ERR()");
                     BasicBlock *errBlock = BI->getSuccessor(0);
 
-                    Type *Ty = this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), (BasicBlock &)(*errBlock));
-                    if (this->getFunctionInformation()->isAllocatedInBasicBlock(errBlock, NULL, Ty, ROOT_INDEX)) {
-                        this->getFunctionInformation()
-                            ->getBasicBlockInformation(&B)
-                            ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(NULL, Ty, ROOT_INDEX)));
-                    }
+                    // Type *Ty = this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), (BasicBlock &)(*errBlock));
+                    // if (this->getFunctionInformation()->isAllocatedInBasicBlock(errBlock, NULL, Ty, ROOT_INDEX)) {
+                    //     this->getFunctionInformation()
+                    //         ->getBasicBlockInformation(&B)
+                    //         ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(NULL, Ty, ROOT_INDEX)));
+                    // }
                     // for(auto ele: this->getErrorValues(ICI, B, 0).getList()) {
                     //     this->getFunctionInformation()
                     //         ->getBasicBlockInformation(&B)
@@ -189,6 +201,12 @@ namespace ST_free {
                 // Add to Allocated
                 if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
                     generateWarning(freedStruct->getInst(), "Allocated");
+                    getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
+                }
+
+                // Add to Allocated
+                if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), freedStruct->getValue(), t, ind)) {
+                    generateWarning(freedStruct->getInst(), "Allocated", true);
                     getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
                 }
 

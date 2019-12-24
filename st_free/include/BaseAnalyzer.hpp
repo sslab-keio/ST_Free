@@ -129,6 +129,7 @@ namespace ST_free {
             Value* getCalledStructFreedValue(Instruction * val);
             bool isHeapValue(Value *);
             bool isFuncPointer(Type * t);
+            bool isBidirectionalAlias(Value *V);
             GetElementPtrInst* getAllocStructEleInfo(Instruction *);
             GetElementPtrInst* getFreeStructEleInfo(Instruction *);
             GetElementPtrInst* getStoredStructEle(StoreInst * SI);

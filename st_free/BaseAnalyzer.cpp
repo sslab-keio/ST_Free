@@ -280,18 +280,9 @@ namespace ST_free {
             if (!info.isStructRelated)
                 this->collectSimpleFreeInfo(val, info);
 
-            if (info.freeValue) {
+            if (info.freeValue 
+                    && !getFunctionInformation()->isFreedInBasicBlock(B, info.freeValue, info.memType, info.index)) {
                 generateWarning(CI, "Add Free");
-                if (getFunctionInformation()->aliasExists(info.freeValue)) {
-                    Value * aliasVal = getFunctionInformation()->getAlias(info.freeValue);
-
-                    if (GetElementPtrInst *GEle = dyn_cast<GetElementPtrInst>(aliasVal)) {
-                        generateWarning(CI, "Alias Free found");
-                        if (V != aliasVal)
-                            this->addFree(GEle, CI, B, true);
-                    }
-                }
-
                 if (getFunctionInformation()->isArgValue(info.freeValue)) {
                     generateWarning(CI, "Add Free Arg");
                     if (!info.parentType)
@@ -301,11 +292,6 @@ namespace ST_free {
                         getFunctionInformation()->setStructMemberArgFreed(info.freeValue, info.indexes);
                     }
                 }
-
-//                 generateWarning(CI, "Adding Free", true);
-//                 if (info.memType) outs() << *info.memType << "\n";
-//                 if (info.parentType) outs() << *info.parentType << "\n";
-//                 outs() << info.index << "\n";
 
                 ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, info.freeValue, info.memType, info.parentType, info.index, info.indexes);
                 if (!isAlias 
@@ -328,6 +314,12 @@ namespace ST_free {
 #if defined(OPTION_NESTED)
                     this->addNestedFree(V, CI, B, info, additionalParents);
 #endif
+                }
+
+                if (getFunctionInformation()->aliasExists(info.freeValue)) {
+                    Value * aliasVal = getFunctionInformation()->getAlias(info.freeValue);
+                    if (V != aliasVal)
+                        this->addFree(aliasVal, CI, B, true);
                 }
             }
         }
@@ -439,7 +431,7 @@ namespace ST_free {
     void BaseAnalyzer::checkAndChangeActualAuthority(StoreInst *SI) {
         vector<CastInst *> CastInsts;
         if(this->isStoreToStructMember(SI)) {
-            GetElementPtrInst * GEle = getStoredStruct(SI);
+            GetElementPtrInst* GEle = getStoredStruct(SI);
             if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
                 generateWarning(SI, "Found StoreInst to struct member");
 
@@ -463,7 +455,9 @@ namespace ST_free {
         ParentList indexes;
         generateWarning(SI, "is Casted Store");
         this->getStructParents(GEle, indexes);
-        if (this->isAuthorityChained(vector<pair<Type *, int>>(indexes.end() - 1, indexes.end()))
+
+        if (indexes.size() > 0
+                && this->isAuthorityChained(vector<pair<Type *, int>>(indexes.end() - 1, indexes.end()))
                 && !this->isAllocCast(CI)) {
             if (StructType *StTy = dyn_cast<StructType>(indexes.back().first)) {
                 generateWarning(SI, "Change back to Unknown");
@@ -494,17 +488,14 @@ namespace ST_free {
         if(LoadInst *LI = dyn_cast<LoadInst>(I)) {
             if(Instruction *Inst = dyn_cast<Instruction>(LI->getPointerOperand()))
                 this->getStructParents(Inst, typeList);
-        } else if(GetElementPtrInst * GI = dyn_cast<GetElementPtrInst>(I)) {
+        } else if(GetElementPtrInst *GI = dyn_cast<GetElementPtrInst>(I)) {
             if(Instruction *Inst = dyn_cast<Instruction>(GI->getPointerOperand()))
                 this->getStructParents(Inst, typeList);
-            // typeList.push_back(pair<Type *, int>(GI->getResultElementType(), getValueIndices(GI)));
             vector<pair<Type*, long>> decoded_vals = this->decodeGEPInst(GI);
             for (auto dec : decoded_vals) {
                 if (dec.first != NULL && dec.second != ROOT_INDEX)
                     typeList.push_back(pair<Type *, int>(dec.first, dec.second));
             }
-        } else if(AllocaInst *AI = dyn_cast<AllocaInst>(I)) {
-            // typeList.push_back(pair<Type *, int>(AI->getAllocatedType(), ROOT_INDEX));
         }
         return;
     }
@@ -517,7 +508,6 @@ namespace ST_free {
     }
 
     vector<long> BaseAnalyzer::getValueIndices(GetElementPtrInst* inst) {
-        // auto idx_itr = inst->idx_end() - 1;
         long indice = ROOT_INDEX;
         vector<long> indices;
 
@@ -526,7 +516,6 @@ namespace ST_free {
                 indice = cint->getSExtValue();
             else
                 indice = ROOT_INDEX;
-            
             indices.push_back(indice);
         }
 
@@ -717,9 +706,12 @@ namespace ST_free {
         return NULL;
     }
 
-    GetElementPtrInst * BaseAnalyzer::getStoredStruct(StoreInst *SI) {
-        if(GetElementPtrInst * gepi = dyn_cast<GetElementPtrInst>(SI->getPointerOperand()))
-            return gepi;
+    GetElementPtrInst* BaseAnalyzer::getStoredStruct(StoreInst *SI) {
+        Value *v = SI->getPointerOperand();
+        if (auto BCI = dyn_cast<CastInst>(v))
+            v = BCI->getOperand(0);
+        if(GetElementPtrInst* GEle = dyn_cast<GetElementPtrInst>(v))
+            return GEle;
         return NULL;
     }
 
@@ -994,5 +986,20 @@ namespace ST_free {
             }
         }
         return;
+    }
+
+    bool BaseAnalyzer::isBidirectionalAlias(Value *V) {
+        if (Value * aliasVal = getFunctionInformation()->getAlias(V)) {
+            if (Instruction *I = dyn_cast<Instruction>(aliasVal)) {
+                if(isStructEleFree(I)) {
+                    struct collectedInfo info;
+                    ParentList plist;
+                    this->collectStructMemberFreeInfo(I, info, plist);
+                    if (info.freeValue == V)
+                        return true;
+                }
+            }
+        }
+        return false;
     }
 }
