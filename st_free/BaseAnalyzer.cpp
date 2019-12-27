@@ -432,7 +432,7 @@ namespace ST_free {
         vector<CastInst *> CastInsts;
         if(this->isStoreToStructMember(SI)) {
             GetElementPtrInst* GEle = getStoredStruct(SI);
-            if(GEle != NULL && isa<StructType>(GEle->getSourceElementType())) {
+            if(GEle && isa<StructType>(GEle->getSourceElementType())) {
                 generateWarning(SI, "Found StoreInst to struct member");
 
                 if (auto PN = dyn_cast<PHINode>(SI->getValueOperand())) {
@@ -466,9 +466,6 @@ namespace ST_free {
         }
         return;
     }
-    // UniqueKey BaseAnalyzer::decodeGEPInst(GetElementPtrInst *GEle){
-    //     return UniqueKey(getLoadeeValue(GEle->getPointerOperand()), GEle->getResultElementType(), getValueIndices(GEle));
-    // }
 
     vector<string> BaseAnalyzer::decodeDirectoryName(string fname){
         vector<string> dirs;
@@ -580,9 +577,9 @@ namespace ST_free {
                     }
                 }
             }
-            if(StoreInst * str_inst = dyn_cast<StoreInst>(tmp_usr)){
+            if(StoreInst * str_inst = dyn_cast<StoreInst>(tmp_usr)) {
                 Value * tgt_op = str_inst->getOperand(1);
-                if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(tgt_op)){
+                if(GetElementPtrInst* inst = dyn_cast<GetElementPtrInst>(tgt_op)){
                     return inst;
                 }
             }
@@ -595,7 +592,7 @@ namespace ST_free {
             return true;
 
         LoadInst * l_inst = find_load(val);
-        if(l_inst != NULL && l_inst->getOperandList() != NULL){
+        if(l_inst && l_inst->getOperandList()) {
             Value *V = l_inst->getPointerOperand();
             if (auto bit_cast_inst = dyn_cast<BitCastInst>(V)) {
                 generateWarning(val, "found BitCast");

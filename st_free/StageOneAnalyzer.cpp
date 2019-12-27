@@ -56,15 +56,18 @@ namespace ST_free {
                 }
 
                 if (addVal) {
-                    Value * aliasVal = getFunctionInformation()->getAlias(addVal);
-                    if (aliasVal != GEle)
-                        getFunctionInformation()->setAlias(GEle, addVal);
+                    getFunctionInformation()->setAlias(GEle, addVal);
                     if(plist.size() > 0) {
                         if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).valueExists(addVal)) {
                             generateWarning(I, "Found alloc alias");
                             if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
                                 if(ROOT_INDEX < plist.back().second && plist.back().second < StTy->getNumElements()) {
-                                    getFunctionInformation()->addAllocValue(&B, addVal, StTy->getElementType(plist.back().second), plist.back().second);
+                                    getFunctionInformation()->addAllocValue(
+                                            &B, 
+                                            addVal,
+                                            StTy->getElementType(plist.back().second),
+                                            plist.back().second
+                                        );
                                 }
                             }
                         }
@@ -200,14 +203,14 @@ namespace ST_free {
 
                 // Add to Allocated
                 if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
-                    generateWarning(freedStruct->getInst(), "Allocated");
+                    generateWarning(freedStruct->getInst(), "Allocated + ind :" + to_string(ind));
                     getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
                 }
 
                 // Add to Allocated
-                if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), freedStruct->getValue(), t, ind)) {
-                    generateWarning(freedStruct->getInst(), "Allocated", true);
-                    getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
+                if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), freedStruct->getValue(), t, ROOT_INDEX)) {
+                    generateWarning(freedStruct->getInst(), "Allocated + ind :" + to_string(ind));
+                    // getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
                 }
 
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);

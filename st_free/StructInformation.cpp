@@ -72,7 +72,6 @@ namespace ST_free{
                     && !this->isBidirectionalReferencing(cand, ind)
                     && cand->memberIsAllocated(ind)
                     ) {
-            // if(!this->isAllStoreGlobalVar(ind)){
                 string message = warningStr;
                 message += parseErrorMessage(this->getStructType(), ind);
                 message += ")";
