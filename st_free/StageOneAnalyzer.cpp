@@ -27,9 +27,12 @@ namespace ST_free {
             generateWarning(SI, "is Store to struct member");
             if(GetElementPtrInst* GEle = getStoredStruct(SI)) {
                 generateWarning(SI, "found GetElementPtrInst");
+                struct collectedInfo info;
                 ParentList plist;
-                this->getStructParents(GEle, plist);
-                if(plist.size() > 0
+
+                this->collectStructMemberFreeInfo(GEle, info, plist);
+
+                if(info.indexes.size() > 0
                         && isa<StructType>(GEle->getSourceElementType())) {
                     // getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
                     // pointerEle.set(cast<StructType>(GEle->getSourceElementType()), getValueIndices(GEle).back());
@@ -57,16 +60,24 @@ namespace ST_free {
 
                 if (addVal) {
                     getFunctionInformation()->setAlias(GEle, addVal);
-                    if(plist.size() > 0) {
+                    if(info.indexes.size() > 0) {
+                            generateWarning(I, "[Before] Looking for alloc alias");
+
                         if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).valueExists(addVal)) {
-                            generateWarning(I, "Found alloc alias");
-                            if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
-                                if(ROOT_INDEX < plist.back().second && plist.back().second < StTy->getNumElements()) {
+                            generateWarning(I, "[After] Found alloc alias");
+                            if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
+                                if(ROOT_INDEX < info.indexes.back().second && info.indexes.back().second < StTy->getNumElements()) {
                                     getFunctionInformation()->addAllocValue(
-                                            &B, 
-                                            addVal,
-                                            StTy->getElementType(plist.back().second),
-                                            plist.back().second
+                                            &B,
+                                            NULL,
+                                            StTy->getElementType(info.indexes.back().second),
+                                            info.indexes.back().second
+                                        );
+                                    getFunctionInformation()->addAllocValue(
+                                            &B,
+                                            info.freeValue,
+                                            StTy->getElementType(info.indexes.back().second),
+                                            info.indexes.back().second
                                         );
                                 }
                             }
@@ -146,12 +157,14 @@ namespace ST_free {
     void StageOneAnalyzer::analyzeBranchInst(Instruction* I, BasicBlock &B) {
         BranchInst *BI = cast<BranchInst>(I);
         if (BI->isConditional()) {
+            generateWarning(I, "Calling is conditional");
             if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
                 int op = this->getErrorOperand(ICI);
                 int errcode = 0;
 
                 if (op >= 0) {
                     BasicBlock *errBlock = BI->getSuccessor(op);
+                    this->getFunctionInformation()->getBasicBlockInformation(&B)->addSucceedingErrorBlock(errBlock);
                     for(auto ele: this->getErrorValues(ICI, B, errcode).getList()) {
                         this->getFunctionInformation()
                             ->getBasicBlockInformation(&B)
@@ -161,10 +174,10 @@ namespace ST_free {
             } else if (CallInst* CI = dyn_cast<CallInst>(BI->getCondition())) {
                 if (CI->getCalledFunction()
                         && isIsErrFunction(CI->getCalledFunction())) {
-                    generateWarning(CI, "Calling IS_ERR()");
+                    generateWarning(CI, "Calling IS_ERR()", true);
                     BasicBlock *errBlock = BI->getSuccessor(0);
 
-                    // Type *Ty = this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), (BasicBlock &)(*errBlock));
+                    // Type *Ty = this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), B);
                     // if (this->getFunctionInformation()->isAllocatedInBasicBlock(errBlock, NULL, Ty, ROOT_INDEX)) {
                     //     this->getFunctionInformation()
                     //         ->getBasicBlockInformation(&B)
@@ -175,10 +188,9 @@ namespace ST_free {
                     //         ->getBasicBlockInformation(&B)
                     //         ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
                     // }
-                    // TODO: add support to IS_ERR check
                 }
-
             }
+            generateWarning(I, "Called was conditional");
         }
 
         if(this->isCorrectlyBranched(BI)) {
@@ -203,15 +215,16 @@ namespace ST_free {
 
                 // Add to Allocated
                 if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
-                    generateWarning(freedStruct->getInst(), "Allocated + ind :" + to_string(ind));
+                    generateWarning(freedStruct->getInst(), "[NON VALUE] Allocated + ind :" + to_string(ind));
                     getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
                 }
 
-                // Add to Allocated
-                if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), freedStruct->getValue(), t, ROOT_INDEX)) {
-                    generateWarning(freedStruct->getInst(), "Allocated + ind :" + to_string(ind));
-                    // getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
-                }
+                // // Add to Allocated
+                // if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ind)) {
+                //     generateWarning(freedStruct->getInst(),
+                //             "[INDEXED VERSION] Allocated(second) + ind :" + to_string(ind));
+                //     getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
+                // }
 
                 ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
                 if (vinfo != NULL) {
@@ -226,7 +239,8 @@ namespace ST_free {
                 }
             }
 
-            if (freedStruct->isInStruct() || !getFunctionInformation()->isArgValue(freedStruct->getValue())) {
+            if (freedStruct->isInStruct()
+                    || !getFunctionInformation()->isArgValue(freedStruct->getValue())) {
                 getStructManager()->addCandidateValue(&(getFunctionInformation()->getFunction()), strTy, freedStruct);
             }
         }

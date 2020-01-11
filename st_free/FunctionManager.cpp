@@ -439,6 +439,10 @@ namespace ST_free{
         return NULL;
     }
 
+    BasicBlockManager* FunctionInformation::getBasicBlockManager(){
+        return &BBManage;
+    }
+
     BasicBlockInformation* FunctionInformation::getBasicBlockInformation(BasicBlock *B){
         return BBManage.get(B);
     }

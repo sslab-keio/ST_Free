@@ -47,6 +47,7 @@ namespace ST_free {
             void setAnalyzed();
             void setInProgress();
             /*** BasicBlock Related ***/
+            BasicBlockManager* getBasicBlockManager();
             BasicBlockInformation * getBasicBlockInformation(BasicBlock *B);
             void BBCollectInfo(BasicBlock& B, bool isEntryPoint);
             BasicBlockList getFreeList(BasicBlock *B);

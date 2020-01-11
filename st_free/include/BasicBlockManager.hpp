@@ -14,6 +14,7 @@ namespace ST_free {
             bool exists(const UniqueKey *UK);
             bool typeExists(Type *T);
             bool valueExists(Value *V);
+            const UniqueKey *getUKFromValue(Value *V);
             // bool exists(Value * v, Type *t, long mem);
             BasicBlockList getList() const;
             void setList(BasicBlockList);
@@ -53,6 +54,8 @@ namespace ST_free {
             bool isLoopBlock();
             void setErrorHandlingBlock();
             bool isErrorHandlingBlock();
+            void addSucceedingErrorBlock(BasicBlock *B);
+            bool isInSucceedingErrorBlock(BasicBlock *B);
             /*** CorrectlyFreed ***/
             // void addCorrectlyFreedValue(Value * V, Type * T, long mem);
             void addCorrectlyFreedValue(const UniqueKey *UK);
@@ -77,6 +80,7 @@ namespace ST_free {
             LiveVariableList liveVariables;
             vector<pair<Value *, CallInst *>> storedCallValues;
             map<BasicBlock *, BasicBlockWorkList> removeAllocs;
+            vector<BasicBlock *> succeedingErrorBlocks;
             /*** BasicBlock Status ***/
             bool correctlyBranched;
             bool predCorrectlyBranched;
@@ -96,6 +100,7 @@ namespace ST_free {
             /*** Mediator ***/
             void CollectInInfo(BasicBlock *B, bool isEntryPoint);
             void copy(BasicBlock *src, BasicBlock *tgt);
+            void copyFreed(BasicBlock *src, BasicBlock *tgt);
             void copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt);
             // void copyCorrectlyFreedToPrev(BasicBlock *src);
             void updateSuccessorBlock(BasicBlock *src);

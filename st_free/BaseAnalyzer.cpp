@@ -30,6 +30,7 @@ namespace ST_free {
             getFunctionInformation()->updateSuccessorBlock(B);
         }
 
+        this->reversePropagateErrorBlockFreeInfo();
         this->checkAvailability();
         getFunctionInformation()->setAnalyzed();
 
@@ -54,8 +55,6 @@ namespace ST_free {
 
     void BaseAnalyzer::analyzeStoreInst(Instruction* I, BasicBlock &B) {
         StoreInst *SI = cast<StoreInst>(I);
-        // if(this->isStoreToStruct(SI)){
-        // }
         if(this->isStoreToStructMember(SI)) {
             generateWarning(SI, "is Store to struct");
             GetElementPtrInst * GEle = getStoredStruct(SI);
@@ -303,7 +302,7 @@ namespace ST_free {
                     getFunctionInformation()->addFreedStruct(
                             B,
                             get_type(info.memType),
-                            info.freeValue, CI, 
+                            info.freeValue, CI,
                             info.parentType,
                             valInfo,
                             info.index != ROOT_INDEX
@@ -338,7 +337,6 @@ namespace ST_free {
             getFunctionInformation()->addAliasedType(CI, Ty);
             getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
         }
-        // this->getAllocStructEleInfo(CI);
         getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
         getFunctionInformation()->addAllocValue(B, CI, Ty, ROOT_INDEX);
         return;
@@ -458,7 +456,8 @@ namespace ST_free {
 
         if (indexes.size() > 0
                 && this->isAuthorityChained(vector<pair<Type *, int>>(indexes.end() - 1, indexes.end()))
-                && !this->isAllocCast(CI)) {
+                && !this->isAllocCast(CI)
+                && !this->isCastToVoid(CI)) {
             if (StructType *StTy = dyn_cast<StructType>(indexes.back().first)) {
                 generateWarning(SI, "Change back to Unknown");
                 getStructManager()->get(StTy)->setMemberStatUnknown(indexes.back().second);
@@ -508,7 +507,13 @@ namespace ST_free {
         long indice = ROOT_INDEX;
         vector<long> indices;
 
-        for(auto idx_itr = inst->idx_begin() + 1; idx_itr != inst->idx_end(); idx_itr++) {
+        Type* Ty = inst->getSourceElementType();
+        auto idx_itr = inst->idx_begin();
+        if (!Ty->isIntegerTy())
+            idx_itr++;
+
+        // for(auto idx_itr = inst->idx_begin() + 1; idx_itr != inst->idx_end(); idx_itr++) {
+        for(; idx_itr != inst->idx_end(); idx_itr++) {
             if(ConstantInt *cint = dyn_cast<ConstantInt>(idx_itr->get()))
                 indice = cint->getSExtValue();
             else
@@ -723,8 +728,9 @@ namespace ST_free {
                 if (Ty->isIntegerTy()) {
                     if(getFunctionInformation()->aliasedTypeExists(GEle->getPointerOperand()) && decoded.empty())
                         Ty = getFunctionInformation()->getAliasedType(GEle->getPointerOperand());
-                    if (Ty && get_type(Ty)->isStructTy())
+                    if (Ty && get_type(Ty)->isStructTy()) {
                         index = getMemberIndiceFromByte(cast<StructType>(get_type(Ty)), index);
+                    }
                 }
                 decoded.push_back(pair<Type *, long>(Ty, index));
                 if(auto StTy = dyn_cast<StructType>(Ty))
@@ -765,6 +771,18 @@ namespace ST_free {
         return false;
     }
 
+    bool BaseAnalyzer::isCastToVoid(CastInst *CI) {
+        //TODO: need more fine-grained checks
+        if (auto BCI = dyn_cast<BitCastInst>(CI)) {
+            if (get_type(BCI->getDestTy())->isIntegerTy()) {
+                return true;
+            }
+        } else if(isa<PtrToIntInst>(CI)) {
+            return true;
+        }
+        return false;
+    }
+
     void BaseAnalyzer::collectStructMemberFreeInfo(Instruction *I, struct BaseAnalyzer::collectedInfo &info, ParentList &additionalParents) {
         GetElementPtrInst *GEle = getFreeStructEleInfo(I);
         if (GEle != NULL) {
@@ -782,8 +800,11 @@ namespace ST_free {
             info.index = info.indexes.back().second;
             
             if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
-                if(ROOT_INDEX < info.index && info.index < StTy->getNumElements())
+                if(0 <= info.index && info.index < StTy->getNumElements())
                     UpdateIfNull(info.memType, StTy->getElementType(info.index));
+                else if(ROOT_INDEX < info.index) {
+                    // TODO: add solid support to negative indice of GEP (a.k.a. container_of)
+                }
             }
 
             if (get_type(info.indexes.front().first)->isStructTy())
@@ -876,7 +897,15 @@ namespace ST_free {
             }
         } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
             generateWarning(I, "Compare with NULL: Look at allocation");
+            ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
             Type *Ty = this->getComparedType(comVal, B);
+            if(plist.size() > 0) {
+                if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
+                    if (0 <= plist.back().second && plist.back().second < StTy->getNumElements())
+                        Ty = StTy->getElementType(plist.back().second);
+                }
+            }
+
             if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty, ROOT_INDEX)) {
                 BList.add(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(NULL, Ty, ROOT_INDEX));
             }
@@ -899,6 +928,19 @@ namespace ST_free {
             comVal = getLoadeeValue(GEle->getPointerOperand());
         }
         return comVal;
+    }
+
+    ParentList BaseAnalyzer::decodeErrorTypes(Value *V) {
+        ParentList plist;
+        Value* comVal = V;
+        if(auto LI = dyn_cast<LoadInst>(comVal)) {
+            comVal = LI->getPointerOperand();
+        }
+
+        if (auto GEle = dyn_cast<GetElementPtrInst>(comVal)) {
+            this->getStructParents(GEle, plist);
+        }
+        return plist;
     }
 
     Type* BaseAnalyzer::getComparedType(Value *comVal, BasicBlock &B) {
@@ -998,5 +1040,31 @@ namespace ST_free {
             }
         }
         return false;
+    }
+
+    void BaseAnalyzer::reversePropagateErrorBlockFreeInfo() {
+        for (auto err : this->getFunctionInformation()->getErrorBlock()) {
+            for(BasicBlock *preds: predecessors(err.second)) {
+                if (this->getFunctionInformation()->getBasicBlockInformation(preds)
+                        && this->getFunctionInformation()->getBasicBlockInformation(preds)->isErrorHandlingBlock())
+                    __recursiveReversePropagateErrorBlockFreeInfo(preds);
+            }
+        }
+        // for (BasicBlock *retBlock : this->getFunctionInformation()->getEndPoint()) {
+        //     for(BasicBlock *preds: predecessors(retBlock))
+        //         if (this->getFunctionInformation()->getBasicBlockInformation(preds)->isErrorHandlingBlock())
+        //             __recursiveReversePropagateErrorBlockFreeInfo(preds);
+        // }
+        return;
+    }
+
+    void BaseAnalyzer::__recursiveReversePropagateErrorBlockFreeInfo(BasicBlock *B) {
+        for(BasicBlock *preds: predecessors(B)) {
+            if (this->getFunctionInformation()->getBasicBlockInformation(preds)->isErrorHandlingBlock()) {
+                this->getFunctionInformation()->getBasicBlockManager()->copyFreed(B, preds);
+                __recursiveReversePropagateErrorBlockFreeInfo(preds);
+            }
+        }
+        return;
     }
 }

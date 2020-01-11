@@ -49,6 +49,16 @@ namespace ST_free {
         return false;
     }
 
+    const UniqueKey* BasicBlockWorkList::getUKFromValue(Value *V) {
+        auto foundVal = find_if(MarkedValues.begin(), MarkedValues.end(),
+                [V](const UniqueKey *UK) {
+                    return UK->getValue() == V;
+                });
+        if(foundVal != MarkedValues.end())
+            return (*foundVal);
+        return NULL;
+    }
+
     void BasicBlockWorkList::setList(BasicBlockList v){
         MarkedValues = BasicBlockList(v);
     }
@@ -109,6 +119,16 @@ namespace ST_free {
 
     bool BasicBlockInformation::isErrorHandlingBlock(){
         return errorHandlingBlock;
+    }
+
+    void BasicBlockInformation::addSucceedingErrorBlock(BasicBlock *B) {
+        succeedingErrorBlocks.push_back(B);
+    }
+
+    bool BasicBlockInformation::isInSucceedingErrorBlock(BasicBlock *B) {
+        if(find(succeedingErrorBlocks.begin(), succeedingErrorBlocks.end(), B) != succeedingErrorBlocks.end())
+            return true;
+        return false;
     }
 
     bool BasicBlockInformation::isCorrectlyBranched(){
@@ -202,8 +222,10 @@ namespace ST_free {
         if(isEntryPoint)
             this->set(B);
 
-        if(this->checkIfErrorBlock(B))
+        if(this->checkIfErrorBlock(B)) {
+            generateWarning(&B->front(), "Is Error Block", true);
             BBMap[B].setErrorHandlingBlock();
+        }
 
         this->addFreeInfoFromDMZToPreds(B);
         for (BasicBlock* PredBB: predecessors(B)) {
@@ -226,6 +248,11 @@ namespace ST_free {
         return;
     }
 
+    void BasicBlockManager::copyFreed(BasicBlock *src, BasicBlock *tgt) {
+        BBMap[tgt].setFreeList(uniteList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
+        return;
+    }
+
     void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt].setFreeList(intersectList(this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
         // BBMap[tgt].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src), this->getLiveVariables(tgt)));
@@ -233,7 +260,7 @@ namespace ST_free {
     }
 
     void BasicBlockManager::unite(BasicBlock *src, BasicBlock *tgt){
-        BBMap[tgt].setAllocList(uniteList(this->getBasicBlockAllocList(src), this->getBasicBlockAllocList(tgt)));
+        BBMap[tgt].setAllocList(uniteList(this->getBasicBlockAllocList(tgt), this->getBasicBlockAllocList(src)));
         BBMap[tgt].setDMZList(uniteList(this->getBasicBlockDMZList(tgt), this->getBasicBlockRemoveAllocList(src, tgt)));
         return;
     }
@@ -439,10 +466,18 @@ namespace ST_free {
             tempErrorBlock = false;
 
         for (BasicBlock *PredBB : predecessors(B)) {
-            if (this->getBasicBlockRemoveAllocList(PredBB, B).size() == 0 &&
-                    !(this->exists(PredBB) && !this->get(PredBB)->isErrorHandlingBlock()))
-                tempErrorBlock = false;
+            if (this->exists(PredBB)) {
+                if (this->get(PredBB)->isInSucceedingErrorBlock(B)) {
+                    tempErrorBlock = true;
+                    break;
+                }
+                if (this->getBasicBlockRemoveAllocList(PredBB, B).size() == 0) {
+                    if (!this->get(PredBB)->isErrorHandlingBlock())
+                        tempErrorBlock = false;
+                }
+            }
         }
+
         return tempErrorBlock;
     }
 }

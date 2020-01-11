@@ -3,7 +3,7 @@
 
 using namespace ST_free;
 
-const vector<string> alloc_funcs = {"malloc", "calloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc", "vzalloc", "kzalloc_node", "kmalloc_array", "kmem_cache_alloc", "kmem_cache_alloc_node", "memdup", "kmemdup"};
+const vector<string> alloc_funcs = {"malloc", "calloc", "kzalloc", "kmalloc", "zalloc", "vmalloc", "kcalloc", "vzalloc", "kzalloc_node", "kmalloc_array", "kmem_cache_alloc", "kmem_cache_alloc_node", "memdup", "kmemdup", "kstrdup"};
 const vector<string> free_funcs = {"free", "kfree", "kzfree", "vfree", "kvfree"};
 const vector<string> err_funcs = {"IS_ERR"};
 

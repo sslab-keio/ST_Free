@@ -99,6 +99,7 @@ namespace ST_free {
             BasicBlockWorkList getErrorValues(Instruction *I, BasicBlock &B, int errcode);
             Value* getComparedValue(ICmpInst *ICI);
             Value* decodeComparedValue(Value *V);
+            ParentList decodeErrorTypes(Value *V);
             Type* getComparedType(Value *V, BasicBlock &B);
             int getErrorOperand(ICmpInst *ICI);
             BasicBlockList getErrorAllocInCalledFunction(CallInst *CI, int errcode);
@@ -113,6 +114,7 @@ namespace ST_free {
             void checkAndChangeActualAuthority(StoreInst *SI);
             void changeAuthority(StoreInst *SI, CastInst *CI, GetElementPtrInst *GEle);
             bool isAllocCast(CastInst *CI);
+            bool isCastToVoid(CastInst *CI);
             vector<pair<Type*, long>> decodeGEPInst(GetElementPtrInst *GEle);
             vector<string> decodeDirectoryName(string str);
             void getStructParents(Instruction *I, vector<pair<Type *, int>> &typeList);
@@ -139,6 +141,7 @@ namespace ST_free {
             vector<long> getValueIndices(GetElementPtrInst * inst);
             GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
             Type* extractResultElementType(GetElementPtrInst *GEle);
+            void reversePropagateErrorBlockFreeInfo();
             /*** connector with struct manager***/
             bool isAuthorityChained(ParentList);
             /*** find icmp ***/
@@ -146,6 +149,8 @@ namespace ST_free {
             /*** MethodMap ***/
             map<unsigned, void (ST_free::BaseAnalyzer::*)(Instruction*, BasicBlock&)> InstAnalysisMap;
         private:
+            /*** private methods ***/
+            void __recursiveReversePropagateErrorBlockFreeInfo(BasicBlock *B);
             /*** Managers and DataLayouts ***/
             FunctionManager identifier;
             LoopManager *loopmap;
