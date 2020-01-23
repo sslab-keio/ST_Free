@@ -45,7 +45,7 @@ int allocation(struct testA *tA) {
         goto err2;
     }
 
-    return 0;
+    free(tA->tB);
 err2:
     free(tA);
 err1:

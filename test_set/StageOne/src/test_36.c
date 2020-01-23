@@ -47,6 +47,7 @@ int main()
         goto err2;
     }
 
+    return 0;
 err2:
     free(tA);
 err1:

@@ -43,7 +43,6 @@ int allocation(struct testA *tA) {
         return -2;
     }
 
-    free(tA);
     return 0;
 }
 
@@ -52,9 +51,10 @@ int main()
     struct testA *tA;
     int err;
 
-    err = allocation(tA); 
+    err = allocation(tA);
     if (err < 0) {
         return -1;
     }
+    free(tA);
     return 0;
 }

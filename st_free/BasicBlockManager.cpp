@@ -223,7 +223,6 @@ namespace ST_free {
             this->set(B);
 
         if(this->checkIfErrorBlock(B)) {
-            generateWarning(&B->front(), "Is Error Block", true);
             BBMap[B].setErrorHandlingBlock();
         }
 

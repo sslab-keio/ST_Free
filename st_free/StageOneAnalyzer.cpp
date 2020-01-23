@@ -61,7 +61,26 @@ namespace ST_free {
                 if (addVal) {
                     getFunctionInformation()->setAlias(GEle, addVal);
                     if(info.indexes.size() > 0) {
-                            generateWarning(I, "[Before] Looking for alloc alias");
+                        generateWarning(I, "[Before] Looking for alloc alias");
+                        if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
+                            if(ROOT_INDEX < info.indexes.back().second && info.indexes.back().second < StTy->getNumElements()) {
+                                if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).typeExists(StTy->getElementType(info.indexes.back().second))) {
+                                    generateWarning(I, "[After] Found alloc alias", true);
+                                    getFunctionInformation()->addAllocValue(
+                                            &B,
+                                            NULL,
+                                            StTy->getElementType(info.indexes.back().second),
+                                            info.indexes.back().second
+                                        );
+                                    getFunctionInformation()->addAllocValue(
+                                            &B,
+                                            info.freeValue,
+                                            StTy->getElementType(info.indexes.back().second),
+                                            info.indexes.back().second
+                                        );
+                                }
+                            }
+                        }
 
                         if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).valueExists(addVal)) {
                             generateWarning(I, "[After] Found alloc alias");
@@ -157,7 +176,7 @@ namespace ST_free {
     void StageOneAnalyzer::analyzeBranchInst(Instruction* I, BasicBlock &B) {
         BranchInst *BI = cast<BranchInst>(I);
         if (BI->isConditional()) {
-            generateWarning(I, "Calling is conditional");
+            // generateWarning(I, "Calling is conditional", true);
             if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
                 int op = this->getErrorOperand(ICI);
                 int errcode = 0;
@@ -174,23 +193,18 @@ namespace ST_free {
             } else if (CallInst* CI = dyn_cast<CallInst>(BI->getCondition())) {
                 if (CI->getCalledFunction()
                         && isIsErrFunction(CI->getCalledFunction())) {
-                    generateWarning(CI, "Calling IS_ERR()", true);
+                    generateWarning(CI, "Calling IS_ERR()");
                     BasicBlock *errBlock = BI->getSuccessor(0);
 
-                    // Type *Ty = this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), B);
-                    // if (this->getFunctionInformation()->isAllocatedInBasicBlock(errBlock, NULL, Ty, ROOT_INDEX)) {
-                    //     this->getFunctionInformation()
-                    //         ->getBasicBlockInformation(&B)
-                    //         ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(NULL, Ty, ROOT_INDEX)));
-                    // }
-                    // for(auto ele: this->getErrorValues(ICI, B, 0).getList()) {
-                    //     this->getFunctionInformation()
-                    //         ->getBasicBlockInformation(&B)
-                    //         ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
-                    // }
+                    Type *Ty = this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), B);
+                    if (this->getFunctionInformation()->isAllocatedInBasicBlock(errBlock, NULL, Ty, ROOT_INDEX)) {
+                        this->getFunctionInformation()
+                            ->getBasicBlockInformation(&B)
+                            ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(NULL, Ty, ROOT_INDEX)));
+                    }
                 }
             }
-            generateWarning(I, "Called was conditional");
+            // generateWarning(I, "Called was conditional", true);
         }
 
         if(this->isCorrectlyBranched(BI)) {
