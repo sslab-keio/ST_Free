@@ -7,6 +7,7 @@
 #include "include/LoopManager.hpp"
 #include "include/BaseAnalyzer.hpp"
 #include "include/StageOneAnalyzer.hpp"
+#include "include/StageTwoAnalyzer.hpp"
 
 using namespace ST_free;
 
@@ -30,6 +31,8 @@ namespace{
             // StManage->addGlobalVariableInitInfo(M);
 #if defined(STAGE_ONE) || defined(STAGE_PRIMITIVE)
             StageOneAnalyzer* analyze = new StageOneAnalyzer(StManage, loopmap, &M.getDataLayout());
+#elif defined(STAGE_TWO)
+            StageTwoAnalyzer* analyze = new StageTwoAnalyzer(StManage, loopmap, &M.getDataLayout());
 #else
             BaseAnalyzer* analyze = new BaseAnalyzer(StManage, loopmap, &M.getDataLayout());
 #endif
