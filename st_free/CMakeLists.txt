@@ -11,6 +11,7 @@ add_library( StructFreeMod MODULE
     StructInformation.cpp
     LoopManager.cpp
     StageOneAnalyzer.cpp
+    StageTwoAnalyzer.cpp
     RelationshipInformation.cpp
     UniqueKeyManager.cpp
     FreedStruct.cpp
@@ -25,19 +26,19 @@ set_target_properties(StructFreeMod PROPERTIES
 )
 include_directories(./include)
 
-set(STAGE_ONE 0 CACHE BOOL "STAGE_ONE OPTION")
-set(STAGE_TWO 0 CACHE BOOL "STAGE_TWO OPTION")
-set(STAGE_PRIMITIVE 0 CACHE BOOL "STAGE_PRIMITIVE OPTION")
-set(STAGE_BIDIRECTIONAL 0 CACHE BOOL "STAGE_BIDIRECTIONAL OPTION")
-set(OPTION_NESTED 0 CACHE BOOL "OPTION_NESTED")
+# set(STAGE_ONE 0 CACHE BOOL "STAGE_ONE OPTION")
+# set(STAGE_TWO 0 CACHE BOOL "STAGE_TWO OPTION")
+# set(STAGE_PRIMITIVE 0 CACHE BOOL "STAGE_PRIMITIVE OPTION")
+# set(STAGE_BIDIRECTIONAL 0 CACHE BOOL "STAGE_BIDIRECTIONAL OPTION")
+# set(OPTION_NESTED 0 CACHE BOOL "OPTION_NESTED")
 
 # if(STAGE_ONE)
 #     add_definitions(-DSTAGE_ONE)
 # endif(STAGE_ONE)
 
-if(STAGE_TWO)
-    add_definitions(-DSTAGE_TWO)
-endif(STAGE_TWO)
+# if(STAGE_TWO)
+add_definitions(-DSTAGE_TWO)
+# endif(STAGE_TWO)
 
 # if(STAGE_PRIMITIVE)
 #     add_definitions(-DSTAGE_PRIMITIVE)

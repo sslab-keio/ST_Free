@@ -84,7 +84,11 @@ namespace ST_free{
     void StructInformation::checkStageTwo(CandidateValue* cand, long ind){
         string warningStr("MEMBER NOT FREED(");
         if(this->isUnknown(ind)) {
-            if(this->judgeResponsibility(ind)) {
+            if(this->judgeResponsibility(ind)
+                    && !this->isAllStoreGlobalVar(ind)
+                    && !this->isBidirectionalReferencing(cand, ind)
+                    && cand->memberIsAllocated(ind)
+                    ) {
                 string message = warningStr;
                 message += parseErrorMessage(this->getStructType(), ind);
                 message += ")";
