@@ -65,7 +65,7 @@ namespace ST_free {
                         if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
                             if(ROOT_INDEX < info.indexes.back().second && info.indexes.back().second < StTy->getNumElements()) {
                                 if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).typeExists(StTy->getElementType(info.indexes.back().second))) {
-                                    generateWarning(I, "[After] Found alloc alias", true);
+                                    generateWarning(I, "[After] Found alloc alias");
                                     getFunctionInformation()->addAllocValue(
                                             &B,
                                             NULL,

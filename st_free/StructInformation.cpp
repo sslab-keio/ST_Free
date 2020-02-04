@@ -312,8 +312,8 @@ namespace ST_free{
     }
 
     void StructManager::addReferee(StructType *tgt, StructType *referee){
-        if(!this->exists(tgt))
-            StructInfo[tgt] = new StructInformation(tgt);
+        // if(!this->exists(tgt))
+        //     StructInfo[tgt] = new StructInformation(tgt);
         StructInfo[tgt]->addReferee(referee);
     }
 
@@ -324,12 +324,22 @@ namespace ST_free{
     }
 
     void StructManager::createDependencies() {
-        for(auto Stmap : StructInfo){
-            for (unsigned i = 0; i < Stmap.first->getNumElements(); i++) {
-                Type* member = Stmap.first->getElementType(i);
-                if(auto stTy = dyn_cast<StructType>(get_type(member)))
-                    this->addReferee(stTy, Stmap.first);
+        queue<StructType*> struct_queue;
+        for(auto Stmap : StructInfo)
+            struct_queue.push(Stmap.first);
+
+        while(!struct_queue.empty()) {
+            for (unsigned i = 0; i < struct_queue.front()->getNumElements(); i++) {
+                Type* member = struct_queue.front()->getElementType(i);
+                if(auto stTy = dyn_cast<StructType>(get_type(member))) {
+                    if(!this->exists(stTy)) {
+                        StructInfo[stTy] = new StructInformation(stTy);
+                        struct_queue.push(stTy);
+                    }
+                    this->addReferee(stTy, struct_queue.front());
+                }
             }
+            struct_queue.pop();
         }
     }
 

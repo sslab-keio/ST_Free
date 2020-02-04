@@ -7,7 +7,6 @@
 #include "include/LoopManager.hpp"
 #include "include/BaseAnalyzer.hpp"
 #include "include/StageOneAnalyzer.hpp"
-#include "include/StageTwoAnalyzer.hpp"
 
 using namespace ST_free;
 
@@ -32,7 +31,7 @@ namespace{
 #if defined(STAGE_ONE) || defined(STAGE_PRIMITIVE)
             StageOneAnalyzer* analyze = new StageOneAnalyzer(StManage, loopmap, &M.getDataLayout());
 #elif defined(STAGE_TWO)
-            StageTwoAnalyzer* analyze = new StageTwoAnalyzer(StManage, loopmap, &M.getDataLayout());
+            // StageTwoAnalyzer* analyze = new StageTwoAnalyzer(StManage, loopmap, &M.getDataLayout());
 #else
             BaseAnalyzer* analyze = new BaseAnalyzer(StManage, loopmap, &M.getDataLayout());
 #endif
