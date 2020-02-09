@@ -292,7 +292,7 @@ namespace ST_free {
                     }
                 }
 
-                ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, info.freeValue, info.memType, info.parentType, info.index, info.indexes);
+                ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, NULL, info.memType, info.parentType, info.index, info.indexes);
                 if (!isAlias 
                         && !getFunctionInformation()->aliasExists(info.freeValue)
                         && info.memType

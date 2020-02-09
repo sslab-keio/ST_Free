@@ -240,15 +240,15 @@ namespace ST_free {
                 //     getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
                 // }
 
-                ValueInformation *vinfo = getFunctionInformation()->getValueInfo(freedStruct->getValue(), t, ind);
-                if (vinfo != NULL) {
-                    if (getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
-                            || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), vinfo->getValue(), t, ind)
+                ValueInformation *vinfo_nulled = getFunctionInformation()->getValueInfo(NULL, t, ind);
+                if (vinfo_nulled != NULL) {
+                    if (getFunctionInformation()->isFreedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ind)
+                            || getFunctionInformation()->isCorrectlyBranchedFreeValue(freedStruct->getFreedBlock(), NULL, t, ind)
                         ) {
-                        getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo->getMemberNum());
-                        if (getFunctionInformation()->isArgValue(vinfo->getValue())) {
-                            getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getParents());
-                        }
+                        getFunctionInformation()->setStructMemberFreed(freedStruct, vinfo_nulled->getMemberNum());
+                        // if (getFunctionInformation()->isArgValue(vinfo->getValue())) {
+                        //     getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(), vinfo->getParents());
+                        // }
                     }
                 }
             }
