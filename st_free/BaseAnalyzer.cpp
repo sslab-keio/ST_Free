@@ -116,9 +116,19 @@ namespace ST_free {
         BitCastInst *BCI = cast<BitCastInst>(I);
 
         Type *tgtTy = get_type(BCI->getDestTy());
-        if (get_type(BCI->getSrcTy())->isIntegerTy() && tgtTy->isStructTy()) {
-            Value *V = BCI->getOperand(0);
-            getFunctionInformation()->addAliasedType(V, tgtTy);
+        if (get_type(BCI->getSrcTy())->isIntegerTy()) {
+            if(tgtTy->isStructTy()) {
+                Value *V = BCI->getOperand(0);
+                getFunctionInformation()->addAliasedType(V, tgtTy);
+            }
+        }
+
+        if (tgtTy->isIntegerTy()) {
+            Type* srcTy = get_type(BCI->getSrcTy());
+            if (srcTy->isStructTy()) {
+                Value *V = BCI->getOperand(0);
+                getFunctionInformation()->addAliasedType(V, srcTy);
+            }
         }
         return;
     }
@@ -774,6 +784,7 @@ namespace ST_free {
     bool BaseAnalyzer::isCastToVoid(CastInst *CI) {
         //TODO: need more fine-grained checks
         if (auto BCI = dyn_cast<BitCastInst>(CI)) {
+            outs() << *get_type(BCI->getDestTy()) << "\n";
             if (get_type(BCI->getDestTy())->isIntegerTy()) {
                 return true;
             }

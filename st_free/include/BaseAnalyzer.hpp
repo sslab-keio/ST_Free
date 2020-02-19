@@ -27,6 +27,7 @@ namespace ST_free {
                 InstAnalysisMap[Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
                 InstAnalysisMap[Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
                 InstAnalysisMap[Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
+                InstAnalysisMap[Instruction::BitCast] = &BaseAnalyzer::analyzeBitCastInst;
             }
             BaseAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl){
                 loopmap = lmap;
@@ -36,6 +37,7 @@ namespace ST_free {
                 InstAnalysisMap[Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
                 InstAnalysisMap[Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
                 InstAnalysisMap[Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
+                InstAnalysisMap[Instruction::BitCast] = &BaseAnalyzer::analyzeBitCastInst;
             }
             void analyze(Function &F);
             void analyzeAdditionalUnknowns(Function &F);

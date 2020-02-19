@@ -61,23 +61,22 @@ namespace ST_free {
                 if (addVal) {
                     getFunctionInformation()->setAlias(GEle, addVal);
                     if(info.indexes.size() > 0) {
-                        generateWarning(I, "[Before] Looking for alloc alias");
                         if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
                             if(ROOT_INDEX < info.indexes.back().second && info.indexes.back().second < StTy->getNumElements()) {
                                 if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).typeExists(StTy->getElementType(info.indexes.back().second))) {
-                                    generateWarning(I, "[After] Found alloc alias");
+                                    generateWarning(I, "[After] Found alloc alias", true);
                                     getFunctionInformation()->addAllocValue(
                                             &B,
                                             NULL,
                                             StTy->getElementType(info.indexes.back().second),
                                             info.indexes.back().second
                                         );
-                                    getFunctionInformation()->addAllocValue(
-                                            &B,
-                                            info.freeValue,
-                                            StTy->getElementType(info.indexes.back().second),
-                                            info.indexes.back().second
-                                        );
+                                    // getFunctionInformation()->addAllocValue(
+                                    //         &B,
+                                    //         info.freeValue,
+                                    //         StTy->getElementType(info.indexes.back().second),
+                                    //         info.indexes.back().second
+                                    //     );
                                 }
                             }
                         }
@@ -229,14 +228,14 @@ namespace ST_free {
 
                 // Add to Allocated
                 if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
-                    generateWarning(freedStruct->getInst(), "[NON VALUE] Allocated + ind :" + to_string(ind));
+                    generateWarning(freedStruct->getInst(), "[NON VALUE] Allocated + ind :" + to_string(ind), true);
                     getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
                 }
 
-                // // Add to Allocated
+                // Add to Allocated
                 // if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ind)) {
                 //     generateWarning(freedStruct->getInst(),
-                //             "[INDEXED VERSION] Allocated(second) + ind :" + to_string(ind));
+                //             "[INDEXED VERSION] Allocated(second) + ind :" + to_string(ind), true);
                 //     getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
                 // }
 
