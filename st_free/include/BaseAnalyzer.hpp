@@ -28,6 +28,7 @@ namespace ST_free {
                 InstAnalysisMap[Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
                 InstAnalysisMap[Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
                 InstAnalysisMap[Instruction::BitCast] = &BaseAnalyzer::analyzeBitCastInst;
+                InstAnalysisMap[Instruction::GetElementPtr] = &BaseAnalyzer::analyzeGetElementPtrInst;
             }
             BaseAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl){
                 loopmap = lmap;
@@ -38,6 +39,7 @@ namespace ST_free {
                 InstAnalysisMap[Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
                 InstAnalysisMap[Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
                 InstAnalysisMap[Instruction::BitCast] = &BaseAnalyzer::analyzeBitCastInst;
+                InstAnalysisMap[Instruction::GetElementPtr] = &BaseAnalyzer::analyzeGetElementPtrInst;
             }
             void analyze(Function &F);
             void analyzeAdditionalUnknowns(Function &F);
@@ -81,6 +83,7 @@ namespace ST_free {
             virtual void analyzeBitCastInst(Instruction *BCI, BasicBlock &B);
             virtual void analyzeICmpInst(Instruction *ICI, BasicBlock &B);
             virtual void analyzeReturnInst(Instruction *RI, BasicBlock &B);
+            virtual void analyzeGetElementPtrInst(Instruction *RI, BasicBlock &B);
             bool isReturnFunc(Instruction *I);
             /*** add Value ***/
             virtual void addFree(Value * V, CallInst *CI, BasicBlock *B, bool isAlias = false, ParentList additionalParents = ParentList());
@@ -96,6 +99,7 @@ namespace ST_free {
             void copyArgStatus(Function &Func, CallInst *CI, BasicBlock &B);
             void copyArgStatusRecursively(Function &Func, CallInst *CI, BasicBlock &B, Value* arg, ArgStatus *ArgStat, int ind, Type* parentType, ParentList plist, bool isFirst = false);
             void copyAllocatedStatus(Function &Func, BasicBlock &B);
+            void copyFreeStatus(Function &Func, BasicBlock &B);
             /*** Branch Instruction(Correctly Branched) ***/
             bool isCorrectlyBranched(BranchInst * BI);
             BasicBlockWorkList getErrorValues(Instruction *I, BasicBlock &B, int errcode);
@@ -112,6 +116,8 @@ namespace ST_free {
             bool isStoreToStructMember(StoreInst *SI);
             bool isStoreFromStructMember(StoreInst *SI);
             bool isStoreToStruct(StoreInst *SI);
+            StructType* getStoreeStruct(StoreInst *SI);
+            StructType* getStorerStruct(StoreInst *SI);
             bool isStoreFromStruct(StoreInst *SI);
             void checkAndChangeActualAuthority(StoreInst *SI);
             void changeAuthority(StoreInst *SI, CastInst *CI, GetElementPtrInst *GEle);

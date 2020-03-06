@@ -74,6 +74,24 @@ namespace ST_free{
         return varinfo;
     }
 
+    void FunctionInformation::addFreeValueFromDifferentFunction(BasicBlock* B, ValueInformation* VI) {
+        if (VI != NULL)
+            this->addFreeValue(
+                B,
+                VI->getValue(),
+                VI->getMemberType(),
+                VI->getStructType(),
+                VI->getMemberNum(),
+                VI->getParents());
+        return;
+    }
+
+    void FunctionInformation::addFreeValue(BasicBlock *B, UniqueKey *UK) {
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addFree(UK);
+    }
+
     void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type * T, long mem) {
         const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
         if (UK == NULL)
@@ -88,6 +106,22 @@ namespace ST_free{
         BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
         if(BInfo)
             BInfo->addAlloc(UK);
+    }
+
+    void FunctionInformation::addPendingArgAlloc(BasicBlock *B, Value *V, Type * T, long mem) {
+        const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
+        if (UK == NULL)
+            UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
+
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addPendingArgAlloc(UK);
+    }
+
+    void FunctionInformation::addPendingArgAlloc(BasicBlock *B, UniqueKey *UK) {
+        BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
+        if(BInfo)
+            BInfo->addPendingArgAlloc(UK);
     }
 
     bool FunctionInformation::isUnanalyzed(){
@@ -495,6 +529,34 @@ namespace ST_free{
                     // tmpBBL = diffList(tmpBBL, getBasicBlockInformation(p.second)->getRemoveAllocs(endBlock).getList());
                 }
                 BBL = uniteList(BBL, tmpBBL);
+            }
+        }
+        return BBL;
+    }
+
+    BasicBlockList FunctionInformation::getFreedInReturn() {
+        for (BasicBlock * B: this->getEndPoint()) {
+            return this->getFreeList(B);
+        }
+        return BasicBlockList();
+    }
+
+    BasicBlockList FunctionInformation::getFreedInSuccess() {
+        for (BasicBlock * B: this->getEndPoint()) {
+            return this->getFreeList(B);
+        }
+        return BasicBlockList();
+    }
+
+    BasicBlockList FunctionInformation::getFreedInError(int errcode) {
+        BasicBlockList BBL = BasicBlockList();
+        for (pair<int64_t, BasicBlock*> p: this->getErrorBlock()) {
+            if (errcode == 0 || p.first == errcode) {
+                // BasicBlockList tmpBBL = diffList(getFreeList(p.second), getFreeList(p.second));
+                // for (auto endBlock:this->getEndPoint()) {
+                //     // tmpBBL = diffList(tmpBBL, getBasicBlockInformation(p.second)->getRemoveAllocs(endBlock).getList());
+                // }
+                // BBL = uniteList(BBL, tmpBBL);
             }
         }
         return BBL;

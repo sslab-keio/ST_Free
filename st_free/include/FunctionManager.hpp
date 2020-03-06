@@ -26,7 +26,9 @@ namespace ST_free {
             /*** FreeValue Related ***/
             // void addFreeValue(BasicBlock *B, Value *V);
             // void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num);
+            void addFreeValueFromDifferentFunction(BasicBlock* B, ValueInformation* VI);
             ValueInformation* addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long num, ParentList plist);
+            void addFreeValue(BasicBlock *B, UniqueKey* UK);
             void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
             void addFreedStruct(Type *T, Value *V, Instruction *I);
             void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I);
@@ -38,6 +40,8 @@ namespace ST_free {
             /** AllocValue Related ***/
             void addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
             void addAllocValue(BasicBlock *B, UniqueKey *UK);
+            void addPendingArgAlloc(BasicBlock *B, Value *V, Type *T, long mem);
+            void addPendingArgAlloc(BasicBlock *B, UniqueKey *UK);
             /*** Arg related ***/
             ArgList* getArgList(){return &args;}
             /*** Status Related ***/
@@ -116,6 +120,10 @@ namespace ST_free {
             BasicBlockList getAllocatedInReturn();
             BasicBlockList getAllocatedInSuccess();
             BasicBlockList getAllocatedInError(int errcode);
+            /*** get Freed ***/
+            BasicBlockList getFreedInReturn();
+            BasicBlockList getFreedInSuccess();
+            BasicBlockList getFreedInError(int errcode);
             BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
             BasicBlockList diffList(BasicBlockList src, BasicBlockList tgt);
         private:

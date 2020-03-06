@@ -21,6 +21,13 @@ namespace ST_free {
         return &(*found);
     }
 
+    // const UniqueKey* UniqueKeyManager::getUniqueKeyFromField(Type *ty, long mem){
+    //     auto found = ukmanage.find(pair<Type *, long>(ty, mem));
+    //     if(found == ukmanage.end())
+    //         return NULL;
+    //     return &(*found);
+    // }
+
     void UniqueKeyManager::print(){
         for (auto uk: ukmanage) {
             uk.print();

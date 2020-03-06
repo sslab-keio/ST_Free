@@ -14,6 +14,7 @@ namespace ST_free {
             bool exists(const UniqueKey *UK);
             bool typeExists(Type *T);
             bool valueExists(Value *V);
+            bool fieldExists(Type *T, long ind);
             const UniqueKey *getUKFromValue(Value *V);
             // bool exists(Value * v, Type *t, long mem);
             BasicBlockList getList() const;
@@ -41,6 +42,9 @@ namespace ST_free {
             void setAllocList(BasicBlockList);
             void setDMZList(BasicBlockList);
             BasicBlockWorkList getDMZList() const;
+            void addPendingArgAlloc(const UniqueKey *UK);
+            BasicBlockWorkList getPendingArgAllocList() const;
+            void setPendingArgAllocList(BasicBlockList);
             /*** Live Variable Methods ***/
             void setLiveVariables(LiveVariableList);
             void addLiveVariable(Value * v);
@@ -75,6 +79,7 @@ namespace ST_free {
             /*** BasicBlock Lists ***/
             BasicBlockWorkList freeList;
             BasicBlockWorkList allocList;
+            BasicBlockWorkList pendingArgStoreList;
             BasicBlockWorkList correctlyFreed;
             BasicBlockWorkList dmzList;
             LiveVariableList liveVariables;
@@ -95,6 +100,7 @@ namespace ST_free {
             BasicBlockList getBasicBlockFreeList(BasicBlock *src);
             BasicBlockList getBasicBlockAllocList(BasicBlock *src);
             BasicBlockList getBasicBlockDMZList(BasicBlock *src);
+            BasicBlockList getBasicBlockPendingAllocList(BasicBlock *src);
             BasicBlockList getBasicBlockRemoveAllocList(BasicBlock *src, BasicBlock *tgt);
             LiveVariableList getLiveVariables(BasicBlock *B);
             /*** Mediator ***/

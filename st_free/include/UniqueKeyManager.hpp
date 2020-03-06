@@ -31,6 +31,17 @@ namespace ST_free {
             bool operator<(Type* T) const {
                 return t < T;
             }
+            bool operator<(const pair<Type *, long> &field) {
+                if (t < field.first) {
+                    return memberNum < field.second;
+                }
+                return t < field.first;
+            }
+            bool fieldMatch(const UniqueKey &uk) {
+                if(t == uk.getType())
+                    return memberNum < uk.getNum();
+                return t < uk.getType();
+            }
     };
     class UniqueKeyManager {
         private:
@@ -38,6 +49,7 @@ namespace ST_free {
         public:
             const UniqueKey* addUniqueKey(Value *val, Type *ty, long mem);
             const UniqueKey* getUniqueKey(Value *val, Type *ty, long mem); 
+            const UniqueKey* getUniqueKeyFromField(Type *ty, long mem); 
             // const UniqueKey* getUniqueKey(Type *ty); 
             void print();
     };

@@ -149,6 +149,10 @@ namespace ST_free {
 
         return;
     }
+
+    void BaseAnalyzer::analyzeGetElementPtrInst(Instruction *I, BasicBlock &B) {
+        return;
+    }
     
     void BaseAnalyzer::checkAvailability() {
         FreedStructList fsl = getFunctionInformation()->getFreedStruct();
@@ -303,7 +307,7 @@ namespace ST_free {
                 }
 
                 ValueInformation *valInfo = getFunctionInformation()->addFreeValue(B, NULL, info.memType, info.parentType, info.index, info.indexes);
-                if (!isAlias 
+                if (!isAlias
                         && !getFunctionInformation()->aliasExists(info.freeValue)
                         && info.memType
                         && get_type(info.memType)->isStructTy()
@@ -325,11 +329,11 @@ namespace ST_free {
 #endif
                 }
 
-                if (getFunctionInformation()->aliasExists(info.freeValue)) {
-                    Value * aliasVal = getFunctionInformation()->getAlias(info.freeValue);
-                    if (V != aliasVal)
-                        this->addFree(aliasVal, CI, B, true);
-                }
+                // if (getFunctionInformation()->aliasExists(info.freeValue)) {
+                //     Value * aliasVal = getFunctionInformation()->getAlias(info.freeValue);
+                //     if (V != aliasVal)
+                //         this->addFree(aliasVal, CI, B, true);
+                // }
             }
         }
     }
@@ -397,6 +401,15 @@ namespace ST_free {
         return;
     }
 
+    void BaseAnalyzer::copyFreeStatus(Function &Func, BasicBlock &B) {
+        FunctionInformation *DF = identifier.getElement(&Func);
+        for (auto ele : DF->getFreedInReturn()) {
+            getFunctionInformation()->addFreeValue(&B, const_cast<UniqueKey *>(ele));
+            // getFunctionInformation()->addFreeValueFromDifferentFunction(&B, VI);
+        }
+        return;
+    }
+
     CallInst* BaseAnalyzer::getStoreFromCall(StoreInst *SI) {
         Value *val = SI->getValueOperand();
         if (auto BCI = dyn_cast<CastInst>(val)) {
@@ -424,10 +437,42 @@ namespace ST_free {
     }
 
     bool BaseAnalyzer::isStoreToStruct(StoreInst *SI) {
-        if(SI->getPointerOperandType()->isPointerTy())
-            if(get_type(SI->getPointerOperandType())->isStructTy())
+        Type *Ty = SI->getPointerOperandType();
+        if (auto CI = dyn_cast<CastInst>(SI->getPointerOperand())) {
+            Ty = CI->getSrcTy();
+        }
+
+        if(Ty->isPointerTy()) {
+            if(get_type(Ty)->isStructTy())
                 return true;
-            return false;
+        }
+        return false;
+    }
+
+    StructType* BaseAnalyzer::getStoreeStruct(StoreInst *SI) {
+        Type *Ty = SI->getPointerOperandType();
+        if (auto CI = dyn_cast<CastInst>(SI->getPointerOperand())) {
+            Ty = CI->getSrcTy();
+        }
+
+        if(Ty->isPointerTy()) {
+            if (auto StTy = dyn_cast<StructType>(get_type(Ty)))
+                return StTy;
+        }
+        return NULL;
+    }
+
+    StructType* BaseAnalyzer::getStorerStruct(StoreInst *SI) {
+        Type *Ty = SI->getValueOperand()->getType();
+        if (auto CI = dyn_cast<CastInst>(SI->getValueOperand())) {
+            Ty = CI->getSrcTy();
+        }
+
+        if(Ty->isPointerTy()) {
+            if (auto StTy = dyn_cast<StructType>(get_type(Ty)))
+                return StTy;
+        }
+        return NULL;
     }
     
     bool BaseAnalyzer::isStoreFromStruct(StoreInst *SI) {
@@ -784,7 +829,6 @@ namespace ST_free {
     bool BaseAnalyzer::isCastToVoid(CastInst *CI) {
         //TODO: need more fine-grained checks
         if (auto BCI = dyn_cast<BitCastInst>(CI)) {
-            outs() << *get_type(BCI->getDestTy()) << "\n";
             if (get_type(BCI->getDestTy())->isIntegerTy()) {
                 return true;
             }

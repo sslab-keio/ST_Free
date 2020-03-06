@@ -63,40 +63,31 @@ namespace ST_free {
                     if(info.indexes.size() > 0) {
                         if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
                             if(ROOT_INDEX < info.indexes.back().second && info.indexes.back().second < StTy->getNumElements()) {
+                                generateWarning(I, "[Before] Looking for alloc alias");
                                 if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).typeExists(StTy->getElementType(info.indexes.back().second))) {
-                                    generateWarning(I, "[After] Found alloc alias", true);
+                                    generateWarning(I, "[After] Found alloc alias");
                                     getFunctionInformation()->addAllocValue(
                                             &B,
                                             NULL,
                                             StTy->getElementType(info.indexes.back().second),
                                             info.indexes.back().second
                                         );
-                                    // getFunctionInformation()->addAllocValue(
-                                    //         &B,
-                                    //         info.freeValue,
-                                    //         StTy->getElementType(info.indexes.back().second),
-                                    //         info.indexes.back().second
-                                    //     );
-                                }
-                            }
-                        }
-
-                        if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).valueExists(addVal)) {
-                            generateWarning(I, "[After] Found alloc alias");
-                            if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
-                                if(ROOT_INDEX < info.indexes.back().second && info.indexes.back().second < StTy->getNumElements()) {
-                                    getFunctionInformation()->addAllocValue(
-                                            &B,
-                                            NULL,
-                                            StTy->getElementType(info.indexes.back().second),
-                                            info.indexes.back().second
-                                        );
-                                    getFunctionInformation()->addAllocValue(
-                                            &B,
-                                            info.freeValue,
-                                            StTy->getElementType(info.indexes.back().second),
-                                            info.indexes.back().second
-                                        );
+                                } else {
+                                    if (auto CastI = dyn_cast<CastInst>(addVal)) {
+                                        addVal = CastI->getOperand(0);
+                                    }
+                                    if (auto GEleI = dyn_cast<GetElementPtrInst>(addVal)) {
+                                        GEleI = this->getRootGEle(GEleI);
+                                        addVal = GEleI->getOperand(0);
+                                    }
+                                    if (getFunctionInformation()->isArgValue(addVal)) {
+                                        getFunctionInformation()->addPendingArgAlloc(
+                                                &B,
+                                                NULL,
+                                                StTy->getElementType(info.indexes.back().second),
+                                                info.indexes.back().second
+                                            );
+                                    }
                                 }
                             }
                         }
@@ -104,7 +95,21 @@ namespace ST_free {
                 }
             }
         } else if(this->isStoreToStruct(SI)) {
-            generateWarning(SI, "is Store To Struct");
+            if(StructType* StTy = this->getStoreeStruct(SI)) {
+                generateWarning(SI, "is Store To Struct");
+                if (StructType* SrcTy = this->getStorerStruct(SI)) {
+                    if (StTy != SrcTy && get_type(StTy->getElementType(0)) == SrcTy) {
+                        if(this->getFunctionInformation()->getBasicBlockInformation(&B)->getWorkList(ALLOCATED).typeExists(StTy->getElementType(0))) {
+                            getFunctionInformation()->addAllocValue(
+                                    &B,
+                                    NULL,
+                                    StTy->getElementType(0),
+                                    0
+                                );
+                        }
+                    }
+                }
+            }
         }
 
         /*** Check the Value of the StoreInst ***/
@@ -168,6 +173,7 @@ namespace ST_free {
                 this->analyzeDifferentFunc((Function &)(*called_function));
                 this->copyArgStatus((Function &)(*called_function), CI, B);
                 this->copyAllocatedStatus((Function &)(*called_function), B);
+                this->copyFreeStatus((Function &)(*called_function), B);
             }
         }
     }
@@ -211,7 +217,25 @@ namespace ST_free {
             getFunctionInformation()->setCorrectlyBranched(&B);
         }
     }
-    
+
+    void StageOneAnalyzer::analyzeGetElementPtrInst(Instruction* I, BasicBlock &B) {
+        GetElementPtrInst *GEleI = cast<GetElementPtrInst>(I);
+        struct collectedInfo info;
+        ParentList plist;
+
+        // generateWarning(GEleI, "found GetElementPtrInst", true);
+        this->collectStructMemberFreeInfo(GEleI, info, plist);
+
+        if(info.indexes.size() > 0) {
+            if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
+                if(ROOT_INDEX < info.indexes.back().second && info.indexes.back().second < StTy->getNumElements()) {
+                    generateWarning(I, "[Before] Found alloc alias");
+                }
+            }
+        }
+        return;
+    }
+
     void StageOneAnalyzer::checkAvailability() {
         FreedStructList fsl = getFunctionInformation()->getFreedStruct();
 
@@ -221,23 +245,23 @@ namespace ST_free {
 
             for (int ind = 0; ind < strTy->getNumElements(); ind++) {
                 Type *t = strTy->getElementType(ind);
-                if (!t->isPointerTy() 
+                if (!t->isPointerTy()
                         || isFuncPointer(t)
                         || alreadyFreed[ind])
                     continue;
 
                 // Add to Allocated
-                if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
-                    generateWarning(freedStruct->getInst(), "[NON VALUE] Allocated + ind :" + to_string(ind), true);
-                    getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
-                }
-
-                // Add to Allocated
-                // if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ind)) {
-                //     generateWarning(freedStruct->getInst(),
-                //             "[INDEXED VERSION] Allocated(second) + ind :" + to_string(ind), true);
+                // if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ROOT_INDEX)) {
+                //     generateWarning(freedStruct->getInst(), "[NON VALUE] Allocated + ind :" + to_string(ind), true);
                 //     getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
                 // }
+
+                // Add to Allocated
+                if (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(), NULL, t, ind)) {
+                    generateWarning(freedStruct->getInst(),
+                            "[INDEXED VERSION] Allocated(second) + ind :" + to_string(ind), true);
+                    getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
+                }
 
                 ValueInformation *vinfo_nulled = getFunctionInformation()->getValueInfo(NULL, t, ind);
                 if (vinfo_nulled != NULL) {

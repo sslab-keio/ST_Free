@@ -15,5 +15,6 @@ namespace ST_free {
             void analyzeStoreInst(Instruction *SI, BasicBlock &B);
             void analyzeCallInst(Instruction *CI, BasicBlock &B);
             void analyzeBranchInst(Instruction *BI, BasicBlock &B);
+            void analyzeGetElementPtrInst(Instruction *GEleI, BasicBlock &B);
     };
 }

@@ -49,6 +49,19 @@ namespace ST_free {
         return false;
     }
 
+    bool BasicBlockWorkList::fieldExists(Type *T, long ind) {
+        auto foundVal = find_if(MarkedValues.begin(), MarkedValues.end(),
+                [T, ind](const UniqueKey *UK) {
+                    if (UK->getType() == T) {
+                        return UK->getNum() == ind;
+                    }
+                    return false;
+                });
+        if(foundVal != MarkedValues.end())
+            return true;
+        return false;
+    }
+
     const UniqueKey* BasicBlockWorkList::getUKFromValue(Value *V) {
         auto foundVal = find_if(MarkedValues.begin(), MarkedValues.end(),
                 [V](const UniqueKey *UK) {
@@ -87,6 +100,10 @@ namespace ST_free {
 
     BasicBlockWorkList BasicBlockInformation::getDMZList() const {
         return dmzList;
+    }
+
+    BasicBlockWorkList BasicBlockInformation::getPendingArgAllocList() const {
+        return pendingArgStoreList;
     }
 
     BasicBlockList BasicBlockWorkList::getList() const {
@@ -197,6 +214,14 @@ namespace ST_free {
         dmzList.setList(v);
     }
 
+    void BasicBlockInformation::addPendingArgAlloc(const UniqueKey *UK) {
+        pendingArgStoreList.add(UK);
+    }
+
+    void BasicBlockInformation::setPendingArgAllocList(BasicBlockList v) {
+        pendingArgStoreList.setList(v);   
+    }
+
     void BasicBlockInformation::addLiveVariable(Value *v){
         liveVariables.push_back(v);
     }
@@ -260,12 +285,14 @@ namespace ST_free {
 
     void BasicBlockManager::unite(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt].setAllocList(uniteList(this->getBasicBlockAllocList(tgt), this->getBasicBlockAllocList(src)));
+        BBMap[tgt].setPendingArgAllocList(uniteList(this->getBasicBlockPendingAllocList(tgt), this->getBasicBlockPendingAllocList(src)));
         BBMap[tgt].setDMZList(uniteList(this->getBasicBlockDMZList(tgt), this->getBasicBlockRemoveAllocList(src, tgt)));
         return;
     }
 
     void BasicBlockManager::diff(BasicBlock *src, BasicBlock *tgt){
         BBMap[tgt].setAllocList(diffList(this->getBasicBlockAllocList(tgt), this->get(src)->getRemoveAllocs(tgt).getList()));
+        BBMap[tgt].setPendingArgAllocList(diffList(this->getBasicBlockPendingAllocList(tgt), this->get(src)->getRemoveAllocs(tgt).getList()));
         return;
     }
 
@@ -373,6 +400,12 @@ namespace ST_free {
     BasicBlockList BasicBlockManager::getBasicBlockDMZList(BasicBlock *src) {
         if(this->exists(src))
             return BBMap[src].getDMZList().getList();
+        return BasicBlockList();
+    }
+
+    BasicBlockList BasicBlockManager::getBasicBlockPendingAllocList(BasicBlock *src) {
+        if(this->exists(src))
+            return BBMap[src].getPendingArgAllocList().getList();
         return BasicBlockList();
     }
 
