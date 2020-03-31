@@ -32,35 +32,30 @@ struct testB *alloctB() {
   return tB;
 }
 
-struct testA *allocation() {
-  struct testA *tA = (struct testA *)malloc(sizeof(struct testA));
-  if (tA == NULL) goto err;
-
+struct testB *allocation(struct testA *tA) {
   struct testB *tB = (struct testB *)malloc(sizeof(struct testB));
-  // tA->tB = alloctB();
-  if (tB == NULL) goto err2;
-
-  tA->tB = tB;
+  if (tB == NULL) return NULL;
 
   struct testC *tC = (struct testC *)malloc(sizeof(struct testC));
-  if (tC == NULL) goto err3;
+  if (tC == NULL) {
+    free(tB);
+    return NULL;
+  } else {
+    tB->tC = tC;
+  }
 
-  tA->tB->tC = tC;
-  return tA;
-
-err3:
-  free(tB);
-err2:
-  free(tA);
-err:
-  return NULL;
+  tA->tB = tB;
+  return tB;
 }
 
 int main() {
   struct testA *tA;
 
-  tA = allocation();
-  if (tA == NULL) return -1;
+  tA = (struct testA *)malloc(sizeof(struct testA));
 
+  if (!allocation(tA)) {
+    free(tA);
+    return -1;
+  }
   return 0;
 }

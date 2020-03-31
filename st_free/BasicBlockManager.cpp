@@ -224,7 +224,6 @@ void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint) {
   if (isEntryPoint) this->set(B);
 
   if (this->checkIfErrorBlock(B)) {
-    generateWarning(B->getFirstNonPHI(), "Is error block", true);
     BBMap[B].setErrorHandlingBlock();
   }
 

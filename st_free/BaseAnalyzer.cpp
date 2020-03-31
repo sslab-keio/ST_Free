@@ -620,6 +620,7 @@ bool BaseAnalyzer::isStructEleAlloc(Instruction *val) {
   }
   return false;
 }
+
 Value *BaseAnalyzer::getAllocatedValue(Instruction *val) {
   for (User *usr : val->users()) {
     User *tmp_usr = usr;
@@ -973,7 +974,15 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
     generateWarning(I, "Compare with NULL: Look at allocation");
     ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
     Type *Ty = this->getComparedType(comVal, B);
+    // if (auto CI = dyn_cast<CallInst>(comVal)) {
+    //   if (!isAllocFunction(CI->getCalledFunction())) {
+    //     for (auto ele : this->getErrorAllocInCalledFunction(CI, errcode)) {
+    //       BList.add(ele);
+    //     }
+    //   }
+    // }
     if (plist.size() > 0) {
+      generateWarning(I, "Plist size", true);
       if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
         if (0 <= plist.back().second &&
             plist.back().second < StTy->getNumElements())
@@ -1154,7 +1163,8 @@ void BaseAnalyzer::reversePropagateErrorBlockFreeInfo() {
         __recursiveReversePropagateErrorBlockFreeInfo(preds);
     }
   }
-  // for (BasicBlock *retBlock : this->getFunctionInformation()->getEndPoint())
+  // for (BasicBlock *retBlock :
+  // this->getFunctionInformation()->getEndPoint())
   // {
   //     for(BasicBlock *preds: predecessors(retBlock))
   //         if

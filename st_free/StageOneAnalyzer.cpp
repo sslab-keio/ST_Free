@@ -194,7 +194,7 @@ void StageOneAnalyzer::analyzeCallInst(Instruction *I, BasicBlock &B) {
 void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
   BranchInst *BI = cast<BranchInst>(I);
   if (BI->isConditional()) {
-    // generateWarning(I, "Calling is conditional", true);
+    generateWarning(I, "Calling is conditional");
     if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
       int op = this->getErrorOperand(ICI);
       int errcode = 0;
@@ -229,7 +229,6 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
         }
       }
     }
-    // generateWarning(I, "Called was conditional", true);
   }
 
   if (this->isCorrectlyBranched(BI)) {
