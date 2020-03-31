@@ -33,7 +33,7 @@ add_definitions(-DSTAGE_ONE)
 #endif(STAGE_ONE)
 
 #if (STAGE_TWO)
-#add_definitions(-DSTAGE_TWO)
+# add_definitions(-DSTAGE_TWO)
 #endif(STAGE_TWO)
 
 #if (STAGE_PRIMITIVE)
