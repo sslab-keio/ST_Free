@@ -185,7 +185,7 @@ void StageOneAnalyzer::analyzeCallInst(Instruction *I, BasicBlock &B) {
       }
     } else {
       this->analyzeDifferentFunc((Function &)(*called_function));
-      this->copyArgStatus((Function &)(*called_function), CI, B);
+      // this->copyArgStatus((Function &)(*called_function), CI, B);
       this->copyAllocatedStatus((Function &)(*called_function), B);
       this->copyFreeStatus((Function &)(*called_function), CI, B);
       this->evaluatePendingStoredValue((Function &)(*called_function), CI, B);

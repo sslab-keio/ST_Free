@@ -3,3 +3,4 @@ test_set/*/ir/
 test_set/*/log/
 
 docs/
+.ccls-cache/

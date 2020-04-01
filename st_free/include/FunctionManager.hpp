@@ -25,10 +25,8 @@ struct FunctionInformation {
   void addErrorBlock(int64_t err, BasicBlock *B);
   vector<pair<int64_t, BasicBlock *>> getErrorBlock() const;
   /*** FreeValue Related ***/
-  // void addFreeValue(BasicBlock *B, Value *V);
-  // void addFreeValue(BasicBlock *B, Value *V, Type *memTy, Type * stTy, long
-  // num);
-  void addFreeValueFromDifferentFunction(BasicBlock *B, ValueInformation *VI);
+  ValueInformation *addFreeValueFromDifferentFunction(BasicBlock *B,
+                                                      ValueInformation *VI);
   ValueInformation *addFreeValue(BasicBlock *B, Value *V, Type *memTy,
                                  Type *stTy, long num, ParentList plist);
   void addFreeValue(BasicBlock *B, UniqueKey *UK);
@@ -84,6 +82,7 @@ struct FunctionInformation {
   bool isLoopBlock(BasicBlock &B);
   /*** Argument Values ***/
   bool isArgValue(Value *V);
+  long getArgIndex(Value *V);
   void setArgFree(Value *V);
   void setArgAlloc(Value *V);
   void setStructMemberFreed(FreedStruct *fstruct, int64_t num);
@@ -138,6 +137,7 @@ struct FunctionInformation {
   BasicBlockList getPendingStoreInReturn();
   BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
   BasicBlockList diffList(BasicBlockList src, BasicBlockList tgt);
+  BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
 
  private:
   /*** Private Variables ***/

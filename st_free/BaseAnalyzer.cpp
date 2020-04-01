@@ -298,9 +298,14 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
 
     if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
                               B, info.freeValue, info.memType, info.index)) {
-      generateWarning(CI, "Add Free");
+      generateWarning(CI, "Adding Free Value");
+      ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
+          B, NULL, info.memType, info.parentType, info.index, info.indexes);
+
       if (getFunctionInformation()->isArgValue(info.freeValue)) {
         generateWarning(CI, "Add Free Arg");
+        valInfo->setArgNumber(
+            getFunctionInformation()->getArgIndex(info.freeValue));
         if (!info.parentType)
           getFunctionInformation()->setArgFree(info.freeValue);
         else if (info.parentType && info.index >= 0) {
@@ -310,8 +315,6 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
         }
       }
 
-      ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
-          B, NULL, info.memType, info.parentType, info.index, info.indexes);
       if (!isAlias && !getFunctionInformation()->aliasExists(info.freeValue) &&
           info.memType && get_type(info.memType)->isStructTy() &&
           this->isAuthorityChained(info.indexes)) {
@@ -407,12 +410,19 @@ void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
 void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
   for (auto ele : DF->getFreedInSuccess()) {
-    getFunctionInformation()->addFreeValue(&B, const_cast<UniqueKey *>(ele));
-    // if (isa<StructType>(get_type(ele->getType()))) {
-    // getFunctionInformation()->addFreedStruct(B, get_type(ele->getType()),
-    //                                          NULL, CI, NULL, valInfo,
-    //                                          info.index != ROOT_INDEX);
-    // }
+    if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
+      if (vinfo->isArgValue()) generateWarning(CI, "Is arg value", true);
+      vinfo = getFunctionInformation()->addFreeValueFromDifferentFunction(
+          &B, vinfo);
+      if (vinfo && get_type(vinfo->getMemberType())->isStructTy()) {
+        getFunctionInformation()->addFreedStruct(
+            &B, get_type(vinfo->getMemberType()), NULL, CI,
+            static_cast<StructType *>(vinfo->getStructType()), vinfo,
+            vinfo->getMemberNum() != ROOT_INDEX);
+      }
+      // getFunctionInformation()->addFreeValue(&B, const_cast<UniqueKey
+      // *>(ele));
+    }
   }
   return;
 }

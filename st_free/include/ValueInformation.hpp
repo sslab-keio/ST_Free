@@ -12,6 +12,7 @@ class ValueInformation {
     structType = NULL;
     refCount = 0;
     freed = false;
+    arg_number = ROOT_INDEX;
   }
   ValueInformation(Value *val, Type *ty) {
     V = val;
@@ -20,6 +21,7 @@ class ValueInformation {
     structType = NULL;
     refCount = 0;
     freed = false;
+    arg_number = ROOT_INDEX;
   }
   ValueInformation(Value *val, Type *memType, Type *parType, long num) {
     V = val;
@@ -28,6 +30,7 @@ class ValueInformation {
     structType = parType;
     refCount = 0;
     freed = false;
+    arg_number = ROOT_INDEX;
   }
   ValueInformation(Value *val, Type *memType, Type *parType, long num,
                    ParentList plist) {
@@ -37,6 +40,7 @@ class ValueInformation {
     structType = parType;
     refCount = 0;
     freed = false;
+    arg_number = ROOT_INDEX;
     for (auto parent : plist) parents.push_back(parent);
     // parents = ParentList(plist);
   }
@@ -70,6 +74,9 @@ class ValueInformation {
   void addParent(Type *ty, int ind);
   ParentList getParents() { return parents; }
   Type *getTopParent();
+  bool isArgValue() { return arg_number != ROOT_INDEX; }
+  void setArgNumber(long arg) { arg_number = arg; }
+  long getArgNumber() { return arg_number; }
 
  private:
   Value *V;
@@ -80,6 +87,7 @@ class ValueInformation {
   bool freed;
   bool parentFreed;
   int refCount;
+  long arg_number;
 };
 class ValueManager {
  private:

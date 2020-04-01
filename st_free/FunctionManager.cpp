@@ -85,13 +85,13 @@ ValueInformation *FunctionInformation::addFreeValue(BasicBlock *B, Value *V,
   return varinfo;
 }
 
-void FunctionInformation::addFreeValueFromDifferentFunction(
+ValueInformation *FunctionInformation::addFreeValueFromDifferentFunction(
     BasicBlock *B, ValueInformation *VI) {
   if (VI != NULL)
-    this->addFreeValue(B, VI->getValue(), VI->getMemberType(),
-                       VI->getStructType(), VI->getMemberNum(),
-                       VI->getParents());
-  return;
+    return this->addFreeValue(B, VI->getValue(), VI->getMemberType(),
+                              VI->getStructType(), VI->getMemberNum(),
+                              VI->getParents());
+  return NULL;
 }
 
 void FunctionInformation::addFreeValue(BasicBlock *B, UniqueKey *UK) {
@@ -213,6 +213,10 @@ BasicBlockList FunctionInformation::getPendingStoreList(BasicBlock *B) {
 }
 
 bool FunctionInformation::isArgValue(Value *v) { return args.isInList(v); }
+
+long FunctionInformation::getArgIndex(Value *v) {
+  return args.getOperandNum(v);
+}
 
 void FunctionInformation::setArgFree(Value *V) { args.setFreed(V); }
 
@@ -543,7 +547,6 @@ BasicBlockList FunctionInformation::getAllocatedInError(int errcode) {
 }
 
 BasicBlockList FunctionInformation::getFreedInReturn() {
-  BasicBlockList collected_list;
   for (BasicBlock *B : this->getEndPoint()) {
     return this->getFreeList(B);
   }
@@ -551,10 +554,17 @@ BasicBlockList FunctionInformation::getFreedInReturn() {
 }
 
 BasicBlockList FunctionInformation::getFreedInSuccess() {
+  BasicBlockList collected_list;
+  bool is_first = true;
   for (BasicBlock *B : this->getSuccessBlock()) {
-    return this->getFreeList(B);
+    if (is_first) {
+      collected_list = BasicBlockList(this->getFreeList(B));
+      is_first = false;
+    } else {
+      collected_list = intersectList(collected_list, this->getFreeList(B));
+    }
   }
-  return BasicBlockList();
+  return collected_list;
 }
 
 BasicBlockList FunctionInformation::getFreedInError(int errcode) {
@@ -597,6 +607,17 @@ BasicBlockList FunctionInformation::diffList(BasicBlockList src,
 
   set_difference(src.begin(), src.end(), tgt.begin(), tgt.end(),
                  back_inserter(tmp));
+  return tmp;
+}
+
+BasicBlockList FunctionInformation::intersectList(BasicBlockList src,
+                                                  BasicBlockList tgt) {
+  BasicBlockList tmp;
+  llvm::sort(src.begin(), src.end());
+  llvm::sort(tgt.begin(), tgt.end());
+
+  set_intersection(src.begin(), src.end(), tgt.begin(), tgt.end(),
+                   back_inserter(tmp));
   return tmp;
 }
 }  // namespace ST_free
