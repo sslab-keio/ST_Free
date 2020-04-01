@@ -4,7 +4,9 @@ namespace ST_free {
 
 void StageOneAnalyzer::analyzeInstructions(BasicBlock &B) {
   for (Instruction &I : B) {
-    if (this->isReturnFunc(&I)) getFunctionInformation()->addEndPoint(&B);
+    if (this->isReturnFunc(&I)) {
+      getFunctionInformation()->addEndPoint(&B);
+    }
 
     if (InstAnalysisMap.find(I.getOpcode()) != InstAnalysisMap.end())
       (this->*InstAnalysisMap[I.getOpcode()])(&I, B);
@@ -185,7 +187,7 @@ void StageOneAnalyzer::analyzeCallInst(Instruction *I, BasicBlock &B) {
       this->analyzeDifferentFunc((Function &)(*called_function));
       this->copyArgStatus((Function &)(*called_function), CI, B);
       this->copyAllocatedStatus((Function &)(*called_function), B);
-      this->copyFreeStatus((Function &)(*called_function), B);
+      this->copyFreeStatus((Function &)(*called_function), CI, B);
       this->evaluatePendingStoredValue((Function &)(*called_function), CI, B);
     }
   }

@@ -31,6 +31,27 @@ void FunctionInformation::setStat(int stat) { this->stat = stat; }
 
 void FunctionInformation::addEndPoint(BasicBlock *B) { endPoint.push_back(B); }
 
+void FunctionInformation::createBlockStatFromEndPoint() {
+  for (auto retBlock : this->getEndPoint()) {
+    vector<BasicBlock *> return_target_blocks;
+    if (retBlock->hasNPredecessorsOrMore(1)) {
+      for (auto predBlock : predecessors(retBlock)) {
+        return_target_blocks.push_back(predBlock);
+      }
+    } else {
+      return_target_blocks.push_back(retBlock);
+    }
+    for (auto tgt_blocks : return_target_blocks) {
+      if (getBasicBlockInformation(tgt_blocks)->isErrorHandlingBlock()) {
+        // addErrorBlock();
+      } else {
+        addSuccessBlock(tgt_blocks);
+      }
+    }
+  }
+  return;
+}
+
 void FunctionInformation::addSuccessBlock(BasicBlock *B) {
   successBlock.push_back(B);
 }
@@ -498,10 +519,11 @@ BasicBlockList FunctionInformation::getAllocatedInReturn() {
 }
 
 BasicBlockList FunctionInformation::getAllocatedInSuccess() {
-  for (BasicBlock *B : this->getEndPoint()) {
-    return this->getAllocList(B);
+  BasicBlockList collected_list;
+  for (BasicBlock *B : this->getSuccessBlock()) {
+    collected_list = uniteList(collected_list, this->getAllocList(B));
   }
-  return BasicBlockList();
+  return collected_list;
 }
 
 BasicBlockList FunctionInformation::getAllocatedInError(int errcode) {
@@ -521,6 +543,7 @@ BasicBlockList FunctionInformation::getAllocatedInError(int errcode) {
 }
 
 BasicBlockList FunctionInformation::getFreedInReturn() {
+  BasicBlockList collected_list;
   for (BasicBlock *B : this->getEndPoint()) {
     return this->getFreeList(B);
   }
@@ -528,7 +551,7 @@ BasicBlockList FunctionInformation::getFreedInReturn() {
 }
 
 BasicBlockList FunctionInformation::getFreedInSuccess() {
-  for (BasicBlock *B : this->getEndPoint()) {
+  for (BasicBlock *B : this->getSuccessBlock()) {
     return this->getFreeList(B);
   }
   return BasicBlockList();

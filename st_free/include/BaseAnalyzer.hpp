@@ -116,7 +116,7 @@ class BaseAnalyzer {
                                 Type *parentType, ParentList plist,
                                 bool isFirst = false);
   void copyAllocatedStatus(Function &Func, BasicBlock &B);
-  void copyFreeStatus(Function &Func, BasicBlock &B);
+  void copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B);
   void evaluatePendingStoredValue(Function &Func, CallInst *CI, BasicBlock &B);
   /*** Branch Instruction(Correctly Branched) ***/
   bool isCorrectlyBranched(BranchInst *BI);

@@ -19,6 +19,7 @@ struct FunctionInformation {
   /*** EndPoints ***/
   void addEndPoint(BasicBlock *B);
   vector<BasicBlock *> getEndPoint() const;
+  void createBlockStatFromEndPoint();
   void addSuccessBlock(BasicBlock *B);
   vector<BasicBlock *> getSuccessBlock() const;
   void addErrorBlock(int64_t err, BasicBlock *B);

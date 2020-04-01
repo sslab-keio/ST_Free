@@ -86,6 +86,14 @@ BasicBlockInformation::BasicBlockInformation(
   errorHandlingBlock = false;
 }
 
+void BasicBlockInformation::initLists(const BasicBlockInformation &BStat) {
+  freeList = BasicBlockWorkList(BStat.getWorkList(FREED).getList());
+  allocList = BasicBlockWorkList(BStat.getWorkList(ALLOCATED).getList());
+  pendingArgStoreList = BasicBlockWorkList(BStat.getPendingArgAllocList());
+  liveVariables = LiveVariableList(BStat.getLiveVariables());
+  correctlyFreed = BasicBlockWorkList(BStat.getCorrectlyFreedValues());
+}
+
 BasicBlockWorkList BasicBlockInformation::getWorkList(int mode) const {
   if (mode == FREED) return freeList;
   return allocList;
@@ -243,7 +251,7 @@ void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint) {
 }
 
 void BasicBlockManager::copy(BasicBlock *src, BasicBlock *tgt) {
-  BBMap[tgt] = BasicBlockInformation(BBMap[src]);
+  BBMap[tgt].initLists(BBMap[src]);
   BBMap[tgt].setDMZList(this->getBasicBlockRemoveAllocList(src, tgt));
   return;
 }

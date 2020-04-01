@@ -29,7 +29,8 @@ void BaseAnalyzer::analyze(Function &F) {
     getFunctionInformation()->updateSuccessorBlock(B);
   }
 
-  this->reversePropagateErrorBlockFreeInfo();
+  getFunctionInformation()->createBlockStatFromEndPoint();
+  // this->reversePropagateErrorBlockFreeInfo();
   this->checkAvailability();
   getFunctionInformation()->setAnalyzed();
 
@@ -397,17 +398,21 @@ void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI,
 
 void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  for (auto ele : DF->getAllocatedInReturn()) {
+  for (auto ele : DF->getAllocatedInSuccess()) {
     getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
   }
   return;
 }
 
-void BaseAnalyzer::copyFreeStatus(Function &Func, BasicBlock &B) {
+void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  for (auto ele : DF->getFreedInReturn()) {
+  for (auto ele : DF->getFreedInSuccess()) {
     getFunctionInformation()->addFreeValue(&B, const_cast<UniqueKey *>(ele));
-    // getFunctionInformation()->addFreeValueFromDifferentFunction(&B, VI);
+    // if (isa<StructType>(get_type(ele->getType()))) {
+    // getFunctionInformation()->addFreedStruct(B, get_type(ele->getType()),
+    //                                          NULL, CI, NULL, valInfo,
+    //                                          info.index != ROOT_INDEX);
+    // }
   }
   return;
 }
@@ -423,8 +428,8 @@ void BaseAnalyzer::evaluatePendingStoredValue(Function &Func, CallInst *CI,
             .typeExists(UK->getType())) {
       getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
     } else {
-      // Determine whether it needs further lazy evaluation, or the lifetime can
-      // end here
+      // Determine whether it needs further lazy evaluation, or the lifetime
+      // can end here
     }
   }
 }
@@ -982,7 +987,6 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
     //   }
     // }
     if (plist.size() > 0) {
-      generateWarning(I, "Plist size", true);
       if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
         if (0 <= plist.back().second &&
             plist.back().second < StTy->getNumElements())

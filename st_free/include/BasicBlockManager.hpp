@@ -29,6 +29,7 @@ class BasicBlockInformation {
  public:
   BasicBlockInformation();
   BasicBlockInformation(const BasicBlockInformation &);
+  void initLists(const BasicBlockInformation &);
   /*** Free Related Methods ***/
   // void addFree(Value * v, Type * ty, long mem);
   void addFree(const UniqueKey *UK);
