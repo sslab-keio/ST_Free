@@ -200,8 +200,8 @@ void BaseAnalyzer::checkAvailability() {
         }
 
         if (isFreed) {
-          getFunctionInformation()->setStructMemberFreed(freedStruct,
-                                                         vinfo->getMemberNum());
+          // getFunctionInformation()->setStructMemberFreed(freedStruct,
+          //                                                vinfo->getMemberNum());
           if (getFunctionInformation()->isArgValue(vinfo->getValue())) {
             getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(),
                                                               ParentList());
@@ -300,7 +300,7 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
                               B, info.freeValue, info.memType, info.index)) {
       generateWarning(CI, "Adding Free Value");
       ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
-          B, NULL, info.memType, info.parentType, info.index, info.indexes);
+          B, NULL, info.memType, info.index, info.indexes);
 
       if (getFunctionInformation()->isArgValue(info.freeValue)) {
         generateWarning(CI, "Add Free Arg");
@@ -411,17 +411,12 @@ void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
   for (auto ele : DF->getFreedInSuccess()) {
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
-      if (vinfo->isArgValue()) generateWarning(CI, "Is arg value", true);
-      vinfo = getFunctionInformation()->addFreeValueFromDifferentFunction(
-          &B, vinfo);
-      if (vinfo && get_type(vinfo->getMemberType())->isStructTy()) {
-        getFunctionInformation()->addFreedStruct(
-            &B, get_type(vinfo->getMemberType()), NULL, CI,
-            static_cast<StructType *>(vinfo->getStructType()), vinfo,
-            vinfo->getMemberNum() != ROOT_INDEX);
+      if (vinfo->isArgValue()) {
+        generateWarning(CI, "Is arg value");
+        if (vinfo->getArgNumber() < CI->getNumArgOperands())
+          addFree(CI->getArgOperand(vinfo->getArgNumber()), CI, &B, false,
+                  vinfo->getParents());
       }
-      // getFunctionInformation()->addFreeValue(&B, const_cast<UniqueKey
-      // *>(ele));
     }
   }
   return;

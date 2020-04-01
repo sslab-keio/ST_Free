@@ -26,9 +26,10 @@ struct FunctionInformation {
   vector<pair<int64_t, BasicBlock *>> getErrorBlock() const;
   /*** FreeValue Related ***/
   ValueInformation *addFreeValueFromDifferentFunction(BasicBlock *B,
-                                                      ValueInformation *VI);
-  ValueInformation *addFreeValue(BasicBlock *B, Value *V, Type *memTy,
-                                 Type *stTy, long num, ParentList plist);
+                                                      ValueInformation *VI,
+                                                      UniqueKey *UK);
+  ValueInformation *addFreeValue(BasicBlock *B, Value *V, Type *memTy, long num,
+                                 ParentList plist);
   void addFreeValue(BasicBlock *B, UniqueKey *UK);
   void incrementFreedRefCount(BasicBlock *B, Value *V, Value *refVal);
   void addFreedStruct(Type *T, Value *V, Instruction *I);
@@ -100,8 +101,8 @@ struct FunctionInformation {
   // ValueInformation * addVariable(Value * val, Type * memType, Type *parType,
   // long num); ValueInformation * addVariable(const UniqueKey *UK, Value * val,
   // Type * memType, Type *parType, long num);
-  ValueInformation *addVariable(const UniqueKey *UK, Value *val, Type *memType,
-                                Type *parType, long num, ParentList plist);
+  ValueInformation *addVariable(const UniqueKey *UK, Value *val,
+                                ParentList plist);
   // ValueInformation * getValueInfo(Value * val);
   ValueInformation *getValueInfo(Value *val, Type *ty, long num);
   ValueInformation *getValueInfo(const UniqueKey *UK);

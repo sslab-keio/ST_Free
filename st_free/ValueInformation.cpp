@@ -2,16 +2,6 @@
 
 namespace ST_free {
 Value *ValueInformation::getValue() const { return V; }
-Type *ValueInformation::getStructType() const { return structType; }
-
-Type *ValueInformation::getMemberType() const { return memberType; }
-
-long ValueInformation::getMemberNum() const { return memberNum; }
-
-bool ValueInformation::isStructMember() {
-  if (memberType == NULL && structType == NULL) return false;
-  return true;
-}
 
 Type *ValueInformation::getTopParent() {
   if (!parents.empty()) return parents[0].first;
@@ -57,10 +47,9 @@ void ValueManager::addValueInfo(const UniqueKey *UK, Value *val) {
 //         memType, parType, num);
 //     return;
 // }
-void ValueManager::addValueInfo(const UniqueKey *UK, Value *val, Type *memType,
-                                Type *parType, long num, ParentList plist) {
-  if (!this->exists(UK))
-    vinfos[UK] = new ValueInformation(val, memType, parType, num, plist);
+void ValueManager::addValueInfo(const UniqueKey *UK, Value *val,
+                                ParentList plist) {
+  if (!this->exists(UK)) vinfos[UK] = new ValueInformation(val, plist);
   return;
 }
 

@@ -61,18 +61,14 @@ void FunctionInformation::addErrorBlock(int64_t errcode, BasicBlock *B) {
 }
 
 ValueInformation *FunctionInformation::addFreeValue(BasicBlock *B, Value *V,
-                                                    Type *memTy, Type *stTy,
-                                                    long num,
+                                                    Type *memTy, long num,
                                                     ParentList plist) {
   const UniqueKey *UK =
       this->getUniqueKeyManager()->getUniqueKey(V, memTy, num);
   if (UK == NULL) UK = this->getUniqueKeyManager()->addUniqueKey(V, memTy, num);
 
   ValueInformation *varinfo = this->getValueInfo(UK);
-  if (varinfo == NULL)
-    varinfo = this->addVariable(UK, V, memTy, stTy, num, plist);
-  else
-    varinfo->addStructParams(stTy, num);
+  if (varinfo == NULL) varinfo = this->addVariable(UK, V, plist);
   varinfo->setFreed();
 
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
@@ -86,10 +82,9 @@ ValueInformation *FunctionInformation::addFreeValue(BasicBlock *B, Value *V,
 }
 
 ValueInformation *FunctionInformation::addFreeValueFromDifferentFunction(
-    BasicBlock *B, ValueInformation *VI) {
+    BasicBlock *B, ValueInformation *VI, UniqueKey *UK) {
   if (VI != NULL)
-    return this->addFreeValue(B, VI->getValue(), VI->getMemberType(),
-                              VI->getStructType(), VI->getMemberNum(),
+    return this->addFreeValue(B, VI->getValue(), UK->getType(), UK->getNum(),
                               VI->getParents());
   return NULL;
 }
@@ -262,11 +257,9 @@ ValueInformation *FunctionInformation::addVariable(Value *val) {
 }
 
 ValueInformation *FunctionInformation::addVariable(const UniqueKey *UK,
-                                                   Value *val, Type *memType,
-                                                   Type *parType, long num,
+                                                   Value *val,
                                                    ParentList plist) {
-  if (!VManage.exists(UK))
-    VManage.addValueInfo(UK, val, memType, parType, num, plist);
+  if (!VManage.exists(UK)) VManage.addValueInfo(UK, val, plist);
   return VManage.getValueInfo(UK);
 }
 
