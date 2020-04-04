@@ -75,6 +75,7 @@ struct FunctionInformation {
   void setAlias(Value *srcinfo, Value *tgtinfo);
   bool aliasExists(Value *src);
   Value *getAlias(Value *src);
+  Aliases* getAliasMap() {return &aliasMap;};
   // void copyCorrectlyFreedValueInLoop(BasicBlock &B);
   void updateSuccessorBlock(BasicBlock &B);
   /*** Loop Related ***/

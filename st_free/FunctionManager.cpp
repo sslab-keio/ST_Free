@@ -139,7 +139,7 @@ void FunctionInformation::setAnalyzed() { setStat(ANALYZED); }
 void FunctionInformation::setInProgress() { setStat(IN_PROGRESS); }
 
 void FunctionInformation::BBCollectInfo(BasicBlock &B, bool isEntryPoint) {
-  BBManage.CollectInInfo(&B, isEntryPoint);
+  BBManage.CollectInInfo(&B, isEntryPoint, this->getAliasMap());
 }
 
 void FunctionInformation::addFreedStruct(Type *T, Value *V, Instruction *I) {
