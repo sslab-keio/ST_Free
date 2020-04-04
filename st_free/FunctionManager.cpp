@@ -397,11 +397,14 @@ bool FunctionInformation::isAllocatedInBasicBlock(BasicBlock *B,
 bool FunctionInformation::isLiveInBasicBlock(BasicBlock *B, Value *val) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) return BInfo->LiveVariableExists(val);
+  return false;
 }
+
 void FunctionInformation::setCorrectlyBranched(BasicBlock *B) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) BInfo->setCorrectlyBranched();
 }
+
 bool FunctionInformation::isCorrectlyBranched(BasicBlock *B) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) return BInfo->isCorrectlyBranched();
@@ -518,7 +521,8 @@ BasicBlockList FunctionInformation::getAllocatedInReturn() {
 BasicBlockList FunctionInformation::getAllocatedInSuccess() {
   BasicBlockList collected_list;
   for (BasicBlock *B : this->getSuccessBlock()) {
-    collected_list = uniteList(collected_list, this->getAllocList(B));
+    collected_list = BasicBlockListOperation::uniteList(collected_list,
+                                                        this->getAllocList(B));
   }
   return collected_list;
 }
@@ -527,13 +531,13 @@ BasicBlockList FunctionInformation::getAllocatedInError(int errcode) {
   BasicBlockList BBL = BasicBlockList();
   for (pair<int64_t, BasicBlock *> p : this->getErrorBlock()) {
     if (errcode == 0 || p.first == errcode) {
-      BasicBlockList tmpBBL =
-          diffList(getAllocList(p.second), getFreeList(p.second));
+      BasicBlockList tmpBBL = BasicBlockListOperation::diffList(
+          getAllocList(p.second), getFreeList(p.second));
       for (auto endBlock : this->getEndPoint()) {
         // tmpBBL = diffList(tmpBBL,
         // getBasicBlockInformation(p.second)->getRemoveAllocs(endBlock).getList());
       }
-      BBL = uniteList(BBL, tmpBBL);
+      BBL = BasicBlockListOperation::uniteList(BBL, tmpBBL);
     }
   }
   return BBL;
@@ -554,7 +558,8 @@ BasicBlockList FunctionInformation::getFreedInSuccess() {
       collected_list = BasicBlockList(this->getFreeList(B));
       is_first = false;
     } else {
-      collected_list = intersectList(collected_list, this->getFreeList(B));
+      collected_list = BasicBlockListOperation::intersectList(
+          collected_list, this->getFreeList(B));
     }
   }
   return collected_list;
@@ -582,35 +587,4 @@ BasicBlockList FunctionInformation::getPendingStoreInReturn() {
   return BasicBlockList();
 }
 
-BasicBlockList FunctionInformation::uniteList(BasicBlockList src,
-                                              BasicBlockList tgt) {
-  BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
-
-  set_union(src.begin(), src.end(), tgt.begin(), tgt.end(), back_inserter(tmp));
-  return tmp;
-}
-
-BasicBlockList FunctionInformation::diffList(BasicBlockList src,
-                                             BasicBlockList tgt) {
-  BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
-
-  set_difference(src.begin(), src.end(), tgt.begin(), tgt.end(),
-                 back_inserter(tmp));
-  return tmp;
-}
-
-BasicBlockList FunctionInformation::intersectList(BasicBlockList src,
-                                                  BasicBlockList tgt) {
-  BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
-
-  set_intersection(src.begin(), src.end(), tgt.begin(), tgt.end(),
-                   back_inserter(tmp));
-  return tmp;
-}
 }  // namespace ST_free

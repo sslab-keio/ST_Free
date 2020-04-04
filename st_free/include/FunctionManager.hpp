@@ -136,9 +136,6 @@ struct FunctionInformation {
   BasicBlockList getFreedInError(int errcode);
   /*** get Freed ***/
   BasicBlockList getPendingStoreInReturn();
-  BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
-  BasicBlockList diffList(BasicBlockList src, BasicBlockList tgt);
-  BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
 
  private:
   /*** Private Variables ***/

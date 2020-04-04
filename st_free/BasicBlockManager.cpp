@@ -241,14 +241,15 @@ void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint) {
   this->addFreeInfoFromDMZToPreds(B);
   for (BasicBlock *PredBB : predecessors(B)) {
     if (isFirst) {
-      this->copy(PredBB, B);
+      this->copyAllList(PredBB, B);
       isFirst = false;
     } else {
-      this->unite(PredBB, B);
-      this->intersect(PredBB, B);
+      this->uniteAllocList(PredBB, B);
+      this->uniteDMZList(PredBB, B);
+      this->intersectFreeList(PredBB, B);
       this->copyCorrectlyFreed(PredBB, B);
     }
-    this->diff(PredBB, B);
+    this->removeAllocatedInError(PredBB, B);
   }
 
   if (get(B)->isErrorHandlingBlock()) {
@@ -256,61 +257,65 @@ void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint) {
       if (this->exists(PredBB) && get(PredBB)->isErrorHandlingBlock() &&
           get(PredBB)->isUnconditionalBranched()) {
         generateWarning(PredBB->getFirstNonPHI(), "Error and unconditional");
-        BBMap[B].setFreeList(uniteList(this->getBasicBlockFreeList(B),
-                                       this->getBasicBlockFreeList(PredBB)));
+        BBMap[B].setFreeList(BasicBlockListOperation::uniteList(
+            this->getBasicBlockFreeList(B),
+            this->getBasicBlockFreeList(PredBB)));
       }
     }
   }
   return;
 }
 
-void BasicBlockManager::copy(BasicBlock *src, BasicBlock *tgt) {
+void BasicBlockManager::copyAllList(BasicBlock *src, BasicBlock *tgt) {
   BBMap[tgt].initLists(BBMap[src]);
   BBMap[tgt].setDMZList(this->getBasicBlockRemoveAllocList(src, tgt));
   return;
 }
 
 void BasicBlockManager::copyFreed(BasicBlock *src, BasicBlock *tgt) {
-  BBMap[tgt].setFreeList(uniteList(this->getBasicBlockFreeList(src),
-                                   this->getBasicBlockFreeList(tgt)));
+  BBMap[tgt].setFreeList(BasicBlockListOperation::uniteList(
+      this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
   return;
 }
 
-void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt) {
-  BBMap[tgt].setFreeList(intersectList(this->getBasicBlockFreeList(src),
-                                       this->getBasicBlockFreeList(tgt)));
+void BasicBlockManager::intersectFreeList(BasicBlock *src, BasicBlock *tgt) {
+  BBMap[tgt].setFreeList(BasicBlockListOperation::intersectList(
+      this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
   return;
 }
 
-void BasicBlockManager::unite(BasicBlock *src, BasicBlock *tgt) {
-  BBMap[tgt].setAllocList(uniteList(this->getBasicBlockAllocList(tgt),
-                                    this->getBasicBlockAllocList(src)));
-  BBMap[tgt].setPendingArgAllocList(
-      uniteList(this->getBasicBlockPendingAllocList(tgt),
-                this->getBasicBlockPendingAllocList(src)));
-  BBMap[tgt].setDMZList(
-      uniteList(this->getBasicBlockDMZList(tgt),
-                this->getBasicBlockRemoveAllocList(src, tgt)));
-  return;
+void BasicBlockManager::uniteAllocList(BasicBlock *src, BasicBlock *tgt) {
+  BBMap[tgt].setAllocList(BasicBlockListOperation::uniteList(
+      this->getBasicBlockAllocList(tgt), this->getBasicBlockAllocList(src)));
+  BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::uniteList(
+      this->getBasicBlockPendingAllocList(tgt),
+      this->getBasicBlockPendingAllocList(src)));
 }
 
-void BasicBlockManager::diff(BasicBlock *src, BasicBlock *tgt) {
-  BBMap[tgt].setAllocList(
-      diffList(this->getBasicBlockAllocList(tgt),
-               this->get(src)->getRemoveAllocs(tgt).getList()));
-  BBMap[tgt].setFreeList(
-      uniteList(this->getBasicBlockFreeList(tgt),
-               this->get(src)->getRemoveAllocs(tgt).getList()));
-  BBMap[tgt].setPendingArgAllocList(
-      diffList(this->getBasicBlockPendingAllocList(tgt),
-               this->get(src)->getRemoveAllocs(tgt).getList()));
-  return;
+void BasicBlockManager::uniteDMZList(BasicBlock *src, BasicBlock *tgt) {
+  BBMap[tgt].setDMZList(BasicBlockListOperation::uniteList(
+      this->getBasicBlockDMZList(tgt),
+      this->getBasicBlockRemoveAllocList(src, tgt)));
+}
+
+void BasicBlockManager::removeAllocatedInError(BasicBlock *src,
+                                               BasicBlock *tgt) {
+  BBMap[tgt].setAllocList(BasicBlockListOperation::diffList(
+      this->getBasicBlockAllocList(tgt),
+      this->get(src)->getRemoveAllocs(tgt).getList()));
+  BBMap[tgt].setFreeList(BasicBlockListOperation::uniteList(
+      this->getBasicBlockFreeList(tgt),
+      this->get(src)->getRemoveAllocs(tgt).getList()));
+  BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::diffList(
+      this->getBasicBlockPendingAllocList(tgt),
+      this->get(src)->getRemoveAllocs(tgt).getList()));
 }
 
 void BasicBlockManager::addFreeInfoFromDMZToPreds(BasicBlock *src) {
   BasicBlockList freeUnite;
   for (BasicBlock *PredBB : predecessors(src)) {
-    freeUnite = uniteList(freeUnite, this->getBasicBlockFreeList(PredBB));
+    freeUnite = BasicBlockListOperation::uniteList(
+        freeUnite, this->getBasicBlockFreeList(PredBB));
   }
 
   for (BasicBlock *PredBB : predecessors(src)) {
@@ -330,46 +335,6 @@ void BasicBlockManager::copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt) {
   for (const UniqueKey *uk : BBMap[src].getCorrectlyFreedValues().getList()) {
     BBMap[tgt].addCorrectlyFreedValue(uk);
   }
-}
-
-// void BasicBlockManager::copyCorrectlyFreedToPrev(BasicBlock *src){
-// for (BasicBlock* PredBB: predecessors(src)) {
-//     BasicBlockInformation* BInfo = this->get(PredBB);
-//     if(BInfo && BInfo->isLoopBlock())
-//         this->copyCorrectlyFreed(src, PredBB);
-// }
-// }
-
-BasicBlockList BasicBlockManager::intersectList(BasicBlockList src,
-                                                BasicBlockList tgt) {
-  BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
-
-  set_intersection(src.begin(), src.end(), tgt.begin(), tgt.end(),
-                   back_inserter(tmp));
-  return tmp;
-}
-
-BasicBlockList BasicBlockManager::uniteList(BasicBlockList src,
-                                            BasicBlockList tgt) {
-  BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
-
-  set_union(src.begin(), src.end(), tgt.begin(), tgt.end(), back_inserter(tmp));
-  return tmp;
-}
-
-BasicBlockList BasicBlockManager::diffList(BasicBlockList src,
-                                           BasicBlockList tgt) {
-  BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
-
-  set_difference(src.begin(), src.end(), tgt.begin(), tgt.end(),
-                 back_inserter(tmp));
-  return tmp;
 }
 
 LiveVariableList BasicBlockManager::intersectLiveVariables(
@@ -440,7 +405,6 @@ void BasicBlockManager::set(BasicBlock *B) {
 void BasicBlockManager::updateSuccessorBlock(BasicBlock *src) {
   for (BasicBlock *SucBB : successors(src)) {
     if (this->exists(SucBB)) {
-      // this->intersect(src, SucBB);
       this->copyCorrectlyFreed(src, SucBB);
     }
   }
@@ -500,5 +464,37 @@ bool BasicBlockManager::checkIfErrorBlock(BasicBlock *B) {
   }
 
   return tempErrorBlock;
+}
+
+BasicBlockList BasicBlockListOperation::intersectList(BasicBlockList src,
+                                                      BasicBlockList tgt) {
+  BasicBlockList tmp;
+  llvm::sort(src.begin(), src.end());
+  llvm::sort(tgt.begin(), tgt.end());
+
+  set_intersection(src.begin(), src.end(), tgt.begin(), tgt.end(),
+                   back_inserter(tmp));
+  return tmp;
+}
+
+BasicBlockList BasicBlockListOperation::uniteList(BasicBlockList src,
+                                                  BasicBlockList tgt) {
+  BasicBlockList tmp;
+  llvm::sort(src.begin(), src.end());
+  llvm::sort(tgt.begin(), tgt.end());
+
+  set_union(src.begin(), src.end(), tgt.begin(), tgt.end(), back_inserter(tmp));
+  return tmp;
+}
+
+BasicBlockList BasicBlockListOperation::diffList(BasicBlockList src,
+                                                 BasicBlockList tgt) {
+  BasicBlockList tmp;
+  llvm::sort(src.begin(), src.end());
+  llvm::sort(tgt.begin(), tgt.end());
+
+  set_difference(src.begin(), src.end(), tgt.begin(), tgt.end(),
+                 back_inserter(tmp));
+  return tmp;
 }
 }  // namespace ST_free

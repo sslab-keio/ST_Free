@@ -111,25 +111,28 @@ class BasicBlockManager {
   LiveVariableList getLiveVariables(BasicBlock *B);
   /*** Mediator ***/
   void CollectInInfo(BasicBlock *B, bool isEntryPoint);
-  void copy(BasicBlock *src, BasicBlock *tgt);
+  void copyAllList(BasicBlock *src, BasicBlock *tgt);
   void copyFreed(BasicBlock *src, BasicBlock *tgt);
   void copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt);
-  // void copyCorrectlyFreedToPrev(BasicBlock *src);
+  void uniteAllocList(BasicBlock *src, BasicBlock *tgt);
+  void uniteDMZList(BasicBlock *src, BasicBlock *tgt);
+  void intersectFreeList(BasicBlock *src, BasicBlock *tgt);
+  void removeAllocatedInError(BasicBlock *src, BasicBlock *tgt);
   void updateSuccessorBlock(BasicBlock *src);
-  void intersect(BasicBlock *src, BasicBlock *tgt);
-  void unite(BasicBlock *src, BasicBlock *tgt);
-  void diff(BasicBlock *src, BasicBlock *tgt);
   void addFreeInfoFromDMZToPreds(BasicBlock *src);
   bool isPredBlockCorrectlyBranched(BasicBlock *B);
   bool checkIfErrorBlock(BasicBlock *B);
 
  private:
   map<BasicBlock *, BasicBlockInformation> BBMap;
-  BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
-  BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
-  BasicBlockList diffList(BasicBlockList src, BasicBlockList tgt);
   LiveVariableList intersectLiveVariables(LiveVariableList src,
                                           LiveVariableList tgt);
   bool exists(BasicBlock *B);
+};
+
+namespace BasicBlockListOperation {
+  BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
+  BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
+  BasicBlockList diffList(BasicBlockList src, BasicBlockList tgt);
 };
 }  // namespace ST_free
