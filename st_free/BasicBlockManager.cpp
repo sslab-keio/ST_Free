@@ -72,6 +72,7 @@ BasicBlockInformation::BasicBlockInformation() {
   correctlyBranched = false;
   loopBlock = false;
   errorHandlingBlock = false;
+  unConditionalBranched = false;
 }
 
 BasicBlockInformation::BasicBlockInformation(
@@ -84,6 +85,7 @@ BasicBlockInformation::BasicBlockInformation(
   correctlyBranched = false;
   loopBlock = false;
   errorHandlingBlock = false;
+  unConditionalBranched = false;
 }
 
 void BasicBlockInformation::initLists(const BasicBlockInformation &BStat) {
@@ -232,6 +234,7 @@ void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint) {
   if (isEntryPoint) this->set(B);
 
   if (this->checkIfErrorBlock(B)) {
+    generateWarning(B->getFirstNonPHI(), "Is error Block", true);
     BBMap[B].setErrorHandlingBlock();
   }
 
@@ -246,6 +249,17 @@ void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint) {
       this->copyCorrectlyFreed(PredBB, B);
     }
     this->diff(PredBB, B);
+  }
+
+  if (get(B)->isErrorHandlingBlock()) {
+    for (BasicBlock *PredBB : predecessors(B)) {
+      if (this->exists(PredBB) && get(PredBB)->isErrorHandlingBlock() &&
+          get(PredBB)->isUnconditionalBranched()) {
+        generateWarning(PredBB->getFirstNonPHI(), "Error and unconditional");
+        BBMap[B].setFreeList(uniteList(this->getBasicBlockFreeList(B),
+                                       this->getBasicBlockFreeList(PredBB)));
+      }
+    }
   }
   return;
 }
@@ -265,8 +279,6 @@ void BasicBlockManager::copyFreed(BasicBlock *src, BasicBlock *tgt) {
 void BasicBlockManager::intersect(BasicBlock *src, BasicBlock *tgt) {
   BBMap[tgt].setFreeList(intersectList(this->getBasicBlockFreeList(src),
                                        this->getBasicBlockFreeList(tgt)));
-  // BBMap[tgt].setLiveVariables(intersectLiveVariables(this->getLiveVariables(src),
-  // this->getLiveVariables(tgt)));
   return;
 }
 
@@ -286,15 +298,9 @@ void BasicBlockManager::diff(BasicBlock *src, BasicBlock *tgt) {
   BBMap[tgt].setAllocList(
       diffList(this->getBasicBlockAllocList(tgt),
                this->get(src)->getRemoveAllocs(tgt).getList()));
-  // for (auto ele : this->get(src)->getRemoveAllocs(tgt).getList()) {
-  //     if (auto StTy = dyn_cast<StructType>(get_type(ele->getType()))) {
-  //         if (StTy->hasName()) {
-  //             generateWarning(tgt->getFirstNonPHI(), StTy->getName(), true);
-  //             generateWarning(tgt->getFirstNonPHI(),
-  //             to_string(ele->getNum()), true);
-  //         }
-  //     }
-  // }
+  BBMap[tgt].setFreeList(
+      uniteList(this->getBasicBlockFreeList(tgt),
+               this->get(src)->getRemoveAllocs(tgt).getList()));
   BBMap[tgt].setPendingArgAllocList(
       diffList(this->getBasicBlockPendingAllocList(tgt),
                this->get(src)->getRemoveAllocs(tgt).getList()));
@@ -311,8 +317,7 @@ void BasicBlockManager::addFreeInfoFromDMZToPreds(BasicBlock *src) {
     BasicBlockInformation *BBInfo = this->get(PredBB);
     if (BBInfo) {
       for (auto ele : freeUnite) {
-        if (BBInfo->getDMZList().typeExists(ele->getType())) {
-          generateWarning(&(src->front()), "Type Exists");
+        if (BBInfo->getDMZList().typeExists(get_type(ele->getType()))) {
           BBInfo->addFree(ele);
         }
       }

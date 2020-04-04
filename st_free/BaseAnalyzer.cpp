@@ -27,6 +27,18 @@ void BaseAnalyzer::analyze(Function &F) {
     getFunctionInformation()->setLoopBlock(B);
     this->analyzeInstructions(B);
     getFunctionInformation()->updateSuccessorBlock(B);
+    // generateWarning(B.getFirstNonPHI(),
+    //                 "Free: " + to_string(getFunctionInformation()
+    //                                          ->getBasicBlockManager()
+    //                                          ->getBasicBlockFreeList(&B)
+    //                                          .size()),
+    //                 true);
+    // generateWarning(B.getFirstNonPHI(),
+    //                 "Alloc: " + to_string(getFunctionInformation()
+    //                                           ->getBasicBlockManager()
+    //                                           ->getBasicBlockAllocList(&B)
+    //                                           .size()),
+    //                 true);
   }
 
   getFunctionInformation()->createBlockStatFromEndPoint();
@@ -401,7 +413,7 @@ void BaseAnalyzer::copyArgStatusRecursively(Function &Func, CallInst *CI,
 
 void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  for (auto ele : DF->getAllocatedInSuccess()) {
+  for (auto ele : DF->getAllocatedInReturn()) {
     getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
   }
   return;
@@ -984,13 +996,6 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
     generateWarning(I, "Compare with NULL: Look at allocation");
     ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
     Type *Ty = this->getComparedType(comVal, B);
-    // if (auto CI = dyn_cast<CallInst>(comVal)) {
-    //   if (!isAllocFunction(CI->getCalledFunction())) {
-    //     for (auto ele : this->getErrorAllocInCalledFunction(CI, errcode)) {
-    //       BList.add(ele);
-    //     }
-    //   }
-    // }
     if (plist.size() > 0) {
       if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
         if (0 <= plist.back().second &&

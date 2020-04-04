@@ -77,6 +77,8 @@ class BasicBlockInformation {
   CallInst *getCallInstForVal(Value *V);
   void addRemoveAlloc(BasicBlock *B, UniqueKey *UK);
   BasicBlockWorkList getRemoveAllocs(BasicBlock *B);
+  void setUnconditionalBranched() { unConditionalBranched = true; }
+  bool isUnconditionalBranched() { return unConditionalBranched; }
 
  private:
   /*** BasicBlock Lists ***/
@@ -94,6 +96,7 @@ class BasicBlockInformation {
   bool predCorrectlyBranched;
   bool loopBlock;
   bool errorHandlingBlock;
+  bool unConditionalBranched;
 };
 class BasicBlockManager {
  public:

@@ -231,6 +231,11 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
         }
       }
     }
+  } else {
+    generateWarning(BI, "Is unconditional branch");
+    this->getFunctionInformation()
+        ->getBasicBlockInformation(&B)
+        ->setUnconditionalBranched();
   }
 
   if (this->isCorrectlyBranched(BI)) {
