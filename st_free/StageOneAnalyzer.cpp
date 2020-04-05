@@ -74,15 +74,17 @@ void StageOneAnalyzer::analyzeStoreInst(Instruction *I, BasicBlock &B) {
             if (ROOT_INDEX < info.indexes.back().second &&
                 info.indexes.back().second < StTy->getNumElements()) {
               generateWarning(I, "[Before] Looking for alloc alias");
-              if (this->getFunctionInformation()
+              if (const UniqueKey* src_uk = this->getFunctionInformation()
                       ->getBasicBlockInformation(&B)
                       ->getWorkList(ALLOCATED)
-                      .typeExists(
+                      .getFromType(
                           StTy->getElementType(info.indexes.back().second))) {
                 generateWarning(I, "[After] Found alloc alias");
-                getFunctionInformation()->addAllocValue(
+                const UniqueKey* dest_uk = getFunctionInformation()->addAllocValue(
                     &B, NULL, StTy->getElementType(info.indexes.back().second),
                     info.indexes.back().second);
+
+                getFunctionInformation()->setUniqueKeyAlias(src_uk, dest_uk);
               } else {
                 if (auto CastI = dyn_cast<CastInst>(addVal)) {
                   addVal = CastI->getOperand(0);
@@ -108,12 +110,13 @@ void StageOneAnalyzer::analyzeStoreInst(Instruction *I, BasicBlock &B) {
       generateWarning(SI, "is Store To Struct");
       if (StructType *SrcTy = this->getStorerStruct(SI)) {
         if (StTy != SrcTy && get_type(StTy->getElementType(0)) == SrcTy) {
-          if (this->getFunctionInformation()
+          if (const UniqueKey* src_uk = this->getFunctionInformation()
                   ->getBasicBlockInformation(&B)
                   ->getWorkList(ALLOCATED)
-                  .typeExists(StTy->getElementType(0))) {
-            getFunctionInformation()->addAllocValue(&B, NULL,
+                  .getFromType(StTy->getElementType(0))) {
+            const UniqueKey* tgt_uk = getFunctionInformation()->addAllocValue(&B, NULL,
                                                     StTy->getElementType(0), 0);
+            getFunctionInformation()->setUniqueKeyAlias(src_uk, tgt_uk);
           }
         }
       }
@@ -213,11 +216,32 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
       }
     } else if (CallInst *CI = dyn_cast<CallInst>(BI->getCondition())) {
       if (CI->getCalledFunction() && isIsErrFunction(CI->getCalledFunction())) {
-        generateWarning(CI, "Calling IS_ERR()");
+        generateWarning(CI, "Calling IS_ERR()", true);
         BasicBlock *errBlock = BI->getSuccessor(0);
 
+        this->getFunctionInformation()
+            ->getBasicBlockInformation(&B)
+            ->addSucceedingErrorBlock(errBlock);
+        ParentList plist = this->decodeErrorTypes(CI->getArgOperand(0));
         Type *Ty =
             this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), B);
+        if (plist.size() > 0) {
+          if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
+            if (0 <= plist.back().second &&
+                plist.back().second < StTy->getNumElements())
+              Ty = StTy->getElementType(plist.back().second);
+          }
+          if (this->getFunctionInformation()->isAllocatedInBasicBlock(
+                  &B, NULL, Ty, plist.back().second)) {
+          this->getFunctionInformation()
+              ->getBasicBlockInformation(&B)
+              ->addRemoveAlloc(errBlock,
+                               const_cast<UniqueKey *>(
+                                   this->getFunctionInformation()
+                                       ->getUniqueKeyManager()
+                                       ->getUniqueKey(NULL, Ty, plist.back().second)));
+          }
+        }
         if (this->getFunctionInformation()->isAllocatedInBasicBlock(
                 errBlock, NULL, Ty, ROOT_INDEX)) {
           this->getFunctionInformation()

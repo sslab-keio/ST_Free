@@ -43,7 +43,7 @@ struct FunctionInformation {
   FreedStructList getFreedStruct() const;
   bool freedStructExists(FreedStruct *fst);
   /** AllocValue Related ***/
-  void addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
+  const UniqueKey* addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
   void addAllocValue(BasicBlock *B, UniqueKey *UK);
   void addPendingArgAlloc(BasicBlock *B, Value *V, Type *T, long mem);
   void addPendingArgAlloc(BasicBlock *B, UniqueKey *UK);
@@ -137,6 +137,9 @@ struct FunctionInformation {
   BasicBlockList getFreedInError(int errcode);
   /*** get Freed ***/
   BasicBlockList getPendingStoreInReturn();
+  /*** UniqueKey alias ***/
+  void setUniqueKeyAlias(const UniqueKey* src, const UniqueKey* dest);
+  const map<const UniqueKey*, const UniqueKey*>* getUniqueKeyAliasMap();
 
  private:
   /*** Private Variables ***/
@@ -155,6 +158,7 @@ struct FunctionInformation {
   map<Value *, vector<Function *>> funcPtr;
   map<Value *, Type *> aliasedType;
   Aliases aliasMap;
+  map<const UniqueKey*, const UniqueKey*> allocated_alias;
   /*** Private Methods ***/
   int getStat();
   void setStat(int);

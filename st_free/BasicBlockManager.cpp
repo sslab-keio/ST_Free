@@ -36,6 +36,14 @@ bool BasicBlockWorkList::typeExists(Type *T) {
   return false;
 }
 
+const UniqueKey *BasicBlockWorkList::getFromType(Type *T) {
+  auto foundVal =
+      find_if(MarkedValues.begin(), MarkedValues.end(),
+              [T](const UniqueKey *UK) { return UK->getType() == T; });
+  if (foundVal != MarkedValues.end()) return *foundVal;
+  return NULL;
+}
+
 bool BasicBlockWorkList::valueExists(Value *V) {
   auto foundVal =
       find_if(MarkedValues.begin(), MarkedValues.end(),
@@ -227,8 +235,9 @@ bool BasicBlockManager::exists(BasicBlock *B) {
   return false;
 }
 
-void BasicBlockManager::CollectInInfo(BasicBlock *B, bool isEntryPoint,
-                                      map<Value *, Value *> *alias_map) {
+void BasicBlockManager::CollectInInfo(
+    BasicBlock *B, bool isEntryPoint,
+    const map<const UniqueKey *, const UniqueKey *> *alias_map) {
   bool isFirst = true;
   if (this->exists(B)) return;
 
@@ -300,30 +309,37 @@ void BasicBlockManager::uniteDMZList(BasicBlock *src, BasicBlock *tgt) {
 }
 
 void BasicBlockManager::removeAllocatedInError(
-    BasicBlock *src, BasicBlock *tgt, map<Value *, Value *> *alias_map) {
-  // generateWarning(tgt->getFirstNonPHI(), "Alloc: " +
-  // to_string(getBasicBlockAllocList(tgt).size()), true);
+    BasicBlock *src, BasicBlock *tgt,
+    const map<const UniqueKey *, const UniqueKey *> *alias_map) {
   BasicBlockWorkList remove_allocs = this->get(src)->getRemoveAllocs(tgt);
+
+  generateWarning(tgt->getFirstNonPHI(), "Remove Alloc: " +
+  to_string(remove_allocs.getList().size()), true);
+
   for (auto ele : this->get(src)->getRemoveAllocs(tgt).getList()) {
-    if (alias_map->find(ele->getValue()) != alias_map->end())
-      outs() << "Alias Exists\n";
+    auto aliased_value = alias_map->find(ele);
+    if (aliased_value != alias_map->end()) {
+      remove_allocs.add(aliased_value->second);
+    }
   }
 
+  generateWarning(tgt->getFirstNonPHI(), "After Remove Alloc: " +
+  to_string(remove_allocs.getList().size()), true);
+
   BBMap[tgt].setAllocList(BasicBlockListOperation::diffList(
-      this->getBasicBlockAllocList(tgt),
-      this->get(src)->getRemoveAllocs(tgt).getList()));
+      this->getBasicBlockAllocList(tgt), remove_allocs.getList()));
   // generateWarning(tgt->getFirstNonPHI(), "After Alloc: " +
   // to_string(getBasicBlockAllocList(tgt).size()), true);
   // generateWarning(tgt->getFirstNonPHI(), "Free: " +
   // to_string(getBasicBlockFreeList(tgt).size()), true);
   BBMap[tgt].setFreeList(BasicBlockListOperation::uniteList(
       this->getBasicBlockFreeList(tgt),
-      this->get(src)->getRemoveAllocs(tgt).getList()));
+      remove_allocs.getList()));
   // generateWarning(tgt->getFirstNonPHI(), "After Free: " +
   // to_string(getBasicBlockFreeList(tgt).size()), true);
   BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::diffList(
       this->getBasicBlockPendingAllocList(tgt),
-      this->get(src)->getRemoveAllocs(tgt).getList()));
+      remove_allocs.getList()));
 }
 
 void BasicBlockManager::addFreeInfoFromDMZToPreds(BasicBlock *src) {

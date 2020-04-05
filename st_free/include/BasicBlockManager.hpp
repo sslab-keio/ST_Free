@@ -13,6 +13,7 @@ class BasicBlockWorkList {
   void add(const UniqueKey *UK);
   bool exists(const UniqueKey *UK);
   bool typeExists(Type *T);
+  const UniqueKey *getFromType(Type *T);
   bool valueExists(Value *V);
   bool fieldExists(Type *T, long ind);
   const UniqueKey *getUKFromValue(Value *V);
@@ -111,15 +112,16 @@ class BasicBlockManager {
   LiveVariableList getLiveVariables(BasicBlock *B);
   /*** Mediator ***/
   void CollectInInfo(BasicBlock *B, bool isEntryPoint,
-                     map<Value *, Value *> *alias_map);
+                     const map<const UniqueKey *, const UniqueKey *> *alias_map);
   void copyAllList(BasicBlock *src, BasicBlock *tgt);
   void copyFreed(BasicBlock *src, BasicBlock *tgt);
   void copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt);
   void uniteAllocList(BasicBlock *src, BasicBlock *tgt);
   void uniteDMZList(BasicBlock *src, BasicBlock *tgt);
   void intersectFreeList(BasicBlock *src, BasicBlock *tgt);
-  void removeAllocatedInError(BasicBlock *src, BasicBlock *tgt,
-                              map<Value *, Value *> *alias_map);
+  void removeAllocatedInError(
+      BasicBlock *src, BasicBlock *tgt,
+      const map<const UniqueKey *, const UniqueKey *> *alias_map);
   void updateSuccessorBlock(BasicBlock *src);
   void addFreeInfoFromDMZToPreds(BasicBlock *src);
   bool isPredBlockCorrectlyBranched(BasicBlock *B);

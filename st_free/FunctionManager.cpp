@@ -94,13 +94,14 @@ void FunctionInformation::addFreeValue(BasicBlock *B, UniqueKey *UK) {
   if (BInfo) BInfo->addFree(UK);
 }
 
-void FunctionInformation::addAllocValue(BasicBlock *B, Value *V, Type *T,
-                                        long mem) {
+const UniqueKey *FunctionInformation::addAllocValue(BasicBlock *B, Value *V,
+                                                    Type *T, long mem) {
   const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
   if (UK == NULL) UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
 
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) BInfo->addAlloc(UK);
+  return UK;
 }
 
 void FunctionInformation::addAllocValue(BasicBlock *B, UniqueKey *UK) {
@@ -139,7 +140,7 @@ void FunctionInformation::setAnalyzed() { setStat(ANALYZED); }
 void FunctionInformation::setInProgress() { setStat(IN_PROGRESS); }
 
 void FunctionInformation::BBCollectInfo(BasicBlock &B, bool isEntryPoint) {
-  BBManage.CollectInInfo(&B, isEntryPoint, this->getAliasMap());
+  BBManage.CollectInInfo(&B, isEntryPoint, this->getUniqueKeyAliasMap());
 }
 
 void FunctionInformation::addFreedStruct(Type *T, Value *V, Instruction *I) {
@@ -586,5 +587,17 @@ BasicBlockList FunctionInformation::getPendingStoreInReturn() {
   }
   return BasicBlockList();
 }
+
+void FunctionInformation::setUniqueKeyAlias(const UniqueKey *src,
+    const UniqueKey *dest) {
+  if (allocated_alias.find(src) == allocated_alias.end()) {
+    allocated_alias[src] = dest;
+  } else {
+    // TODO: Has more than one alias. Think about what needs to be done.
+  }
+}
+
+const map<const UniqueKey *, const UniqueKey *>
+    *FunctionInformation::getUniqueKeyAliasMap() {return &allocated_alias;}
 
 }  // namespace ST_free
