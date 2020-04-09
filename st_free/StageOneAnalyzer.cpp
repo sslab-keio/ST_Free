@@ -216,16 +216,21 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
       }
     } else if (CallInst *CI = dyn_cast<CallInst>(BI->getCondition())) {
       if (CI->getCalledFunction() && isIsErrFunction(CI->getCalledFunction())) {
-        generateWarning(CI, "Calling IS_ERR()", true);
+        generateWarning(CI, "Calling IS_ERR()");
         BasicBlock *errBlock = BI->getSuccessor(0);
-
         this->getFunctionInformation()
             ->getBasicBlockInformation(&B)
             ->addSucceedingErrorBlock(errBlock);
-        ParentList plist = this->decodeErrorTypes(CI->getArgOperand(0));
+
+        Value* tgt_val = CI->getArgOperand(0);
+        if (auto BCI = dyn_cast<BitCastInst>(tgt_val)) {
+          tgt_val = BCI->getOperand(0);
+        }
+        ParentList plist = this->decodeErrorTypes(tgt_val);
         Type *Ty =
-            this->getComparedType(decodeComparedValue(CI->getArgOperand(0)), B);
+            this->getComparedType(decodeComparedValue(tgt_val), B);
         if (plist.size() > 0) {
+          generateWarning(CI, "Calling IS_ERR(): plist");
           if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
             if (0 <= plist.back().second &&
                 plist.back().second < StTy->getNumElements())
@@ -233,6 +238,7 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
           }
           if (this->getFunctionInformation()->isAllocatedInBasicBlock(
                   &B, NULL, Ty, plist.back().second)) {
+          generateWarning(CI, "Calling IS_ERR(): plist found alloc");
           this->getFunctionInformation()
               ->getBasicBlockInformation(&B)
               ->addRemoveAlloc(errBlock,

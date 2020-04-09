@@ -330,6 +330,7 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
       if (!isAlias && !getFunctionInformation()->aliasExists(info.freeValue) &&
           info.memType && get_type(info.memType)->isStructTy() &&
           this->isAuthorityChained(info.indexes)) {
+        generateWarning(CI, "Add Freed Struct ");
         getFunctionInformation()->addFreedStruct(
             B, get_type(info.memType), info.freeValue, CI, info.parentType,
             valInfo, info.index != ROOT_INDEX);
@@ -421,10 +422,10 @@ void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
 
 void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
+  generateWarning(CI,"Copy Free Status");
   for (auto ele : DF->getFreedInSuccess()) {
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
       if (vinfo->isArgValue()) {
-        generateWarning(CI, "Is arg value");
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
           addFree(CI->getArgOperand(vinfo->getArgNumber()), CI, &B, false,
                   vinfo->getParents());
@@ -978,7 +979,7 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
 
   if (isa<ConstantInt>(ICI->getOperand(1))) {
     CallInst *CI = NULL;
-    generateWarning(I, "Compare with Int: Error Code", true);
+    generateWarning(I, "Compare with Int: Error Code");
     if (auto comValCI = dyn_cast<CallInst>(comVal)) {
       CI = comValCI;
     } else {
