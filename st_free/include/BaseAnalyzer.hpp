@@ -163,6 +163,7 @@ class BaseAnalyzer {
   Type *getStructType(Instruction *val);
   Value *getFreedValue(Instruction *val);
   Value *getAllocatedValue(Instruction *I);
+  bool isCallInstReturnValue(Value *V);
   /*** Support Methods ***/
   vector<long> getValueIndices(GetElementPtrInst *inst);
   GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);

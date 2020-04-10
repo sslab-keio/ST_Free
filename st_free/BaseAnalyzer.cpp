@@ -310,7 +310,7 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
 
     if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
                               B, info.freeValue, info.memType, info.index)) {
-      generateWarning(CI, "Adding Free Value");
+      generateWarning(CI, "Adding Free Value", true);
       ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
           B, NULL, info.memType, info.index, info.indexes);
 
@@ -1201,5 +1201,17 @@ void BaseAnalyzer::__recursiveReversePropagateErrorBlockFreeInfo(
     }
   }
   return;
+}
+
+bool BaseAnalyzer::isCallInstReturnValue(Value *V) {
+  Value* tgt_val = V;
+  if (auto LI = dyn_cast<LoadInst>(tgt_val)) {
+    tgt_val = LI->getPointerOperand();
+  }
+
+  if (auto CI = dyn_cast<CallInst>(tgt_val))
+    return true;
+
+  return false;
 }
 }  // namespace ST_free

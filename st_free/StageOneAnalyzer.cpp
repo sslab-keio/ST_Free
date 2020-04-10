@@ -203,6 +203,11 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
       int op = this->getErrorOperand(ICI);
       int errcode = 0;
 
+      if (!this->isCallInstReturnValue(ICI->getOperand(0))) {
+        generateWarning(I, "ICI operand is CallInst");
+        return;
+      }
+
       if (op >= 0) {
         BasicBlock *errBlock = BI->getSuccessor(op);
         this->getFunctionInformation()

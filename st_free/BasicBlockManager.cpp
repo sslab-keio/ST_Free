@@ -248,14 +248,14 @@ void BasicBlockManager::CollectInInfo(
     BBMap[B].setErrorHandlingBlock();
   }
 
-  // this->addFreeInfoFromDMZToPreds(B);
+  this->addFreeInfoFromDMZToPreds(B);
   for (BasicBlock *PredBB : predecessors(B)) {
     if (isFirst) {
       this->copyAllList(PredBB, B);
       isFirst = false;
     } else {
       this->uniteAllocList(PredBB, B);
-      // this->uniteDMZList(PredBB, B);
+      this->uniteDMZList(PredBB, B);
       this->intersectFreeList(PredBB, B);
       this->copyCorrectlyFreed(PredBB, B);
     }
@@ -491,6 +491,8 @@ bool BasicBlockManager::checkIfErrorBlock(BasicBlock *B) {
       if (this->getBasicBlockRemoveAllocList(PredBB, B).size() == 0) {
         if (!this->get(PredBB)->isErrorHandlingBlock()) tempErrorBlock = false;
       }
+    } else {
+      tempErrorBlock = false;
     }
   }
 
