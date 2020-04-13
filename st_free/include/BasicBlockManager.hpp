@@ -28,6 +28,11 @@ class BasicBlockWorkList {
 using LiveVariableList = vector<Value *>;
 class BasicBlockInformation {
  public:
+  enum BasicBlockInformationStat {
+    BASIC_BLOCK_STAT_UNANALYZED,
+    BASIC_BLOCK_STAT_ANALYZING,
+    BASIC_BLOCK_STAT_ANALYZED
+  };
   BasicBlockInformation();
   BasicBlockInformation(const BasicBlockInformation &);
   void initLists(const BasicBlockInformation &);
@@ -80,6 +85,17 @@ class BasicBlockInformation {
   BasicBlockWorkList getRemoveAllocs(BasicBlock *B);
   void setUnconditionalBranched() { unConditionalBranched = true; }
   bool isUnconditionalBranched() { return unConditionalBranched; }
+  /*** Status Information ***/
+  BasicBlockInformationStat getStatus() { return information_status; };
+  void setStatusToAnalyzing() {
+    information_status = BasicBlockInformationStat::BASIC_BLOCK_STAT_ANALYZING;
+  }
+  void setStatusToAnalyzed() {
+    information_status = BasicBlockInformationStat::BASIC_BLOCK_STAT_ANALYZED;
+  }
+  void setStatusToUnanalyzed() {
+    information_status = BasicBlockInformationStat::BASIC_BLOCK_STAT_UNANALYZED;
+  }
 
  private:
   /*** BasicBlock Lists ***/
@@ -98,6 +114,8 @@ class BasicBlockInformation {
   bool loopBlock;
   bool errorHandlingBlock;
   bool unConditionalBranched;
+  /*** BasicBlockInformation Status ***/
+  BasicBlockInformationStat information_status;
 };
 class BasicBlockManager {
  public:
@@ -111,8 +129,9 @@ class BasicBlockManager {
   BasicBlockList getBasicBlockRemoveAllocList(BasicBlock *src, BasicBlock *tgt);
   LiveVariableList getLiveVariables(BasicBlock *B);
   /*** Mediator ***/
-  void CollectInInfo(BasicBlock *B, bool isEntryPoint,
-                     const map<const UniqueKey *, const UniqueKey *> *alias_map);
+  void CollectInInfo(
+      BasicBlock *B, bool isEntryPoint,
+      const map<const UniqueKey *, const UniqueKey *> *alias_map);
   void copyAllList(BasicBlock *src, BasicBlock *tgt);
   void copyFreed(BasicBlock *src, BasicBlock *tgt);
   void copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt);

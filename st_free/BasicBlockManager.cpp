@@ -81,6 +81,7 @@ BasicBlockInformation::BasicBlockInformation() {
   loopBlock = false;
   errorHandlingBlock = false;
   unConditionalBranched = false;
+  information_status = BasicBlockInformationStat::BASIC_BLOCK_STAT_UNANALYZED;
 }
 
 BasicBlockInformation::BasicBlockInformation(
@@ -94,6 +95,7 @@ BasicBlockInformation::BasicBlockInformation(
   loopBlock = false;
   errorHandlingBlock = false;
   unConditionalBranched = false;
+  information_status = BasicBlockInformationStat::BASIC_BLOCK_STAT_UNANALYZED;
 }
 
 void BasicBlockInformation::initLists(const BasicBlockInformation &BStat) {

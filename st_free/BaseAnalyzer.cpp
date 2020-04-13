@@ -422,7 +422,7 @@ void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
 
 void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  generateWarning(CI,"Copy Free Status");
+  generateWarning(CI, "Copy Free Status");
   for (auto ele : DF->getFreedInSuccess()) {
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
       if (vinfo->isArgValue()) {
@@ -1204,13 +1204,12 @@ void BaseAnalyzer::__recursiveReversePropagateErrorBlockFreeInfo(
 }
 
 bool BaseAnalyzer::isCallInstReturnValue(Value *V) {
-  Value* tgt_val = V;
+  Value *tgt_val = V;
   if (auto LI = dyn_cast<LoadInst>(tgt_val)) {
     tgt_val = LI->getPointerOperand();
   }
 
-  if (auto CI = dyn_cast<CallInst>(tgt_val))
-    return true;
+  if (auto CI = dyn_cast<CallInst>(tgt_val)) return true;
 
   return false;
 }
