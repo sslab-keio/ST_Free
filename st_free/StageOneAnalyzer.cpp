@@ -204,31 +204,38 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
   if (BI->isConditional()) {
     generateWarning(I, "Calling is conditional");
     if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
-      int op = this->getErrorOperand(ICI);
-      int errcode = 0;
-
-      if (!this->isCallInstReturnValue(ICI->getOperand(0))) {
-        generateWarning(I, "ICI operand is CallInst");
-        return;
-      }
-
-      if (op >= 0) {
-        if (this->errorCodeExists(ICI, B, errcode)) {
+      if (this->isCallInstReturnValue(ICI->getOperand(0))) {
+        this->analyzeErrorCode(BI, ICI, B);
+      } else {
+        int op = this->getErrorOperand(ICI);
+        if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
           BasicBlock *errBlock = BI->getSuccessor(op);
-          this->getFunctionInformation()
-              ->getBasicBlockInformation(&B)
-              ->addSucceedingErrorBlock(errBlock);
-          BasicBlockWorkList allocated_on_err =
-              this->getErrorValues(ICI, B, errcode);
-          // 1. Get Allocated on Success
-          BasicBlockWorkList allocated_on_success =
-              this->getSuccessValues(ICI, B);
-          // 2. Success diff allocated_on_err is pure non allocated in err
-          BasicBlockList diff_list = BasicBlockListOperation::diffList(
-              allocated_on_success.getList(), allocated_on_err.getList());
-          // 3. add it to the list
-          for (auto ele : diff_list) {
-            generateWarning(I, "Remove alloc", true);
+          BasicBlockWorkList BList;
+          Value *comVal = this->getComparedValue(ICI);
+
+          ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
+          Type *Ty = this->getComparedType(comVal, B);
+          if (plist.size() > 0) {
+            if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
+              if (0 <= plist.back().second &&
+                  plist.back().second < StTy->getNumElements())
+                Ty = StTy->getElementType(plist.back().second);
+            }
+            BList.add(
+                this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+                    NULL, Ty, plist.back().second));
+          }
+
+          if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
+                                                                      ROOT_INDEX)) {
+            BList.add(
+                this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+                    NULL, Ty, ROOT_INDEX));
+          }
+          if (BList.getList().size() > 0)
+            generateWarning(I, "Simple NULL Check error path", true);
+          for (auto ele : BList.getList()) {
+            generateWarning(BI, "Remove alloc", true);
             this->getFunctionInformation()
                 ->getBasicBlockInformation(&B)
                 ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
@@ -329,8 +336,7 @@ void StageOneAnalyzer::checkAvailability() {
               freedStruct->getFreedBlock(), NULL, t, ind)) {
         generateWarning(
             freedStruct->getInst(),
-            "[INDEXED VERSION] Allocated(second) + ind :" + to_string(ind),
-            true);
+            "[INDEXED VERSION] Allocated(second) + ind :" + to_string(ind));
         getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
       }
 

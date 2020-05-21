@@ -976,6 +976,35 @@ ICmpInst *BaseAnalyzer::findAllocICmp(Instruction *I) {
   return icmp;
 }
 
+void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI, BasicBlock &B) {
+  int op = this->getErrorOperand(ICI);
+  int errcode = 0;
+
+  if (op >= 0) {
+    if (this->errorCodeExists(ICI, B, errcode)) {
+      BasicBlock *errBlock = BI->getSuccessor(op);
+      this->getFunctionInformation()
+          ->getBasicBlockInformation(&B)
+          ->addSucceedingErrorBlock(errBlock);
+      BasicBlockWorkList allocated_on_err =
+          this->getErrorValues(ICI, B, errcode);
+      // 1. Get Allocated on Success
+      BasicBlockWorkList allocated_on_success =
+          this->getSuccessValues(ICI, B);
+      // 2. Success diff allocated_on_err is pure non allocated in err
+      BasicBlockList diff_list = BasicBlockListOperation::diffList(
+          allocated_on_success.getList(), allocated_on_err.getList());
+      // 3. add it to the list
+      for (auto ele : diff_list) {
+        generateWarning(BI, "[ERROR] Remove alloc", true);
+        this->getFunctionInformation()
+            ->getBasicBlockInformation(&B)
+            ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
+      }
+    }
+  }
+}
+
 BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
                                                 int errcode) {
   BasicBlockWorkList BList;

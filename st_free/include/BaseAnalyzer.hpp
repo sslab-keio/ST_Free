@@ -118,8 +118,9 @@ class BaseAnalyzer {
   void copyAllocatedStatus(Function &Func, BasicBlock &B);
   void copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B);
   void evaluatePendingStoredValue(Function &Func, CallInst *CI, BasicBlock &B);
-  /*** Branch Instruction(Correctly Branched) ***/
+  /*** Branch Instruction(Error Code Analysis) ***/
   bool isCorrectlyBranched(BranchInst *BI);
+  void analyzeErrorCode(BranchInst *BI, ICmpInst *ICI, BasicBlock &B);
   BasicBlockWorkList getErrorValues(Instruction *I, BasicBlock &B, int errcode);
   BasicBlockWorkList getSuccessValues(Instruction *I, BasicBlock &B);
   bool errorCodeExists(Instruction *I, BasicBlock &B, int errcode);
