@@ -42,7 +42,7 @@ void BaseAnalyzer::analyze(Function &F) {
   }
 
   getFunctionInformation()->createBlockStatFromEndPoint();
-  // this->reversePropagateErrorBlockFreeInfo();
+  this->reversePropagateErrorBlockFreeInfo();
   this->checkAvailability();
   getFunctionInformation()->setAnalyzed();
 
@@ -151,6 +151,10 @@ void BaseAnalyzer::analyzeReturnInst(Instruction *I, BasicBlock &B) {
   if (RetTy->isIntegerTy()) {
     if (RI->getNumOperands() <= 0) return;
     Value *V = RI->getReturnValue();
+    if (auto Inst = dyn_cast<Instruction>(V)) {
+      generateWarning(
+          I, "[integer call]: " + string(I->getFunction()->getName()), true);
+    }
     this->checkErrorInstruction(V);
 
   } else if (RetTy->isPointerTy()) {
@@ -424,6 +428,7 @@ void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
   generateWarning(CI, "Copy Free Status");
   for (auto ele : DF->getFreedInSuccess()) {
+    generateWarning(CI, "Copying Free Status", true);
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
       if (vinfo->isArgValue()) {
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
@@ -1020,6 +1025,80 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
   }
   return BList;
 }
+BasicBlockWorkList BaseAnalyzer::getSuccessValues(Instruction *I, BasicBlock &B){
+  BasicBlockWorkList BList;
+  ICmpInst *ICI = cast<ICmpInst>(I);
+  Value *comVal = this->getComparedValue(ICI);
+
+  if (isa<ConstantInt>(ICI->getOperand(1))) {
+    CallInst *CI = NULL;
+    generateWarning(I, "Compare with Int: Error Code");
+    if (auto comValCI = dyn_cast<CallInst>(comVal)) {
+      CI = comValCI;
+    } else {
+      CI = this->getFunctionInformation()
+               ->getBasicBlockInformation(&B)
+               ->getCallInstForVal(comVal);
+    }
+    if (CI) {
+      generateWarning(CI, "Error Code");
+      for (auto ele : this->getSuccessAllocInCalledFunction(CI)) {
+        BList.add(ele);
+      }
+    }
+  } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
+    // generateWarning(I, "Compare with NULL: Look at allocation");
+    // ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
+    // Type *Ty = this->getComparedType(comVal, B);
+    // if (plist.size() > 0) {
+    //   if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
+    //     if (0 <= plist.back().second &&
+    //         plist.back().second < StTy->getNumElements())
+    //       Ty = StTy->getElementType(plist.back().second);
+    //   }
+    //   if (this->getFunctionInformation()->isAllocatedInBasicBlock(
+    //           &B, NULL, Ty, plist.back().second)) {
+    //     BList.add(
+    //         this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+    //             NULL, Ty, plist.back().second));
+    //   }
+    // }
+
+    // if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
+    //                                                             ROOT_INDEX)) {
+    //   BList.add(
+    //       this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+    //           NULL, Ty, ROOT_INDEX));
+    // }
+  }
+  return BList;
+}
+
+bool BaseAnalyzer::errorCodeExists(Instruction *I, BasicBlock &B, int errcode) {
+  ICmpInst *ICI = cast<ICmpInst>(I);
+  Value *comVal = this->getComparedValue(ICI);
+
+  if (isa<ConstantInt>(ICI->getOperand(1))) {
+    CallInst *CI = NULL;
+    generateWarning(I, "Compare with Int: Error Code");
+    if (auto comValCI = dyn_cast<CallInst>(comVal)) {
+      CI = comValCI;
+    } else {
+      CI = this->getFunctionInformation()
+               ->getBasicBlockInformation(&B)
+               ->getCallInstForVal(comVal);
+    }
+    if (CI) {
+      generateWarning(CI, "Error Code");
+      Function *DF = CI->getCalledFunction();
+      return this->getFunctionManager()->getElement(DF)->errorCodeExists(
+          errcode);
+    }
+  } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
+    return true;
+  }
+  return false;
+}
 
 Value *BaseAnalyzer::getComparedValue(ICmpInst *ICI) {
   return this->decodeComparedValue(ICI->getOperand(0));
@@ -1112,15 +1191,23 @@ BasicBlockList BaseAnalyzer::getErrorAllocInCalledFunction(CallInst *CI,
       errcode);
 }
 
+BasicBlockList BaseAnalyzer::getSuccessAllocInCalledFunction(CallInst *CI) {
+  Function *DF = CI->getCalledFunction();
+  generateWarning(CI, "Called Success");
+  return this->getFunctionManager()->getElement(DF)->getAllocatedInSuccess();
+}
+
 void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,
                                              Value *inval) {
   if (auto CInt = dyn_cast<ConstantInt>(inval)) {
     generateWarning(I, "Storing constant value to ret");
     int64_t errcode = CInt->getSExtValue();
-    if (errcode != NO_ERROR) {
-      generateWarning(I, "ERROR RETURN");
+    // if (errcode != NO_ERROR) {
+    if (errcode < NO_ERROR) {
+      generateWarning(I, "ERROR RETURN: " + to_string(errcode), true);
       getFunctionInformation()->addErrorBlock(errcode, B);
     }
+  } else if (auto CI = dyn_cast<CallInst>(inval)) {
   } else {
     // if (auto Inst = dyn_cast<Instruction>(inval)) {
     //     generateWarning(Inst, Inst->getOpcodeName());
@@ -1134,8 +1221,14 @@ void BaseAnalyzer::checkErrorInstruction(Value *V) {
   if (auto CInt = dyn_cast<Constant>(V)) {
     // generateWarning(RI, "Const Int");
   }
+  if (auto CI = dyn_cast<CallInst>(V)) {
+    generateWarning(CI, "[ERRORINST]: Call Inst", true);
+    if (CI->getCalledFunction()) {
+      generateWarning(CI, CI->getFunction()->getName(), true);
+    }
+  }
   if (auto LI = dyn_cast<LoadInst>(V)) {
-    generateWarning(LI, "Load Instruction");
+    generateWarning(LI, "[ERRORINST]: Load Instruction", true);
     for (auto usr : LI->getPointerOperand()->users()) {
       if (auto SI = dyn_cast<StoreInst>(usr)) {
         if (V != SI->getValueOperand())
@@ -1144,7 +1237,7 @@ void BaseAnalyzer::checkErrorInstruction(Value *V) {
       }
     }
   } else if (auto PHI = dyn_cast<PHINode>(V)) {
-    generateWarning(PHI, "PHINode Instruction");
+    generateWarning(PHI, "[ERRORINST]: PHINode Instruction", true);
     for (unsigned i = 0; i < PHI->getNumIncomingValues(); i++) {
       if (V != PHI->getIncomingValue(i))
         this->checkErrorCodeAndAddBlock(PHI, PHI->getIncomingBlock(i),
@@ -1194,9 +1287,15 @@ void BaseAnalyzer::__recursiveReversePropagateErrorBlockFreeInfo(
   for (BasicBlock *preds : predecessors(B)) {
     if (this->getFunctionInformation()
             ->getBasicBlockInformation(preds)
-            ->isErrorHandlingBlock()) {
+            ->isErrorHandlingBlock() &&
+        !this->getFunctionInformation()
+             ->getBasicBlockInformation(preds)
+             ->isReversePropagated()) {
       this->getFunctionInformation()->getBasicBlockManager()->copyFreed(B,
                                                                         preds);
+      this->getFunctionInformation()
+          ->getBasicBlockInformation(preds)
+          ->setReversePropagated();
       __recursiveReversePropagateErrorBlockFreeInfo(preds);
     }
   }

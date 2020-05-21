@@ -42,10 +42,13 @@ void FunctionInformation::createBlockStatFromEndPoint() {
       return_target_blocks.push_back(retBlock);
     }
     for (auto tgt_blocks : return_target_blocks) {
-      if (getBasicBlockInformation(tgt_blocks)->isErrorHandlingBlock()) {
-        // addErrorBlock();
-      } else {
+      if (!getBasicBlockInformation(tgt_blocks)->isErrorHandlingBlock() &&
+          !getBasicBlockInformation(tgt_blocks)
+               ->isInSucceedingErrorBlock(retBlock)) {
+        generateWarning(tgt_blocks->getFirstNonPHI(), "Is success block", true);
         addSuccessBlock(tgt_blocks);
+      } else {
+        // addErrorBlock();
       }
     }
   }
@@ -534,14 +537,22 @@ BasicBlockList FunctionInformation::getAllocatedInError(int errcode) {
     if (errcode == 0 || p.first == errcode) {
       BasicBlockList tmpBBL = BasicBlockListOperation::diffList(
           getAllocList(p.second), getFreeList(p.second));
-      for (auto endBlock : this->getEndPoint()) {
-        // tmpBBL = diffList(tmpBBL,
-        // getBasicBlockInformation(p.second)->getRemoveAllocs(endBlock).getList());
-      }
+      // for (auto endBlock : this->getEndPoint()) {
+      //   tmpBBL = diffList(tmpBBL,
+      //   getBasicBlockInformation(p.second)->getRemoveAllocs(endBlock).getList());
+      // }
       BBL = BasicBlockListOperation::uniteList(BBL, tmpBBL);
     }
   }
   return BBL;
+}
+bool FunctionInformation::errorCodeExists(int errcode) {
+  for (pair<int64_t, BasicBlock *> p : this->getErrorBlock()) {
+    if (p.first < errcode) {
+      return true;
+    }
+  }
+  return false;
 }
 
 BasicBlockList FunctionInformation::getFreedInReturn() {
@@ -559,8 +570,8 @@ BasicBlockList FunctionInformation::getFreedInSuccess() {
       collected_list = BasicBlockList(this->getFreeList(B));
       is_first = false;
     } else {
-      collected_list = BasicBlockListOperation::intersectList(
-          collected_list, this->getFreeList(B));
+      collected_list = BasicBlockListOperation::intersectList(collected_list,
+                                                          this->getFreeList(B));
     }
   }
   return collected_list;
@@ -589,7 +600,7 @@ BasicBlockList FunctionInformation::getPendingStoreInReturn() {
 }
 
 void FunctionInformation::setUniqueKeyAlias(const UniqueKey *src,
-    const UniqueKey *dest) {
+                                            const UniqueKey *dest) {
   if (allocated_alias.find(src) == allocated_alias.end()) {
     allocated_alias[src] = dest;
   } else {
@@ -598,6 +609,8 @@ void FunctionInformation::setUniqueKeyAlias(const UniqueKey *src,
 }
 
 const map<const UniqueKey *, const UniqueKey *>
-    *FunctionInformation::getUniqueKeyAliasMap() {return &allocated_alias;}
+    *FunctionInformation::getUniqueKeyAliasMap() {
+  return &allocated_alias;
+}
 
 }  // namespace ST_free

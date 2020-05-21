@@ -81,6 +81,7 @@ BasicBlockInformation::BasicBlockInformation() {
   loopBlock = false;
   errorHandlingBlock = false;
   unConditionalBranched = false;
+  reversepropagated = false;
   information_status = BasicBlockInformationStat::BASIC_BLOCK_STAT_UNANALYZED;
 }
 
@@ -95,6 +96,7 @@ BasicBlockInformation::BasicBlockInformation(
   loopBlock = false;
   errorHandlingBlock = false;
   unConditionalBranched = false;
+  reversepropagated = false;
   information_status = BasicBlockInformationStat::BASIC_BLOCK_STAT_UNANALYZED;
 }
 

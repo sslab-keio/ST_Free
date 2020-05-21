@@ -121,12 +121,15 @@ class BaseAnalyzer {
   /*** Branch Instruction(Correctly Branched) ***/
   bool isCorrectlyBranched(BranchInst *BI);
   BasicBlockWorkList getErrorValues(Instruction *I, BasicBlock &B, int errcode);
+  BasicBlockWorkList getSuccessValues(Instruction *I, BasicBlock &B);
+  bool errorCodeExists(Instruction *I, BasicBlock &B, int errcode);
   Value *getComparedValue(ICmpInst *ICI);
   Value *decodeComparedValue(Value *V);
   ParentList decodeErrorTypes(Value *V);
   Type *getComparedType(Value *V, BasicBlock &B);
   int getErrorOperand(ICmpInst *ICI);
   BasicBlockList getErrorAllocInCalledFunction(CallInst *CI, int errcode);
+  BasicBlockList getSuccessAllocInCalledFunction(CallInst *CI);
   void checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B, Value *inval);
   void checkErrorInstruction(Value *v);
   /*** Store Instruction related funtions ***/

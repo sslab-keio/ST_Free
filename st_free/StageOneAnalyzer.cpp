@@ -213,14 +213,26 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
       }
 
       if (op >= 0) {
-        BasicBlock *errBlock = BI->getSuccessor(op);
-        this->getFunctionInformation()
-            ->getBasicBlockInformation(&B)
-            ->addSucceedingErrorBlock(errBlock);
-        for (auto ele : this->getErrorValues(ICI, B, errcode).getList()) {
+        if (this->errorCodeExists(ICI, B, errcode)) {
+          BasicBlock *errBlock = BI->getSuccessor(op);
           this->getFunctionInformation()
               ->getBasicBlockInformation(&B)
-              ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
+              ->addSucceedingErrorBlock(errBlock);
+          BasicBlockWorkList allocated_on_err =
+              this->getErrorValues(ICI, B, errcode);
+          // 1. Get Allocated on Success
+          BasicBlockWorkList allocated_on_success =
+              this->getSuccessValues(ICI, B);
+          // 2. Success diff allocated_on_err is pure non allocated in err
+          BasicBlockList diff_list = BasicBlockListOperation::diffList(
+              allocated_on_success.getList(), allocated_on_err.getList());
+          // 3. add it to the list
+          for (auto ele : diff_list) {
+            generateWarning(I, "Remove alloc", true);
+            this->getFunctionInformation()
+                ->getBasicBlockInformation(&B)
+                ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
+          }
         }
       }
     } else if (CallInst *CI = dyn_cast<CallInst>(BI->getCondition())) {
@@ -313,16 +325,6 @@ void StageOneAnalyzer::checkAvailability() {
       if (!t->isPointerTy() || isFuncPointer(t) || alreadyFreed[ind]) continue;
 
       // Add to Allocated
-      // if
-      // (getFunctionInformation()->isAllocatedInBasicBlock(freedStruct->getFreedBlock(),
-      // NULL, t, ROOT_INDEX)) {
-      //     generateWarning(freedStruct->getInst(), "[NON VALUE] Allocated +
-      //     ind :" + to_string(ind), true);
-      //     getFunctionInformation()->setStructMemberAllocated(freedStruct,
-      //     ind);
-      // }
-
-      // Add to Allocated
       if (getFunctionInformation()->isAllocatedInBasicBlock(
               freedStruct->getFreedBlock(), NULL, t, ind)) {
         generateWarning(
@@ -332,27 +334,19 @@ void StageOneAnalyzer::checkAvailability() {
         getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
       }
 
-      // ValueInformation *vinfo_nulled =
-      // getFunctionInformation()->getValueInfo(NULL, t, ind); if (vinfo_nulled
-      // != NULL) {
       if (getFunctionInformation()->isFreedInBasicBlock(
               freedStruct->getFreedBlock(), NULL, t, ind) ||
           getFunctionInformation()->isCorrectlyBranchedFreeValue(
               freedStruct->getFreedBlock(), NULL, t, ind)) {
         getFunctionInformation()->setStructMemberFreed(freedStruct, ind);
-        // if (getFunctionInformation()->isArgValue(freedStruct->getValue())) {
-        //     getFunctionInformation()->setStructMemberArgFreed(vinfo->getValue(),
-        //     vinfo->getParents());
-        // }
       }
-      // }
     }
 
-    if (freedStruct->isInStruct() ||
-        !getFunctionInformation()->isArgValue(freedStruct->getValue())) {
-      getStructManager()->addCandidateValue(
-          &(getFunctionInformation()->getFunction()), strTy, freedStruct);
-    }
+    // if (freedStruct->isInStruct() ||
+    //     !getFunctionInformation()->isArgValue(freedStruct->getValue())) {
+    getStructManager()->addCandidateValue(
+        &(getFunctionInformation()->getFunction()), strTy, freedStruct);
+    // }
   }
   return;
 }

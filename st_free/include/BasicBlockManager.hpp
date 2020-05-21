@@ -85,6 +85,9 @@ class BasicBlockInformation {
   BasicBlockWorkList getRemoveAllocs(BasicBlock *B);
   void setUnconditionalBranched() { unConditionalBranched = true; }
   bool isUnconditionalBranched() { return unConditionalBranched; }
+  /*** ***/
+  bool isReversePropagated(){return reversepropagated;}
+  void setReversePropagated(){reversepropagated = true;}
   /*** Status Information ***/
   BasicBlockInformationStat getStatus() { return information_status; };
   void setStatusToAnalyzing() {
@@ -114,6 +117,7 @@ class BasicBlockInformation {
   bool loopBlock;
   bool errorHandlingBlock;
   bool unConditionalBranched;
+  bool reversepropagated;
   /*** BasicBlockInformation Status ***/
   BasicBlockInformationStat information_status;
 };

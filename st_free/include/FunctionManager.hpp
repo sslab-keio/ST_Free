@@ -131,6 +131,7 @@ struct FunctionInformation {
   BasicBlockList getAllocatedInReturn();
   BasicBlockList getAllocatedInSuccess();
   BasicBlockList getAllocatedInError(int errcode);
+  bool errorCodeExists(int errcode);
   /*** get Freed ***/
   BasicBlockList getFreedInReturn();
   BasicBlockList getFreedInSuccess();
