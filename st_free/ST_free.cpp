@@ -58,7 +58,7 @@ struct st_free : public ModulePass {
 
     /*** Main Warning Generator ***/
     StManage->BuildCandidateCount();
-    // StManage->print();
+    // StManage->PrintAsJson();
     StManage->checkCorrectness();
     return false;
   }

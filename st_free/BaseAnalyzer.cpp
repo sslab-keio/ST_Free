@@ -996,7 +996,7 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI, BasicBlock &B
           allocated_on_success.getList(), allocated_on_err.getList());
       // 3. add it to the list
       for (auto ele : diff_list) {
-        generateWarning(BI, "[ERROR] Remove alloc", true);
+        generateWarning(BI, "Remove alloc");
         this->getFunctionInformation()
             ->getBasicBlockInformation(&B)
             ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));

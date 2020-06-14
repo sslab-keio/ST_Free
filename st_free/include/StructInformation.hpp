@@ -104,6 +104,7 @@ class StructInformation {
   void setMemberStatNotAllocated(int num);
   void addCandidateValue(Function *F, FreedStruct *fs);
   void print();
+  void PrintJson();
   void BuildCandidateCount();
   void checkCorrectness();
   vector<CandidateValue *> getCandidateValue() { return candidates; };
@@ -152,6 +153,7 @@ class StructManager {
   void addStore(StructType *strTy, int ind);
   void addGlobalVarStore(StructType *strTy, int ind);
   void print();
+  void PrintAsJson();
   void BuildCandidateCount();
   void checkCorrectness();
   void addGlobalVariableInitInfo(Module &M);

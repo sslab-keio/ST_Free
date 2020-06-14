@@ -232,10 +232,9 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
                 this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
                     NULL, Ty, ROOT_INDEX));
           }
-          if (BList.getList().size() > 0)
-            generateWarning(I, "Simple NULL Check error path", true);
+          // if (BList.getList().size() > 0)
+          //   generateWarning(I, "Simple NULL Check error path");
           for (auto ele : BList.getList()) {
-            generateWarning(BI, "Remove alloc", true);
             this->getFunctionInformation()
                 ->getBasicBlockInformation(&B)
                 ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));

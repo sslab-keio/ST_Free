@@ -224,45 +224,51 @@ void StructInformation::print() {
   outs() << "=============================\n";
 }
 
-// void StructInformation::printjson(){
-//     if (strTy->hasName())
-//         outs() << "\"Struct\": \"" << strTy->getName() << "\"\n";
-//     outs() << "[Elements]\n";
-//     for(int ind = 0; ind < strTy->getNumElements(); ind++){
-//         outs() << "\t[" << ind << "]: " << *strTy->getElementType(ind) << "
-//         "; switch(memberStats[ind]){
-//             case ISRESPONSIBLE:
-//                 outs() << "ISRESPONSIBLE";
-//                 break;
-//             case ISNOTRESPONSIBLE:
-//                 outs() << "ISNOTRESPONSIBLE";
-//                 break;
-//             case ISUNKNOWN:
-//                 outs() << "ISUNKNOWN ";
-//                 if(this->judgeResponsibility(ind))
-//                     outs() << "(Judged Responsible)";
-//                 else
-//                     outs() << "(Judged Not Responsible)";
-//                 break;
-//             case NOTPOINTERTY:
-//                 outs() << "NOTPOINTERTY";
-//                 break;
-//             case UNALLOCATED:
-//                 outs() << "UNALLOCATED";
-//                 break;
-//             case PRIMITIVE:
-//                 outs() << "PRIMITIVE";
-//                 break;
-//             case SELF_DEREFERENCE:
-//                 outs() << "SELF_DEREFERENCE";
-//                 break;
-//             default:
-//                 outs() << "DEFAULT";
-//         }
-//         outs() << " [" << stc[ind].globalVar << "/" << stc[ind].total << "],
-//         " << freedCounts[ind] << "\n";
-//     }
-// }
+void StructInformation::PrintJson(){
+    if (!strTy->hasName())
+      return;
+    outs() << "{\n";
+    outs() << "\"StructName\": \"" << strTy->getName() << "\",\n";
+    outs() << "\"Members\": [\n";
+    for(int ind = 0; ind < strTy->getNumElements(); ind++){
+      outs() << "{\n";
+      outs() << "\"Type\": " << *strTy->getElementType(ind) << ", \n";
+      outs() << "\"Responsibility\": \"";
+      switch(memberStats[ind]){
+          case ISRESPONSIBLE:
+              outs() << "ISRESPONSIBLE";
+              break;
+          case ISNOTRESPONSIBLE:
+              outs() << "ISNOTRESPONSIBLE";
+              break;
+          case ISUNKNOWN:
+              outs() << "ISUNKNOWN ";
+              if(this->judgeResponsibility(ind))
+                  outs() << "(Judged Responsible)";
+              else
+                  outs() << "(Judged Not Responsible)";
+              break;
+          case NOTPOINTERTY:
+              outs() << "NOTPOINTERTY";
+              break;
+          case UNALLOCATED:
+              outs() << "UNALLOCATED";
+              break;
+          case PRIMITIVE:
+              outs() << "PRIMITIVE";
+              break;
+          case SELF_DEREFERENCE:
+              outs() << "SELF_DEREFERENCE";
+              break;
+          default:
+              outs() << "DEFAULT";
+      }
+      outs() << "\"\n";
+      outs() << "}, \n";
+    }
+    outs() << "]\n";
+    outs() << "},\n";
+}
 
 void StructInformation::addFunctionPtr(int ind, Function *func) {
   funcPtr[ind].push_back(func);
@@ -368,6 +374,16 @@ void StructManager::print() {
   for (auto Stmap : StructInfo) {
     Stmap.second->print();
   }
+}
+
+void StructManager::PrintAsJson() {
+  outs() << "======= Printing Struct Relationship as Json =======\n";
+  outs() << "[\n";
+  for (auto Stmap : StructInfo) {
+    Stmap.second->PrintJson();
+  }
+  outs() << "]\n";
+  outs() << "======= Printed Struct Relationship as Json =======\n";
 }
 
 void StructManager::BuildCandidateCount() {
