@@ -121,6 +121,8 @@ class BaseAnalyzer {
   /*** Branch Instruction(Error Code Analysis) ***/
   bool isCorrectlyBranched(BranchInst *BI);
   void analyzeErrorCode(BranchInst *BI, ICmpInst *ICI, BasicBlock &B);
+  void analyzeNullCheck(BranchInst *BI, ICmpInst *ICI, BasicBlock &B);
+  void analyzeErrorCheckFunction(BranchInst *BI, CallInst *CI, BasicBlock &B);
   BasicBlockWorkList getErrorValues(Instruction *I, BasicBlock &B, int errcode);
   BasicBlockWorkList getSuccessValues(Instruction *I, BasicBlock &B);
   bool errorCodeExists(Instruction *I, BasicBlock &B, int errcode);

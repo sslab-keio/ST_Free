@@ -1005,6 +1005,85 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI, BasicBlock &B
   }
 }
 
+void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI, BasicBlock &B){
+  int op = this->getErrorOperand(ICI);
+  BasicBlock *errBlock = BI->getSuccessor(op);
+  BasicBlockWorkList BList;
+  Value *comVal = this->getComparedValue(ICI);
+
+  ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
+  Type *Ty = this->getComparedType(comVal, B);
+  if (plist.size() > 0) {
+    if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
+      if (0 <= plist.back().second &&
+          plist.back().second < StTy->getNumElements())
+        Ty = StTy->getElementType(plist.back().second);
+    }
+    BList.add(
+        this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+            NULL, Ty, plist.back().second));
+  }
+
+  if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
+                                                              ROOT_INDEX)) {
+    BList.add(
+        this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+            NULL, Ty, ROOT_INDEX));
+  }
+  // if (BList.getList().size() > 0)
+  //   generateWarning(BI, "Simple NULL Check error path", true);
+  for (auto ele : BList.getList()) {
+    this->getFunctionInformation()
+        ->getBasicBlockInformation(&B)
+        ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
+  }
+}
+
+void BaseAnalyzer::analyzeErrorCheckFunction(BranchInst *BI, CallInst *CI, BasicBlock &B) {
+  generateWarning(CI, "Calling IS_ERR()");
+  BasicBlock *errBlock = BI->getSuccessor(0);
+  this->getFunctionInformation()
+      ->getBasicBlockInformation(&B)
+      ->addSucceedingErrorBlock(errBlock);
+
+  Value *tgt_val = CI->getArgOperand(0);
+  if (auto BCI = dyn_cast<BitCastInst>(tgt_val)) {
+    tgt_val = BCI->getOperand(0);
+  }
+  ParentList plist = this->decodeErrorTypes(tgt_val);
+  Type *Ty = this->getComparedType(decodeComparedValue(tgt_val), B);
+  if (plist.size() > 0) {
+    generateWarning(CI, "Calling IS_ERR(): plist");
+    if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
+      if (0 <= plist.back().second &&
+          plist.back().second < StTy->getNumElements())
+        Ty = StTy->getElementType(plist.back().second);
+    }
+    if (this->getFunctionInformation()->isAllocatedInBasicBlock(
+            &B, NULL, Ty, plist.back().second)) {
+      generateWarning(CI, "Calling IS_ERR(): plist found alloc");
+      this->getFunctionInformation()
+          ->getBasicBlockInformation(&B)
+          ->addRemoveAlloc(
+              errBlock,
+              const_cast<UniqueKey *>(
+                  this->getFunctionInformation()
+                      ->getUniqueKeyManager()
+                      ->getUniqueKey(NULL, Ty, plist.back().second)));
+    }
+  }
+  if (this->getFunctionInformation()->isAllocatedInBasicBlock(
+          errBlock, NULL, Ty, ROOT_INDEX)) {
+    this->getFunctionInformation()
+        ->getBasicBlockInformation(&B)
+        ->addRemoveAlloc(errBlock,
+                         const_cast<UniqueKey *>(
+                             this->getFunctionInformation()
+                                 ->getUniqueKeyManager()
+                                 ->getUniqueKey(NULL, Ty, ROOT_INDEX)));
+  }
+}
+
 BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
                                                 int errcode) {
   BasicBlockWorkList BList;

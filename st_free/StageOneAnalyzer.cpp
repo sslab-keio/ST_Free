@@ -206,85 +206,12 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
     if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
       if (this->isCallInstReturnValue(ICI->getOperand(0))) {
         this->analyzeErrorCode(BI, ICI, B);
-      } else {
-        int op = this->getErrorOperand(ICI);
-        if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
-          BasicBlock *errBlock = BI->getSuccessor(op);
-          BasicBlockWorkList BList;
-          Value *comVal = this->getComparedValue(ICI);
-
-          ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
-          Type *Ty = this->getComparedType(comVal, B);
-          if (plist.size() > 0) {
-            if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
-              if (0 <= plist.back().second &&
-                  plist.back().second < StTy->getNumElements())
-                Ty = StTy->getElementType(plist.back().second);
-            }
-            BList.add(
-                this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-                    NULL, Ty, plist.back().second));
-          }
-
-          if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
-                                                                      ROOT_INDEX)) {
-            BList.add(
-                this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-                    NULL, Ty, ROOT_INDEX));
-          }
-          // if (BList.getList().size() > 0)
-          //   generateWarning(I, "Simple NULL Check error path");
-          for (auto ele : BList.getList()) {
-            this->getFunctionInformation()
-                ->getBasicBlockInformation(&B)
-                ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
-          }
-        }
+      } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
+        this->analyzeNullCheck(BI, ICI, B);
       }
     } else if (CallInst *CI = dyn_cast<CallInst>(BI->getCondition())) {
       if (CI->getCalledFunction() && isIsErrFunction(CI->getCalledFunction())) {
-        generateWarning(CI, "Calling IS_ERR()");
-        BasicBlock *errBlock = BI->getSuccessor(0);
-        this->getFunctionInformation()
-            ->getBasicBlockInformation(&B)
-            ->addSucceedingErrorBlock(errBlock);
-
-        Value *tgt_val = CI->getArgOperand(0);
-        if (auto BCI = dyn_cast<BitCastInst>(tgt_val)) {
-          tgt_val = BCI->getOperand(0);
-        }
-        ParentList plist = this->decodeErrorTypes(tgt_val);
-        Type *Ty = this->getComparedType(decodeComparedValue(tgt_val), B);
-        if (plist.size() > 0) {
-          generateWarning(CI, "Calling IS_ERR(): plist");
-          if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
-            if (0 <= plist.back().second &&
-                plist.back().second < StTy->getNumElements())
-              Ty = StTy->getElementType(plist.back().second);
-          }
-          if (this->getFunctionInformation()->isAllocatedInBasicBlock(
-                  &B, NULL, Ty, plist.back().second)) {
-            generateWarning(CI, "Calling IS_ERR(): plist found alloc");
-            this->getFunctionInformation()
-                ->getBasicBlockInformation(&B)
-                ->addRemoveAlloc(
-                    errBlock,
-                    const_cast<UniqueKey *>(
-                        this->getFunctionInformation()
-                            ->getUniqueKeyManager()
-                            ->getUniqueKey(NULL, Ty, plist.back().second)));
-          }
-        }
-        if (this->getFunctionInformation()->isAllocatedInBasicBlock(
-                errBlock, NULL, Ty, ROOT_INDEX)) {
-          this->getFunctionInformation()
-              ->getBasicBlockInformation(&B)
-              ->addRemoveAlloc(errBlock,
-                               const_cast<UniqueKey *>(
-                                   this->getFunctionInformation()
-                                       ->getUniqueKeyManager()
-                                       ->getUniqueKey(NULL, Ty, ROOT_INDEX)));
-        }
+        this->analyzeErrorCheckFunction(BI, CI, B);
       }
     }
   } else {
