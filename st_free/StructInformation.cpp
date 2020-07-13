@@ -298,7 +298,9 @@ void StructInformation::changeToNonRefered(StructType *StTy) {
 
 /*** [Struct Manager] ***/
 StructManager::StructManager(vector<StructType *> st) {
-  for (StructType *StrTy : st) StructInfo[StrTy] = new StructInformation(StrTy);
+  for (StructType *StrTy : st) {
+    StructInfo[StrTy] = new StructInformation(StrTy);
+  }
   this->createDependencies();
   this->changeStats();
 }

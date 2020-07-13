@@ -16,7 +16,11 @@ add_library(StructFreeMod MODULE
     FreedStruct.cpp)
 #Use C++ 11 to compile our pass(i.e., supply - std = c++ 11).
 target_compile_features(StructFreeMod PRIVATE cxx_range_for cxx_auto_type)
-
+# if(OPENMP_FOUND)
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+# endif()
 #LLVM is(typically) built with no C++ RTTI.We need to match that;
 #otherwise, we'll get linker errors about missing RTTI data.
 set_target_properties(StructFreeMod PROPERTIES COMPILE_FLAGS "-fno-rtti")
