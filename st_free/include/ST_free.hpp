@@ -39,9 +39,9 @@
 #define ALLOCATED 1
 #define FREED 2
 
-#define UNANALYZED 1
-#define IN_PROGRESS 2
-#define ANALYZED 3
+// #define UNANALYZED 1
+// #define IN_PROGRESS 2
+// #define ANALYZED 3
 
 #define DEBUG_TYPE "st_free"
 

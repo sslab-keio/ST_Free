@@ -17,7 +17,7 @@ FunctionInformation::FunctionInformation(Function *Func) {
     F = Func;
     args = ArgList(Func->arg_size());
     args.setArgs(Func);
-    stat = UNANALYZED;
+    stat = AnalysisStat::UNANALYZED;
   }
 }
 
@@ -25,9 +25,9 @@ FunctionInformation::FunctionInformation() { stat = UNANALYZED; }
 
 Function &FunctionInformation::getFunction() { return (Function &)(*this->F); }
 
-int FunctionInformation::getStat() { return this->stat; }
+FunctionInformation::AnalysisStat FunctionInformation::getStat() { return this->stat; }
 
-void FunctionInformation::setStat(int stat) { this->stat = stat; }
+void FunctionInformation::setStat(AnalysisStat stat) { this->stat = stat; }
 
 void FunctionInformation::addEndPoint(BasicBlock *B) { endPoint.push_back(B); }
 
@@ -127,20 +127,28 @@ void FunctionInformation::addPendingArgAlloc(BasicBlock *B, UniqueKey *UK) {
 }
 
 bool FunctionInformation::isUnanalyzed() {
-  return getStat() == UNANALYZED ? true : false;
+  return stat == AnalysisStat::UNANALYZED ? true : false;
 }
 
 bool FunctionInformation::isInProgress() {
-  return getStat() == IN_PROGRESS ? true : false;
+  return (stat == AnalysisStat::IN_PROGRESS || stat == AnalysisStat::DIRTY)
+             ? true
+             : false;
+}
+
+bool FunctionInformation::isDirty() {
+  return stat == AnalysisStat::DIRTY ? true : false;
 }
 
 bool FunctionInformation::isAnalyzed() {
-  return getStat() == ANALYZED ? true : false;
+  return stat == AnalysisStat::ANALYZED ? true : false;
 }
 
-void FunctionInformation::setAnalyzed() { setStat(ANALYZED); }
+void FunctionInformation::setAnalyzed() { setStat(AnalysisStat::ANALYZED); }
 
-void FunctionInformation::setInProgress() { setStat(IN_PROGRESS); }
+void FunctionInformation::setInProgress() {
+  setStat(AnalysisStat::IN_PROGRESS);
+}
 
 void FunctionInformation::BBCollectInfo(BasicBlock &B, bool isEntryPoint) {
   BBManage.CollectInInfo(&B, isEntryPoint, this->getUniqueKeyAliasMap());
@@ -570,8 +578,8 @@ BasicBlockList FunctionInformation::getFreedInSuccess() {
       collected_list = BasicBlockList(this->getFreeList(B));
       is_first = false;
     } else {
-      collected_list = BasicBlockListOperation::intersectList(collected_list,
-                                                          this->getFreeList(B));
+      collected_list = BasicBlockListOperation::intersectList(
+          collected_list, this->getFreeList(B));
     }
   }
   return collected_list;

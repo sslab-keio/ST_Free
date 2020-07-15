@@ -48,12 +48,15 @@ struct FunctionInformation {
   void addAllocValue(BasicBlock *B, UniqueKey *UK);
   void addPendingArgAlloc(BasicBlock *B, Value *V, Type *T, long mem);
   void addPendingArgAlloc(BasicBlock *B, UniqueKey *UK);
+
   /*** Arg related ***/
   ArgList *getArgList() { return &args; }
+
   /*** Status Related ***/
   bool isUnanalyzed();
   bool isAnalyzed();
   bool isInProgress();
+  bool isDirty();
   void setAnalyzed();
   void setInProgress();
 
@@ -152,17 +155,13 @@ struct FunctionInformation {
   void setUniqueKeyAlias(const UniqueKey *src, const UniqueKey *dest);
   const map<const UniqueKey *, const UniqueKey *> *getUniqueKeyAliasMap();
 
-  /*** WorkList Algorithm Related Stats ***/
-  // void setDirty() { dirty = true; }
-  // void setClean() { dirty = false; }
-  // bool isDirty() { return dirty; }
-
  private:
-  // enum AnalysisStat { UNANALYZED, IN_PROGRESS, DIRTY, ANALYZED };
+  enum AnalysisStat { UNANALYZED, IN_PROGRESS, DIRTY, ANALYZED };
+
   /*** Private Variables ***/
   static UniqueKeyManager UKManage;
   Function *F;
-  int stat;
+  AnalysisStat stat;
   ArgList args;
   vector<BasicBlock *> endPoint;
   vector<BasicBlock *> successBlock;
@@ -177,9 +176,10 @@ struct FunctionInformation {
   Aliases aliasMap;
   map<const UniqueKey *, const UniqueKey *> allocated_alias;
   bool dirty;
+
   /*** Private Methods ***/
-  int getStat();
-  void setStat(int);
+  AnalysisStat getStat();
+  void setStat(AnalysisStat);
 };
 class FunctionManager {
  public:
