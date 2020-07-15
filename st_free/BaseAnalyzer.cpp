@@ -23,6 +23,7 @@ void BaseAnalyzer::analyze(Function &F) {
   getFunctionInformation()->setInProgress();
 
   for (BasicBlock &B : F) {
+    generateWarning(B.getFirstNonPHI(), B.getName(), true);
     getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
     getFunctionInformation()->setLoopBlock(B);
     this->analyzeInstructions(B);
@@ -976,7 +977,8 @@ ICmpInst *BaseAnalyzer::findAllocICmp(Instruction *I) {
   return icmp;
 }
 
-void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI, BasicBlock &B) {
+void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI,
+                                    BasicBlock &B) {
   int op = this->getErrorOperand(ICI);
   int errcode = 0;
 
@@ -989,8 +991,7 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI, BasicBlock &B
       BasicBlockWorkList allocated_on_err =
           this->getErrorValues(ICI, B, errcode);
       // 1. Get Allocated on Success
-      BasicBlockWorkList allocated_on_success =
-          this->getSuccessValues(ICI, B);
+      BasicBlockWorkList allocated_on_success = this->getSuccessValues(ICI, B);
       // 2. Success diff allocated_on_err is pure non allocated in err
       BasicBlockList diff_list = BasicBlockListOperation::diffList(
           allocated_on_success.getList(), allocated_on_err.getList());
@@ -1005,14 +1006,20 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI, BasicBlock &B
   }
 }
 
-void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI, BasicBlock &B){
+void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI,
+                                    BasicBlock &B) {
+  BasicBlockWorkList BList;
+
+  // Get which basicblock to pass the data to
   int op = this->getErrorOperand(ICI);
   BasicBlock *errBlock = BI->getSuccessor(op);
-  BasicBlockWorkList BList;
-  Value *comVal = this->getComparedValue(ICI);
 
-  ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
+  // decode compared type
+  Value *comVal = this->getComparedValue(ICI);
   Type *Ty = this->getComparedType(comVal, B);
+
+  // check if the value is struct or not
+  ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
   if (plist.size() > 0) {
     if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
       if (0 <= plist.back().second &&
@@ -1030,8 +1037,10 @@ void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI, BasicBlock &B
         this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
             NULL, Ty, ROOT_INDEX));
   }
-  // if (BList.getList().size() > 0)
-  //   generateWarning(BI, "Simple NULL Check error path", true);
+
+  if (BList.getList().size() > 0)
+    generateWarning(BI, "Simple NULL Check error path", true);
+
   for (auto ele : BList.getList()) {
     this->getFunctionInformation()
         ->getBasicBlockInformation(&B)
@@ -1039,7 +1048,8 @@ void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI, BasicBlock &B
   }
 }
 
-void BaseAnalyzer::analyzeErrorCheckFunction(BranchInst *BI, CallInst *CI, BasicBlock &B) {
+void BaseAnalyzer::analyzeErrorCheckFunction(BranchInst *BI, CallInst *CI,
+                                             BasicBlock &B) {
   generateWarning(CI, "Calling IS_ERR()");
   BasicBlock *errBlock = BI->getSuccessor(0);
   this->getFunctionInformation()
@@ -1065,22 +1075,21 @@ void BaseAnalyzer::analyzeErrorCheckFunction(BranchInst *BI, CallInst *CI, Basic
       this->getFunctionInformation()
           ->getBasicBlockInformation(&B)
           ->addRemoveAlloc(
-              errBlock,
-              const_cast<UniqueKey *>(
-                  this->getFunctionInformation()
-                      ->getUniqueKeyManager()
-                      ->getUniqueKey(NULL, Ty, plist.back().second)));
+              errBlock, const_cast<UniqueKey *>(
+                            this->getFunctionInformation()
+                                ->getUniqueKeyManager()
+                                ->getUniqueKey(NULL, Ty, plist.back().second)));
     }
   }
-  if (this->getFunctionInformation()->isAllocatedInBasicBlock(
-          errBlock, NULL, Ty, ROOT_INDEX)) {
+  if (this->getFunctionInformation()->isAllocatedInBasicBlock(errBlock, NULL,
+                                                              Ty, ROOT_INDEX)) {
     this->getFunctionInformation()
         ->getBasicBlockInformation(&B)
-        ->addRemoveAlloc(errBlock,
-                         const_cast<UniqueKey *>(
-                             this->getFunctionInformation()
-                                 ->getUniqueKeyManager()
-                                 ->getUniqueKey(NULL, Ty, ROOT_INDEX)));
+        ->addRemoveAlloc(
+            errBlock,
+            const_cast<UniqueKey *>(this->getFunctionInformation()
+                                        ->getUniqueKeyManager()
+                                        ->getUniqueKey(NULL, Ty, ROOT_INDEX)));
   }
 }
 
@@ -1133,7 +1142,8 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
   }
   return BList;
 }
-BasicBlockWorkList BaseAnalyzer::getSuccessValues(Instruction *I, BasicBlock &B){
+BasicBlockWorkList BaseAnalyzer::getSuccessValues(Instruction *I,
+                                                  BasicBlock &B) {
   BasicBlockWorkList BList;
   ICmpInst *ICI = cast<ICmpInst>(I);
   Value *comVal = this->getComparedValue(ICI);
@@ -1173,7 +1183,8 @@ BasicBlockWorkList BaseAnalyzer::getSuccessValues(Instruction *I, BasicBlock &B)
     // }
 
     // if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
-    //                                                             ROOT_INDEX)) {
+    //                                                             ROOT_INDEX))
+    //                                                             {
     //   BList.add(
     //       this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
     //           NULL, Ty, ROOT_INDEX));

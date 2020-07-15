@@ -318,7 +318,7 @@ void BasicBlockManager::removeAllocatedInError(
   BasicBlockWorkList remove_allocs = this->get(src)->getRemoveAllocs(tgt);
 
   generateWarning(tgt->getFirstNonPHI(), "Remove Alloc: " +
-  to_string(remove_allocs.getList().size()), true);
+  to_string(remove_allocs.getList().size()));
 
   for (auto ele : this->get(src)->getRemoveAllocs(tgt).getList()) {
     auto aliased_value = alias_map->find(ele);
@@ -328,19 +328,19 @@ void BasicBlockManager::removeAllocatedInError(
   }
 
   generateWarning(tgt->getFirstNonPHI(), "After Remove Alloc: " +
-  to_string(remove_allocs.getList().size()), true);
+  to_string(remove_allocs.getList().size()));
 
   BBMap[tgt].setAllocList(BasicBlockListOperation::diffList(
       this->getBasicBlockAllocList(tgt), remove_allocs.getList()));
-  // generateWarning(tgt->getFirstNonPHI(), "After Alloc: " +
-  // to_string(getBasicBlockAllocList(tgt).size()), true);
-  // generateWarning(tgt->getFirstNonPHI(), "Free: " +
-  // to_string(getBasicBlockFreeList(tgt).size()), true);
+  generateWarning(tgt->getFirstNonPHI(), "After Alloc: " +
+  to_string(getBasicBlockAllocList(tgt).size()), true);
+  generateWarning(tgt->getFirstNonPHI(), "Free: " +
+  to_string(getBasicBlockFreeList(tgt).size()), true);
   BBMap[tgt].setFreeList(BasicBlockListOperation::uniteList(
       this->getBasicBlockFreeList(tgt),
       remove_allocs.getList()));
-  // generateWarning(tgt->getFirstNonPHI(), "After Free: " +
-  // to_string(getBasicBlockFreeList(tgt).size()), true);
+  generateWarning(tgt->getFirstNonPHI(), "After Free: " +
+  to_string(getBasicBlockFreeList(tgt).size()), true);
   BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::diffList(
       this->getBasicBlockPendingAllocList(tgt),
       remove_allocs.getList()));
