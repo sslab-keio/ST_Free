@@ -230,9 +230,10 @@ void BasicBlockManager::CollectInInfo(
     BasicBlock *B, bool isEntryPoint,
     const map<const UniqueKey *, const UniqueKey *> *alias_map) {
   bool isFirst = true;
-  if (this->exists(B)) return;
 
   if (isEntryPoint) this->set(B);
+
+  BBMap[B].backupFreeAllocInformation();
 
   if (this->checkIfErrorBlock(B)) {
     generateWarning(B->getFirstNonPHI(), "Is error Block", true);
@@ -490,6 +491,25 @@ bool BasicBlockManager::checkIfErrorBlock(BasicBlock *B) {
   }
 
   return tempErrorBlock;
+}
+
+void BasicBlockInformation::backupFreeAllocInformation() {
+  BackupAllocList = BasicBlockWorkList(allocList);
+  BackupFreeList = BasicBlockWorkList(freeList);
+}
+
+void BasicBlockInformation::clearBackup() {
+  BackupAllocList = BasicBlockWorkList();
+  BackupFreeList = BasicBlockWorkList();
+}
+
+bool BasicBlockInformation::isInformationIdenticalToBackup() {
+  if (BackupFreeList.getList().size() != freeList.getList().size() ||
+      BackupAllocList.getList().size() != allocList.getList().size())
+    return false;
+
+  return BackupFreeList.getList() == freeList.getList() &&
+         BackupAllocList.getList() == allocList.getList();
 }
 
 BasicBlockList BasicBlockListOperation::intersectList(BasicBlockList src,

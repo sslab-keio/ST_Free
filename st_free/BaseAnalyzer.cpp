@@ -20,27 +20,37 @@ void BaseAnalyzer::analyze(Function &F) {
 
   if (!getFunctionInformation()->isUnanalyzed()) return;
 
-  getFunctionInformation()->setInProgress();
-
-  for (BasicBlock &B : F) {
-    generateWarning(B.getFirstNonPHI(), B.getName(), true);
-    getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
-    getFunctionInformation()->setLoopBlock(B);
-    this->analyzeInstructions(B);
-    getFunctionInformation()->updateSuccessorBlock(B);
-    // generateWarning(B.getFirstNonPHI(),
-    //                 "Free: " + to_string(getFunctionInformation()
-    //                                          ->getBasicBlockManager()
-    //                                          ->getBasicBlockFreeList(&B)
-    //                                          .size()),
-    //                 true);
-    // generateWarning(B.getFirstNonPHI(),
-    //                 "Alloc: " + to_string(getFunctionInformation()
-    //                                           ->getBasicBlockManager()
-    //                                           ->getBasicBlockAllocList(&B)
-    //                                           .size()),
-    //                 true);
-  }
+  int iterate_counter = 0;
+  do {
+    getFunctionInformation()->setInProgress();
+    for (BasicBlock &B : F) {
+      generateWarning(B.getFirstNonPHI(), B.getName(), true);
+      getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
+      getFunctionInformation()->setLoopBlock(B);
+      this->analyzeInstructions(B);
+      getFunctionInformation()->updateSuccessorBlock(B);
+      // generateWarning(B.getFirstNonPHI(),
+      //                 "Free: " + to_string(getFunctionInformation()
+      //                                          ->getBasicBlockManager()
+      //                                          ->getBasicBlockFreeList(&B)
+      //                                          .size()),
+      //                 true);
+      // generateWarning(B.getFirstNonPHI(),
+      //                 "Alloc: " + to_string(getFunctionInformation()
+      //                                           ->getBasicBlockManager()
+      //                                           ->getBasicBlockAllocList(&B)
+      //                                           .size()),
+      //                 true);
+      if (!getFunctionInformation()
+               ->getBasicBlockInformation(&B)
+               ->isInformationIdenticalToBackup()) {
+        generateWarning(B.getFirstNonPHI(), "Information not Identical", true);
+        getFunctionInformation()->getBasicBlockInformation(&B)->clearBackup();
+        getFunctionInformation()->setDirty();
+      }
+    }
+  } while (iterate_counter++ < WORKLIST_MAX_INTERATION &&
+           getFunctionInformation()->isDirty());
 
   getFunctionInformation()->createBlockStatFromEndPoint();
   this->reversePropagateErrorBlockFreeInfo();

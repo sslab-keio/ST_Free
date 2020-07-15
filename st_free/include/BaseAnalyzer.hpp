@@ -12,6 +12,8 @@
 #include "statList.hpp"
 #include "support_funcs.hpp"
 
+#define WORKLIST_MAX_INTERATION 3
+
 namespace ST_free {
 class BaseAnalyzer {
  public:

@@ -59,6 +59,7 @@ struct FunctionInformation {
   bool isDirty();
   void setAnalyzed();
   void setInProgress();
+  void setDirty();
 
   /*** BasicBlock Related ***/
   BasicBlockManager *getBasicBlockManager();

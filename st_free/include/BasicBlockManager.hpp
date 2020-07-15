@@ -78,6 +78,11 @@ class BasicBlockInformation {
   bool CorrectlyFreedValueExists(const UniqueKey *UK);
   BasicBlockWorkList getCorrectlyFreedValues() const;
 
+  /*** Worklist algorithm related ***/
+  void backupFreeAllocInformation();
+  void clearBackup();
+  bool isInformationIdenticalToBackup();
+
   /*** Utilities ***/
   BasicBlockWorkList getWorkList(int mode) const;
   LiveVariableList getLiveVariables() const;
@@ -89,7 +94,8 @@ class BasicBlockInformation {
   BasicBlockWorkList getRemoveAllocs(BasicBlock *B);
   void setUnconditionalBranched() { unConditionalBranched = true; }
   bool isUnconditionalBranched() { return unConditionalBranched; }
-  /*** ***/
+
+  /*** Reverse Propagation ***/
   bool isReversePropagated(){return reversepropagated;}
   void setReversePropagated(){reversepropagated = true;}
   /*** Status Information ***/
@@ -112,9 +118,15 @@ class BasicBlockInformation {
   BasicBlockWorkList correctlyFreed;
   BasicBlockWorkList dmzList;
   LiveVariableList liveVariables;
+
+  /*** Backup Lists to conduct worklist algorithm ***/
+  BasicBlockWorkList BackupFreeList;
+  BasicBlockWorkList BackupAllocList;
+
   vector<pair<Value *, CallInst *>> storedCallValues;
   map<BasicBlock *, BasicBlockWorkList> removeAllocs;
   vector<BasicBlock *> succeedingErrorBlocks;
+
   /*** BasicBlock Status ***/
   bool correctlyBranched;
   bool predCorrectlyBranched;
@@ -122,9 +134,11 @@ class BasicBlockInformation {
   bool errorHandlingBlock;
   bool unConditionalBranched;
   bool reversepropagated;
+
   /*** BasicBlockInformation Status ***/
   BasicBlockInformationStat information_status;
 };
+
 class BasicBlockManager {
  public:
   /*** getter ***/
@@ -166,4 +180,5 @@ BasicBlockList intersectList(BasicBlockList src, BasicBlockList tgt);
 BasicBlockList uniteList(BasicBlockList src, BasicBlockList tgt);
 BasicBlockList diffList(BasicBlockList src, BasicBlockList tgt);
 };  // namespace BasicBlockListOperation
+
 }  // namespace ST_free

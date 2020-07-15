@@ -150,6 +150,10 @@ void FunctionInformation::setInProgress() {
   setStat(AnalysisStat::IN_PROGRESS);
 }
 
+void FunctionInformation::setDirty() {
+  setStat(AnalysisStat::DIRTY);
+}
+
 void FunctionInformation::BBCollectInfo(BasicBlock &B, bool isEntryPoint) {
   BBManage.CollectInInfo(&B, isEntryPoint, this->getUniqueKeyAliasMap());
 }
