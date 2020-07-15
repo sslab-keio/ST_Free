@@ -9,6 +9,7 @@ namespace ST_free {
 using FreedStructList = vector<FreedStruct *>;
 using LocalVarList = vector<FreedStruct *>;
 using Aliases = map<Value *, Value *>;
+
 struct FunctionInformation {
  public:
   /*** Costructor ***/
@@ -43,7 +44,7 @@ struct FunctionInformation {
   FreedStructList getFreedStruct() const;
   bool freedStructExists(FreedStruct *fst);
   /** AllocValue Related ***/
-  const UniqueKey* addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
+  const UniqueKey *addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
   void addAllocValue(BasicBlock *B, UniqueKey *UK);
   void addPendingArgAlloc(BasicBlock *B, Value *V, Type *T, long mem);
   void addPendingArgAlloc(BasicBlock *B, UniqueKey *UK);
@@ -55,6 +56,7 @@ struct FunctionInformation {
   bool isInProgress();
   void setAnalyzed();
   void setInProgress();
+
   /*** BasicBlock Related ***/
   BasicBlockManager *getBasicBlockManager();
   BasicBlockInformation *getBasicBlockInformation(BasicBlock *B);
@@ -75,13 +77,15 @@ struct FunctionInformation {
   void setAlias(Value *srcinfo, Value *tgtinfo);
   bool aliasExists(Value *src);
   Value *getAlias(Value *src);
-  Aliases* getAliasMap() {return &aliasMap;};
+  Aliases *getAliasMap() { return &aliasMap; };
   // void copyCorrectlyFreedValueInLoop(BasicBlock &B);
   void updateSuccessorBlock(BasicBlock &B);
+
   /*** Loop Related ***/
   void setLoopInfo(LoopInfo *li);
   void setLoopBlock(BasicBlock &B);
   bool isLoopBlock(BasicBlock &B);
+
   /*** Argument Values ***/
   bool isArgValue(Value *V);
   long getArgIndex(Value *V);
@@ -97,11 +101,9 @@ struct FunctionInformation {
   void setStructMemberArgAllocated(Value *V, int64_t num);
   bool isArgFreed(int64_t num);
   bool isArgAllocated(int64_t num);
+
   /*** Individual Variable Informations ***/
   ValueInformation *addVariable(Value *val);
-  // ValueInformation * addVariable(Value * val, Type * memType, Type *parType,
-  // long num); ValueInformation * addVariable(const UniqueKey *UK, Value * val,
-  // Type * memType, Type *parType, long num);
   ValueInformation *addVariable(const UniqueKey *UK, Value *val,
                                 ParentList plist);
   // ValueInformation * getValueInfo(Value * val);
@@ -116,33 +118,47 @@ struct FunctionInformation {
   bool localVarExists(Type *);
   // void incrementRefCount(Value *V, Type *T, long mem, Value *ref);
   bool isLiveInBasicBlock(BasicBlock *B, Value *val);
+
   /*** Debugging ***/
   void printVal() { VManage.print(); }
+
   /*** Func Ptr related ***/
   void addFunctionPointerInfo(Value *val, Function *func);
   vector<Function *> getPointedFunctions(Value *val);
+
   /*** UniqueKeys ***/
   UniqueKeyManager *getUniqueKeyManager() { return &UKManage; }
+
   /*** Aliased Type ***/
   void addAliasedType(Value *V, Type *T);
   Type *getAliasedType(Value *V);
   bool aliasedTypeExists(Value *V);
+
   /*** get Allocated ***/
   BasicBlockList getAllocatedInReturn();
   BasicBlockList getAllocatedInSuccess();
   BasicBlockList getAllocatedInError(int errcode);
   bool errorCodeExists(int errcode);
+
   /*** get Freed ***/
   BasicBlockList getFreedInReturn();
   BasicBlockList getFreedInSuccess();
   BasicBlockList getFreedInError(int errcode);
+
   /*** get Freed ***/
   BasicBlockList getPendingStoreInReturn();
+
   /*** UniqueKey alias ***/
-  void setUniqueKeyAlias(const UniqueKey* src, const UniqueKey* dest);
-  const map<const UniqueKey*, const UniqueKey*>* getUniqueKeyAliasMap();
+  void setUniqueKeyAlias(const UniqueKey *src, const UniqueKey *dest);
+  const map<const UniqueKey *, const UniqueKey *> *getUniqueKeyAliasMap();
+
+  /*** WorkList Algorithm Related Stats ***/
+  // void setDirty() { dirty = true; }
+  // void setClean() { dirty = false; }
+  // bool isDirty() { return dirty; }
 
  private:
+  // enum AnalysisStat { UNANALYZED, IN_PROGRESS, DIRTY, ANALYZED };
   /*** Private Variables ***/
   static UniqueKeyManager UKManage;
   Function *F;
@@ -159,7 +175,8 @@ struct FunctionInformation {
   map<Value *, vector<Function *>> funcPtr;
   map<Value *, Type *> aliasedType;
   Aliases aliasMap;
-  map<const UniqueKey*, const UniqueKey*> allocated_alias;
+  map<const UniqueKey *, const UniqueKey *> allocated_alias;
+  bool dirty;
   /*** Private Methods ***/
   int getStat();
   void setStat(int);

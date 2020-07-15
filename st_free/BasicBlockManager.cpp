@@ -8,23 +8,10 @@ BasicBlockWorkList::BasicBlockWorkList(const BasicBlockList v) {
   MarkedValues = BasicBlockList(v);
 }
 
-// void BasicBlockWorkList::add(Value *v, Type * ty, long mem){
-//     UniqueKey uk(v, ty, mem);
-//     MarkedValues.push_back(uk);
-// }
-void BasicBlockWorkList::add(const UniqueKey *UK) {
-  MarkedValues.push_back(UK);
-}
-// bool BasicBlockWorkList::exists(Value * v, Type * ty, long mem){
-//     if(find(MarkedValues.begin(), MarkedValues.end(), UniqueKey(v, ty, mem))
-//     != MarkedValues.end())
-//         return true;
-//     return false;
-// }
+void BasicBlockWorkList::add(const UniqueKey *UK) { MarkedValues.insert(UK); }
 
 bool BasicBlockWorkList::exists(const UniqueKey *UK) {
-  if (find(MarkedValues.begin(), MarkedValues.end(), UK) != MarkedValues.end())
-    return true;
+  if (MarkedValues.find(UK) != MarkedValues.end()) return true;
   return false;
 }
 
@@ -317,8 +304,8 @@ void BasicBlockManager::removeAllocatedInError(
     const map<const UniqueKey *, const UniqueKey *> *alias_map) {
   BasicBlockWorkList remove_allocs = this->get(src)->getRemoveAllocs(tgt);
 
-  generateWarning(tgt->getFirstNonPHI(), "Remove Alloc: " +
-  to_string(remove_allocs.getList().size()));
+  generateWarning(tgt->getFirstNonPHI(),
+                  "Remove Alloc: " + to_string(remove_allocs.getList().size()));
 
   for (auto ele : this->get(src)->getRemoveAllocs(tgt).getList()) {
     auto aliased_value = alias_map->find(ele);
@@ -327,23 +314,25 @@ void BasicBlockManager::removeAllocatedInError(
     }
   }
 
-  generateWarning(tgt->getFirstNonPHI(), "After Remove Alloc: " +
-  to_string(remove_allocs.getList().size()));
+  generateWarning(
+      tgt->getFirstNonPHI(),
+      "After Remove Alloc: " + to_string(remove_allocs.getList().size()));
 
   BBMap[tgt].setAllocList(BasicBlockListOperation::diffList(
       this->getBasicBlockAllocList(tgt), remove_allocs.getList()));
-  generateWarning(tgt->getFirstNonPHI(), "After Alloc: " +
-  to_string(getBasicBlockAllocList(tgt).size()), true);
-  generateWarning(tgt->getFirstNonPHI(), "Free: " +
-  to_string(getBasicBlockFreeList(tgt).size()), true);
+  generateWarning(
+      tgt->getFirstNonPHI(),
+      "After Alloc: " + to_string(getBasicBlockAllocList(tgt).size()), true);
+  generateWarning(tgt->getFirstNonPHI(),
+                  "Free: " + to_string(getBasicBlockFreeList(tgt).size()),
+                  true);
   BBMap[tgt].setFreeList(BasicBlockListOperation::uniteList(
-      this->getBasicBlockFreeList(tgt),
-      remove_allocs.getList()));
-  generateWarning(tgt->getFirstNonPHI(), "After Free: " +
-  to_string(getBasicBlockFreeList(tgt).size()), true);
+      this->getBasicBlockFreeList(tgt), remove_allocs.getList()));
+  generateWarning(tgt->getFirstNonPHI(),
+                  "After Free: " + to_string(getBasicBlockFreeList(tgt).size()),
+                  true);
   BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::diffList(
-      this->getBasicBlockPendingAllocList(tgt),
-      remove_allocs.getList()));
+      this->getBasicBlockPendingAllocList(tgt), remove_allocs.getList()));
 }
 
 void BasicBlockManager::addFreeInfoFromDMZToPreds(BasicBlock *src) {
@@ -506,32 +495,39 @@ bool BasicBlockManager::checkIfErrorBlock(BasicBlock *B) {
 BasicBlockList BasicBlockListOperation::intersectList(BasicBlockList src,
                                                       BasicBlockList tgt) {
   BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
+  // llvm::sort(src.begin(), src.end());
+  // llvm::sort(tgt.begin(), tgt.end());
 
+  // set_intersection(src.begin(), src.end(), tgt.begin(), tgt.end(),
+  //                  back_inserter(tmp));
   set_intersection(src.begin(), src.end(), tgt.begin(), tgt.end(),
-                   back_inserter(tmp));
+                   inserter(tmp, tmp.end()));
   return tmp;
 }
 
 BasicBlockList BasicBlockListOperation::uniteList(BasicBlockList src,
                                                   BasicBlockList tgt) {
   BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
+  // llvm::sort(src.begin(), src.end());
+  // llvm::sort(tgt.begin(), tgt.end());
 
-  set_union(src.begin(), src.end(), tgt.begin(), tgt.end(), back_inserter(tmp));
+  // set_union(src.begin(), src.end(), tgt.begin(), tgt.end(),
+  // back_inserter(tmp));
+  set_union(src.begin(), src.end(), tgt.begin(), tgt.end(),
+            inserter(tmp, tmp.end()));
   return tmp;
 }
 
 BasicBlockList BasicBlockListOperation::diffList(BasicBlockList src,
                                                  BasicBlockList tgt) {
   BasicBlockList tmp;
-  llvm::sort(src.begin(), src.end());
-  llvm::sort(tgt.begin(), tgt.end());
+  // llvm::sort(src.begin(), src.end());
+  // llvm::sort(tgt.begin(), tgt.end());
 
+  // set_difference(src.begin(), src.end(), tgt.begin(), tgt.end(),
+  //                back_inserter(tmp));
   set_difference(src.begin(), src.end(), tgt.begin(), tgt.end(),
-                 back_inserter(tmp));
+                 inserter(tmp, tmp.end()));
   return tmp;
 }
 }  // namespace ST_free

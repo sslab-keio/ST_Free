@@ -4,12 +4,11 @@
 #include "ValueInformation.hpp"
 
 namespace ST_free {
-using BasicBlockList = vector<const UniqueKey *>;
+using BasicBlockList = set<const UniqueKey *>;
 class BasicBlockWorkList {
  public:
   BasicBlockWorkList();
   BasicBlockWorkList(const BasicBlockList);
-  // void add(Value * v, Type * t, long mem);
   void add(const UniqueKey *UK);
   bool exists(const UniqueKey *UK);
   bool typeExists(Type *T);
@@ -17,7 +16,6 @@ class BasicBlockWorkList {
   bool valueExists(Value *V);
   bool fieldExists(Type *T, long ind);
   const UniqueKey *getUKFromValue(Value *V);
-  // bool exists(Value * v, Type *t, long mem);
   BasicBlockList getList() const;
   void setList(BasicBlockList);
 
@@ -36,30 +34,36 @@ class BasicBlockInformation {
   BasicBlockInformation();
   BasicBlockInformation(const BasicBlockInformation &);
   void initLists(const BasicBlockInformation &);
+
   /*** Free Related Methods ***/
   // void addFree(Value * v, Type * ty, long mem);
   void addFree(const UniqueKey *UK);
   // bool FreeExists(Value *v, Type * ty, long mem);
   bool FreeExists(const UniqueKey *UK);
   void setFreeList(BasicBlockList);
+
   /*** Alloc Related Methods ***/
-  // void addAlloc(Value *v, Type * ty, long mem);
   void addAlloc(const UniqueKey *UK);
-  // bool AllocExists(Value *v, Type *ty, long mem);
   bool AllocExists(const UniqueKey *UK);
   void setAllocList(BasicBlockList);
+
+  /*** DMZJRelated Methods ***/
   void setDMZList(BasicBlockList);
   BasicBlockWorkList getDMZList() const;
+
+  /*** Pending Alloc Related Methods ***/
   void addPendingArgAlloc(const UniqueKey *UK);
   BasicBlockWorkList getPendingArgAllocList() const;
   void setPendingArgAllocList(BasicBlockList);
+
   /*** Live Variable Methods ***/
   void setLiveVariables(LiveVariableList);
   void addLiveVariable(Value *v);
   bool LiveVariableExists(Value *v);
   void incrementRefCount(Value *v);
   void decrementRefCount(Value *v);
-  /*** Correct Branch Freed Methods ***/
+
+  /*** Branch Related Methods ***/
   void setCorrectlyBranched();
   bool isCorrectlyBranched();
   void setLoopBlock();
@@ -68,12 +72,12 @@ class BasicBlockInformation {
   bool isErrorHandlingBlock();
   void addSucceedingErrorBlock(BasicBlock *B);
   bool isInSucceedingErrorBlock(BasicBlock *B);
+
   /*** CorrectlyFreed ***/
-  // void addCorrectlyFreedValue(Value * V, Type * T, long mem);
   void addCorrectlyFreedValue(const UniqueKey *UK);
-  // bool CorrectlyFreedValueExists(Value * V, Type * T, long mem);
   bool CorrectlyFreedValueExists(const UniqueKey *UK);
   BasicBlockWorkList getCorrectlyFreedValues() const;
+
   /*** Utilities ***/
   BasicBlockWorkList getWorkList(int mode) const;
   LiveVariableList getLiveVariables() const;
