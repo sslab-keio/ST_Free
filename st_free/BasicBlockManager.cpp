@@ -467,21 +467,17 @@ BasicBlockWorkList BasicBlockInformation::getRemoveAllocs(BasicBlock *B) {
 }
 
 bool BasicBlockManager::checkIfErrorBlock(BasicBlock *B) {
-  bool tempErrorBlock = true;
+  bool tempErrorBlock = false;
 
   for (BasicBlock *PredBB : predecessors(B)) {
-    if (this->exists(PredBB)) {
-      if (this->get(PredBB)->isInSucceedingErrorBlock(B)) {
-        tempErrorBlock = true;
-      }
+    if (!this->exists(PredBB)) continue;
 
-      if (this->getBasicBlockRemoveAllocList(PredBB, B).size() == 0 &&
-          !this->get(PredBB)->isErrorHandlingBlock()) {
-        tempErrorBlock = false;
-        break;
-      }
-    } else {
+    if (this->get(PredBB)->isInSucceedingErrorBlock(B)) tempErrorBlock = true;
+
+    if (this->getBasicBlockRemoveAllocList(PredBB, B).size() == 0 &&
+        !this->get(PredBB)->isErrorHandlingBlock()) {
       tempErrorBlock = false;
+      break;
     }
   }
 

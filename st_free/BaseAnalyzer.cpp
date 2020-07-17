@@ -347,7 +347,7 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
       if (!isAlias && !getFunctionInformation()->aliasExists(info.freeValue) &&
           info.memType && get_type(info.memType)->isStructTy() &&
           this->isAuthorityChained(info.indexes)) {
-        generateWarning(CI, "Add Freed Struct ");
+        generateWarning(CI, "Add Freed Struct");
         getFunctionInformation()->addFreedStruct(
             B, get_type(info.memType), info.freeValue, CI, info.parentType,
             valInfo, info.index != ROOT_INDEX);

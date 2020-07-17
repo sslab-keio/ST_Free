@@ -25,7 +25,9 @@ FunctionInformation::FunctionInformation() { stat = UNANALYZED; }
 
 Function &FunctionInformation::getFunction() { return (Function &)(*this->F); }
 
-FunctionInformation::AnalysisStat FunctionInformation::getStat() { return this->stat; }
+FunctionInformation::AnalysisStat FunctionInformation::getStat() {
+  return this->stat;
+}
 
 void FunctionInformation::setStat(AnalysisStat stat) { this->stat = stat; }
 
@@ -150,9 +152,7 @@ void FunctionInformation::setInProgress() {
   setStat(AnalysisStat::IN_PROGRESS);
 }
 
-void FunctionInformation::setDirty() {
-  setStat(AnalysisStat::DIRTY);
-}
+void FunctionInformation::setDirty() { setStat(AnalysisStat::DIRTY); }
 
 void FunctionInformation::BBCollectInfo(BasicBlock &B, bool isEntryPoint) {
   BBManage.CollectInInfo(&B, isEntryPoint, this->getUniqueKeyAliasMap());
@@ -182,7 +182,12 @@ void FunctionInformation::addFreedStruct(BasicBlock *B, Type *T, Value *V,
 }
 
 bool FunctionInformation::freedStructExists(FreedStruct *fst) {
-  if (find(freedStruct.begin(), freedStruct.end(), fst) != freedStruct.end())
+  if (find_if(freedStruct.begin(), freedStruct.end(),
+              [fst](const FreedStruct *v) {
+                return fst->getValue() == v->getValue() &&
+                       fst->getType() == v->getType() &&
+                       fst->getInst() == v->getInst();
+              }) != freedStruct.end())
     return true;
   return false;
 }
