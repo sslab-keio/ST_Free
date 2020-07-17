@@ -9,7 +9,6 @@ add_library(StructFreeMod MODULE
     BasicBlockManager.cpp
     ValueInformation.cpp
     StructInformation.cpp
-    LoopManager.cpp
     StageOneAnalyzer.cpp
     RelationshipInformation.cpp
     UniqueKeyManager.cpp

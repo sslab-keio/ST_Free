@@ -130,7 +130,7 @@ void StageTwoAnalyzer::checkAvailability() {
 }
 
 void StageTwoAnalyzer::analyzeDifferentFunc(Function &F) {
-  StageTwoAnalyzer called_function(&F, getStructManager(), getLoopManager());
+  StageTwoAnalyzer called_function(&F, getStructManager());
   called_function.analyze();
   return;
 }

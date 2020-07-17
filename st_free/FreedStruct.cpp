@@ -13,12 +13,4 @@ void FreedStruct::print() {
   return;
 }
 
-void FreedStruct::setStoredInLoop(int ind) {
-  if (ind < storedInLoop.size()) storedInLoop[ind] = true;
-}
-
-bool FreedStruct::isStoredInLoop(int ind) {
-  if (ind < storedInLoop.size()) return storedInLoop[ind];
-  return false;
-}
 }  // namespace ST_free

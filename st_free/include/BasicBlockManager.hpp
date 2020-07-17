@@ -66,8 +66,6 @@ class BasicBlockInformation {
   /*** Branch Related Methods ***/
   void setCorrectlyBranched();
   bool isCorrectlyBranched();
-  void setLoopBlock();
-  bool isLoopBlock();
   void setErrorHandlingBlock();
   bool isErrorHandlingBlock();
   void addSucceedingErrorBlock(BasicBlock *B);

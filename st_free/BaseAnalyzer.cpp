@@ -16,7 +16,6 @@ void BaseAnalyzer::analyzeAdditionalUnknowns(Function &F) {
 
 void BaseAnalyzer::analyze(Function &F) {
   setFunctionInformation(identifier.getElement(&F));
-  getFunctionInformation()->setLoopInfo(loopmap->get(&F));
 
   if (!getFunctionInformation()->isUnanalyzed()) return;
 
@@ -26,7 +25,6 @@ void BaseAnalyzer::analyze(Function &F) {
     for (BasicBlock &B : F) {
       generateWarning(B.getFirstNonPHI(), B.getName());
       getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
-      getFunctionInformation()->setLoopBlock(B);
       this->analyzeInstructions(B);
       getFunctionInformation()->updateSuccessorBlock(B);
       // generateWarning(B.getFirstNonPHI(),
@@ -226,8 +224,6 @@ void BaseAnalyzer::checkAvailability() {
           //     }
           // }
           // if(storedValueFreed){
-          //     generateWarning("Found Store In Loop\n");
-          //     freedStruct->setStoredInLoop(ind);
           //     cPointers--;
           // }
         }

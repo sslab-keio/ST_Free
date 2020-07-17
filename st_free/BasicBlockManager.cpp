@@ -116,10 +116,6 @@ void BasicBlockInformation::addFree(const UniqueKey *UK) { freeList.add(UK); }
 
 void BasicBlockInformation::setCorrectlyBranched() { correctlyBranched = true; }
 
-void BasicBlockInformation::setLoopBlock() { loopBlock = true; }
-
-bool BasicBlockInformation::isLoopBlock() { return loopBlock; }
-
 void BasicBlockInformation::setErrorHandlingBlock() {
   errorHandlingBlock = true;
 }

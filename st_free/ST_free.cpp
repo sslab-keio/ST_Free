@@ -2,7 +2,6 @@
 
 #include "include/BaseAnalyzer.hpp"
 #include "include/FunctionManager.hpp"
-#include "include/LoopManager.hpp"
 #include "include/StageOneAnalyzer.hpp"
 #include "include/StructInformation.hpp"
 #include "include/determinator.hpp"
@@ -18,33 +17,24 @@ struct st_free : public ModulePass {
   st_free() : ModulePass(ID) {}
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
-    AU.setPreservesAll();
-    AU.addRequired<LoopInfoWrapperPass>();
   }
 
   /*** Main Modular ***/
   bool runOnModule(Module &M) override {
     /*** Collect Struct Information ***/
     StructManager *StManage = new StructManager(M.getIdentifiedStructTypes());
-    LoopManager *loopmap = new LoopManager();
 
     // StManage->addGlobalVariableInitInfo(M);
 #if defined(STAGE_ONE) || defined(STAGE_PRIMITIVE)
     StageOneAnalyzer *analyze =
-        new StageOneAnalyzer(StManage, loopmap, &M.getDataLayout());
+        new StageOneAnalyzer(StManage, &M.getDataLayout());
 #elif defined(STAGE_TWO)
-    // StageTwoAnalyzer* analyze = new StageTwoAnalyzer(StManage, loopmap,
+    // StageTwoAnalyzer* analyze = new StageTwoAnalyzer(StManage, 
     // &M.getDataLayout());
 #else
     BaseAnalyzer *analyze =
-        new BaseAnalyzer(StManage, loopmap, &M.getDataLayout());
+        new BaseAnalyzer(StManage, &M.getDataLayout());
 #endif
-
-    /*** Generate LoopInformation ***/
-    for (Function &F : M) {
-      if (!(F.isDeclaration()))
-        loopmap->add(&F, &(getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo()));
-    }
 
     /*** Additional analysis for Checking force casts ***/
     for (Function &F : M) {

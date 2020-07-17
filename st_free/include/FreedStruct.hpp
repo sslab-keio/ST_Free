@@ -11,14 +11,12 @@ struct FreedStruct {
     V = val;
     I = Inst;
     FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
-    storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
   };
   FreedStruct(Type *Ty, Value *val, Instruction *Inst, ParentList P) {
     T = Ty;
     V = val;
     I = Inst;
     FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
-    storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
     ParentType = ParentList(P);
     valInfo = NULL;
   };
@@ -29,7 +27,6 @@ struct FreedStruct {
     I = Inst;
     FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
     AllocatedMembers = vector<bool>(Ty->getStructNumElements(), false);
-    storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
     valInfo = vinfo;
     freedBlock = freedB;
     inStruct = hasParent;
@@ -42,7 +39,6 @@ struct FreedStruct {
     I = Inst;
     FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
     AllocatedMembers = vector<bool>(Ty->getStructNumElements(), false);
-    storedInLoop = vector<bool>(Ty->getStructNumElements(), false);
     valInfo = vinfo;
     freedBlock = freedB;
     inStruct = hasParent;
@@ -75,8 +71,6 @@ struct FreedStruct {
     return ind < AllocatedMembers.size() ? AllocatedMembers[ind] : false;
   }
   unsigned memberSize() { return FreedMembers.size(); }
-  void setStoredInLoop(int ind);
-  bool isStoredInLoop(int ind);
   void print();
   /*** getter/setter ***/
   Type *getType() const { return T; }
@@ -105,7 +99,6 @@ struct FreedStruct {
   ParentList ParentType;
   Value *V;
   Instruction *I;
-  vector<bool> storedInLoop;
   vector<bool> FreedMembers;
   vector<bool> AllocatedMembers;
   ValueInformation *valInfo;

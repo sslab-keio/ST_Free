@@ -2,7 +2,6 @@
 #include "ArgList.hpp"
 #include "BasicBlockManager.hpp"
 #include "FunctionManager.hpp"
-#include "LoopManager.hpp"
 #include "RelationshipInformation.hpp"
 #include "ST_free.hpp"
 #include "StructInformation.hpp"
@@ -18,12 +17,9 @@ namespace ST_free {
 class BaseAnalyzer {
  public:
   BaseAnalyzer() {}
-  BaseAnalyzer(Function *func, StructManager *stm, LoopManager *lmap,
-               const DataLayout *dl) {
+  BaseAnalyzer(Function *func, StructManager *stm, const DataLayout *dl) {
     FEle = identifier.getElement(func);
-    loopmap = lmap;
     stManage = stm;
-    FEle->setLoopInfo(loopmap->get(func));
     dat_layout = dl;
     InstAnalysisMap[Instruction::Call] = &BaseAnalyzer::analyzeCallInst;
     InstAnalysisMap[Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
@@ -33,8 +29,7 @@ class BaseAnalyzer {
     InstAnalysisMap[Instruction::GetElementPtr] =
         &BaseAnalyzer::analyzeGetElementPtrInst;
   }
-  BaseAnalyzer(StructManager *stm, LoopManager *lmap, const DataLayout *dl) {
-    loopmap = lmap;
+  BaseAnalyzer(StructManager *stm, const DataLayout *dl) {
     stManage = stm;
     dat_layout = dl;
     InstAnalysisMap[Instruction::Call] = &BaseAnalyzer::analyzeCallInst;
@@ -68,7 +63,6 @@ class BaseAnalyzer {
   };
   /*** getter/setter ***/
   FunctionManager *getFunctionManager() { return &identifier; };
-  LoopManager *getLoopManager() { return loopmap; };
   FunctionInformation *getFunctionInformation() { return FEle; };
   void setFunctionInformation(FunctionInformation *FInfo) { FEle = FInfo; };
   StructManager *getStructManager() { return stManage; };
@@ -190,7 +184,6 @@ class BaseAnalyzer {
   void __recursiveReversePropagateErrorBlockFreeInfo(BasicBlock *B);
   /*** Managers and DataLayouts ***/
   FunctionManager identifier;
-  LoopManager *loopmap;
   StructManager *stManage;
   const DataLayout *dat_layout;
   /*** Current Function/ Stacked Functions ***/

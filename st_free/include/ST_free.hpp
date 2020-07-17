@@ -1,5 +1,4 @@
 #pragma once
-#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/Argument.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/CFG.h"
@@ -38,10 +37,6 @@
 #define NO_ALLOC 0
 #define ALLOCATED 1
 #define FREED 2
-
-// #define UNANALYZED 1
-// #define IN_PROGRESS 2
-// #define ANALYZED 3
 
 #define DEBUG_TYPE "st_free"
 

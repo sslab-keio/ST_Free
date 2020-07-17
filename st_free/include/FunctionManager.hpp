@@ -82,13 +82,7 @@ struct FunctionInformation {
   bool aliasExists(Value *src);
   Value *getAlias(Value *src);
   Aliases *getAliasMap() { return &aliasMap; };
-  // void copyCorrectlyFreedValueInLoop(BasicBlock &B);
   void updateSuccessorBlock(BasicBlock &B);
-
-  /*** Loop Related ***/
-  void setLoopInfo(LoopInfo *li);
-  void setLoopBlock(BasicBlock &B);
-  bool isLoopBlock(BasicBlock &B);
 
   /*** Argument Values ***/
   bool isArgValue(Value *V);
@@ -172,7 +166,6 @@ struct FunctionInformation {
   FreedStructList freedStruct;
   BasicBlockManager BBManage;
   ValueManager VManage;
-  LoopInfo *LoopI;
   map<Value *, vector<Function *>> funcPtr;
   map<Value *, Type *> aliasedType;
   Aliases aliasMap;

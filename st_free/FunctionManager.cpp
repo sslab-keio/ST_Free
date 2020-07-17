@@ -77,7 +77,7 @@ ValueInformation *FunctionInformation::addFreeValue(BasicBlock *B, Value *V,
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) {
     BInfo->addFree(UK);
-    if (BBManage.isPredBlockCorrectlyBranched(B) || BInfo->isLoopBlock()) {
+    if (BBManage.isPredBlockCorrectlyBranched(B)) {
       this->addCorrectlyFreedValue(B, UK);
     }
   }
@@ -453,30 +453,10 @@ bool FunctionInformation::isCorrectlyBranchedFreeValue(BasicBlock *B,
   if (BInfo) return BInfo->CorrectlyFreedValueExists(UK);
   return false;
 }
-void FunctionInformation::setLoopBlock(BasicBlock &B) {
-  BasicBlockInformation *BInfo = this->getBasicBlockInformation(&B);
-  if (LoopI->getLoopFor(&B)) {
-    if (BInfo) BInfo->setLoopBlock();
-  }
-}
-
-bool FunctionInformation::isLoopBlock(BasicBlock &B) {
-  BasicBlockInformation *BInfo = this->getBasicBlockInformation(&B);
-  if (BInfo) return BInfo->isLoopBlock();
-  return false;
-}
-
-// void FunctionInformation::copyCorrectlyFreedValueInLoop(BasicBlock &B){
-//     if(this->isLoopBlock(B)){
-//         BBManage.copyCorrectlyFreedToPrev(&B);
-//     }
-// }
 
 void FunctionInformation::updateSuccessorBlock(BasicBlock &B) {
   BBManage.updateSuccessorBlock(&B);
 }
-
-void FunctionInformation::setLoopInfo(LoopInfo *li) { LoopI = li; }
 
 void FunctionInformation::setAlias(Value *src, Value *tgt) {
   if (!this->aliasExists(tgt)) {

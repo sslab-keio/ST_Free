@@ -4,8 +4,8 @@
 namespace ST_free {
 class StageTwoAnalyzer : public BaseAnalyzer {
  public:
-  StageTwoAnalyzer(Function *func, StructManager *stm, LoopManager *lmap)
-      : BaseAnalyzer(func, stm, lmap){};
+  StageTwoAnalyzer(Function *func, StructManager *stm)
+      : BaseAnalyzer(func, stm){};
   void analyzeDifferentFunc(Function &F);
 
  protected:
