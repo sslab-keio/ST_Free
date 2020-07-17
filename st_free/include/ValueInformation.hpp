@@ -66,5 +66,6 @@ class ValueManager {
   void addValueInfo(const UniqueKey *UK, Value *val);
   void addValueInfo(const UniqueKey *UK, Value *val, ParentList plist);
   void print();
+  size_t getSize() {return vinfos.size();}
 };
 }  // namespace ST_free

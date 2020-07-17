@@ -125,6 +125,7 @@ struct FunctionInformation {
 
   /*** Debugging ***/
   void printVal() { VManage.print(); }
+  size_t getVManageSize() {return VManage.getSize(); }
 
   /*** Func Ptr related ***/
   void addFunctionPointerInfo(Value *val, Function *func);

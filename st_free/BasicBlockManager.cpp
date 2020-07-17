@@ -323,15 +323,14 @@ void BasicBlockManager::removeAllocatedInError(
       this->getBasicBlockAllocList(tgt), remove_allocs.getList()));
   generateWarning(
       tgt->getFirstNonPHI(),
-      "After Alloc: " + to_string(getBasicBlockAllocList(tgt).size()), true);
+      "After Alloc: " + to_string(getBasicBlockAllocList(tgt).size()));
   generateWarning(tgt->getFirstNonPHI(),
-                  "Free: " + to_string(getBasicBlockFreeList(tgt).size()),
-                  true);
+                  "Free: " + to_string(getBasicBlockFreeList(tgt).size()));
   BBMap[tgt].setFreeList(BasicBlockListOperation::uniteList(
       this->getBasicBlockFreeList(tgt), remove_allocs.getList()));
-  generateWarning(tgt->getFirstNonPHI(),
-                  "After Free: " + to_string(getBasicBlockFreeList(tgt).size()),
-                  true);
+  generateWarning(
+      tgt->getFirstNonPHI(),
+      "After Free: " + to_string(getBasicBlockFreeList(tgt).size()));
   BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::diffList(
       this->getBasicBlockPendingAllocList(tgt), remove_allocs.getList()));
 }
@@ -474,16 +473,16 @@ BasicBlockWorkList BasicBlockInformation::getRemoveAllocs(BasicBlock *B) {
 bool BasicBlockManager::checkIfErrorBlock(BasicBlock *B) {
   bool tempErrorBlock = true;
 
-  if (!(B->hasNPredecessorsOrMore(1))) tempErrorBlock = false;
-
   for (BasicBlock *PredBB : predecessors(B)) {
     if (this->exists(PredBB)) {
       if (this->get(PredBB)->isInSucceedingErrorBlock(B)) {
         tempErrorBlock = true;
-        break;
       }
-      if (this->getBasicBlockRemoveAllocList(PredBB, B).size() == 0) {
-        if (!this->get(PredBB)->isErrorHandlingBlock()) tempErrorBlock = false;
+
+      if (this->getBasicBlockRemoveAllocList(PredBB, B).size() == 0 &&
+          !this->get(PredBB)->isErrorHandlingBlock()) {
+        tempErrorBlock = false;
+        break;
       }
     } else {
       tempErrorBlock = false;

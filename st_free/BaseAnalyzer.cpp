@@ -24,7 +24,7 @@ void BaseAnalyzer::analyze(Function &F) {
   do {
     getFunctionInformation()->setInProgress();
     for (BasicBlock &B : F) {
-      generateWarning(B.getFirstNonPHI(), B.getName(), true);
+      generateWarning(B.getFirstNonPHI(), B.getName());
       getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
       getFunctionInformation()->setLoopBlock(B);
       this->analyzeInstructions(B);
@@ -44,7 +44,7 @@ void BaseAnalyzer::analyze(Function &F) {
       if (!getFunctionInformation()
                ->getBasicBlockInformation(&B)
                ->isInformationIdenticalToBackup()) {
-        generateWarning(B.getFirstNonPHI(), "Information not Identical", true);
+        generateWarning(B.getFirstNonPHI(), "Information not Identical");
         getFunctionInformation()->getBasicBlockInformation(&B)->clearBackup();
         getFunctionInformation()->setDirty();
       }
@@ -52,10 +52,16 @@ void BaseAnalyzer::analyze(Function &F) {
   } while (iterate_counter++ < WORKLIST_MAX_INTERATION &&
            getFunctionInformation()->isDirty());
 
+  getFunctionInformation()->printVal();
   getFunctionInformation()->createBlockStatFromEndPoint();
   this->reversePropagateErrorBlockFreeInfo();
   this->checkAvailability();
   getFunctionInformation()->setAnalyzed();
+
+//   outs() << "get freed in return " << F.getName() << "\n";
+//   for (auto ele : getFunctionInformation()->getFreedInReturn()) {
+//     ele->print();
+//   }
 
   return;
 }
@@ -437,11 +443,18 @@ void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
 
 void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  generateWarning(CI, "Copy Free Status");
-  for (auto ele : DF->getFreedInSuccess()) {
-    generateWarning(CI, "Copying Free Status", true);
+  generateWarning(CI, "Copy Free Status", true);
+  for (auto ele : DF->getFreedInReturn()) {
+    generateWarning(CI, Func.getName(), true);
+    generateWarning(
+        CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()),
+        true);
+    if (DF->getVManageSize() > 0)
+      DF->printVal();
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
+      generateWarning(CI, "Getting Value Info", true);
       if (vinfo->isArgValue()) {
+        generateWarning(CI, "Copying value", true);
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
           addFree(CI->getArgOperand(vinfo->getArgNumber()), CI, &B, false,
                   vinfo->getParents());

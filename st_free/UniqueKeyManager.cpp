@@ -3,8 +3,8 @@
 namespace ST_free {
 void UniqueKey::print() const {
   outs() << "== Unique Key Info ==\n";
-  outs() << "[Value]: " << *this->getValue() << "\n";
-  outs() << "[Type]: " << *this->getType() << "\n";
+  outs() << "[Value]: " << this->getValue() << "\n";
+  outs() << "[Type]: " << this->getType() << "\n";
   outs() << "[memberNum]: " << this->getNum() << "\n";
   outs() << "=====================\n";
 }
