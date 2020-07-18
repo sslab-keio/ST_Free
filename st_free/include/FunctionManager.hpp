@@ -15,16 +15,19 @@ struct FunctionInformation {
   /*** Costructor ***/
   FunctionInformation();
   FunctionInformation(Function *F);
+
   /*** Function ***/
   Function &getFunction();
+
   /*** EndPoints ***/
   void addEndPoint(BasicBlock *B);
   vector<BasicBlock *> getEndPoint() const;
-  void createBlockStatFromEndPoint();
   void addSuccessBlock(BasicBlock *B);
   vector<BasicBlock *> getSuccessBlock() const;
   void addErrorBlock(int64_t err, BasicBlock *B);
   vector<pair<int64_t, BasicBlock *>> getErrorBlock() const;
+  bool isErrorBlock(BasicBlock* B);
+
   /*** FreeValue Related ***/
   ValueInformation *addFreeValueFromDifferentFunction(BasicBlock *B,
                                                       ValueInformation *VI,

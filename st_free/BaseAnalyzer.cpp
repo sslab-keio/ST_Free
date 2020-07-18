@@ -50,17 +50,10 @@ void BaseAnalyzer::analyze(Function &F) {
   } while (iterate_counter++ < WORKLIST_MAX_INTERATION &&
            getFunctionInformation()->isDirty());
 
-  getFunctionInformation()->printVal();
-  getFunctionInformation()->createBlockStatFromEndPoint();
   this->reversePropagateErrorBlockFreeInfo();
   this->checkAvailability();
+
   getFunctionInformation()->setAnalyzed();
-
-//   outs() << "get freed in return " << F.getName() << "\n";
-//   for (auto ele : getFunctionInformation()->getFreedInReturn()) {
-//     ele->print();
-//   }
-
   return;
 }
 
@@ -171,9 +164,13 @@ void BaseAnalyzer::analyzeReturnInst(Instruction *I, BasicBlock &B) {
           I, "[integer call]: " + string(I->getFunction()->getName()), true);
     }
     this->checkErrorInstruction(V);
-
   } else if (RetTy->isPointerTy()) {
     // TODO: add support to pointers
+    generateWarning(I, "[RETURN]: No Error Code Analysis", true);
+    getFunctionInformation()->addSuccessBlock(&B);
+  } else {
+    generateWarning(I, "[RETURN]: No Error Code Analysis", true);
+    getFunctionInformation()->addSuccessBlock(&B);
   }
 
   return;
@@ -439,18 +436,16 @@ void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
 
 void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  generateWarning(CI, "Copy Free Status", true);
-  for (auto ele : DF->getFreedInReturn()) {
-    generateWarning(CI, Func.getName(), true);
+  generateWarning(CI, "Copy Free Status");
+  for (auto ele : DF->getFreedInSuccess()) {
     generateWarning(
-        CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()),
-        true);
+        CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()));
     if (DF->getVManageSize() > 0)
       DF->printVal();
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
-      generateWarning(CI, "Getting Value Info", true);
+      generateWarning(CI, "Getting Value Info");
       if (vinfo->isArgValue()) {
-        generateWarning(CI, "Copying value", true);
+        generateWarning(CI, "Copying value");
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
           addFree(CI->getArgOperand(vinfo->getArgNumber()), CI, &B, false,
                   vinfo->getParents());
@@ -1161,6 +1156,7 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
   }
   return BList;
 }
+
 BasicBlockWorkList BaseAnalyzer::getSuccessValues(Instruction *I,
                                                   BasicBlock &B) {
   BasicBlockWorkList BList;
@@ -1342,10 +1338,14 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,
     int64_t errcode = CInt->getSExtValue();
     // if (errcode != NO_ERROR) {
     if (errcode < NO_ERROR) {
-      generateWarning(I, "ERROR RETURN: " + to_string(errcode), true);
+      generateWarning(I, "[RETURN] ERR: " + to_string(errcode), true);
       getFunctionInformation()->addErrorBlock(errcode, B);
+    } else {
+      generateWarning(I, "[RETURN] SUCCESS: " + to_string(errcode), true);
+      getFunctionInformation()->addSuccessBlock(B);
     }
   } else if (auto CI = dyn_cast<CallInst>(inval)) {
+    // TODO: Add support for multiple Call Insts
   } else {
     // if (auto Inst = dyn_cast<Instruction>(inval)) {
     //     generateWarning(Inst, Inst->getOpcodeName());

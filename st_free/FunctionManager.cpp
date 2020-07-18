@@ -33,30 +33,6 @@ void FunctionInformation::setStat(AnalysisStat stat) { this->stat = stat; }
 
 void FunctionInformation::addEndPoint(BasicBlock *B) { endPoint.push_back(B); }
 
-void FunctionInformation::createBlockStatFromEndPoint() {
-  for (auto retBlock : this->getEndPoint()) {
-    vector<BasicBlock *> return_target_blocks;
-    if (retBlock->hasNPredecessorsOrMore(1)) {
-      for (auto predBlock : predecessors(retBlock)) {
-        return_target_blocks.push_back(predBlock);
-      }
-    } else {
-      return_target_blocks.push_back(retBlock);
-    }
-    for (auto tgt_blocks : return_target_blocks) {
-      if (!getBasicBlockInformation(tgt_blocks)->isErrorHandlingBlock() &&
-          !getBasicBlockInformation(tgt_blocks)
-               ->isInSucceedingErrorBlock(retBlock)) {
-        generateWarning(tgt_blocks->getFirstNonPHI(), "Is success block", true);
-        addSuccessBlock(tgt_blocks);
-      } else {
-        // addErrorBlock();
-      }
-    }
-  }
-  return;
-}
-
 void FunctionInformation::addSuccessBlock(BasicBlock *B) {
   successBlock.push_back(B);
 }
@@ -210,6 +186,16 @@ vector<BasicBlock *> FunctionInformation::getSuccessBlock() const {
 
 vector<pair<int64_t, BasicBlock *>> FunctionInformation::getErrorBlock() const {
   return errorBlock;
+}
+
+bool FunctionInformation::isErrorBlock(BasicBlock *B) {
+  if (find_if(errorBlock.begin(), errorBlock.end(),
+              [B](const pair<int64_t, BasicBlock *> ele) {
+                return B == ele.second;
+              }) != errorBlock.end()) {
+    return true;
+  }
+  return false;
 }
 
 FreedStructList FunctionInformation::getFreedStruct() const {
@@ -563,6 +549,7 @@ BasicBlockList FunctionInformation::getFreedInSuccess() {
   BasicBlockList collected_list;
   bool is_first = true;
   for (BasicBlock *B : this->getSuccessBlock()) {
+    generateWarning(B->getFirstNonPHI(), "getting Succesing block", true);
     if (is_first) {
       collected_list = BasicBlockList(this->getFreeList(B));
       is_first = false;
