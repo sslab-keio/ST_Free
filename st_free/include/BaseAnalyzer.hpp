@@ -129,6 +129,7 @@ class BaseAnalyzer {
   int getErrorOperand(ICmpInst *ICI);
   BasicBlockList getErrorAllocInCalledFunction(CallInst *CI, int errcode);
   BasicBlockList getSuccessAllocInCalledFunction(CallInst *CI);
+  void buildReturnValueInformation();
   void checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B, Value *inval);
   void checkErrorInstruction(Value *v);
   /*** Store Instruction related funtions ***/

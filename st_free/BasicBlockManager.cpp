@@ -118,8 +118,9 @@ BasicBlockList BasicBlockInformation::getFreeList() const {
 
 BasicBlockList BasicBlockInformation::getErrorRemovedAllocList(
     BasicBlock *tgt) {
-  return BasicBlockListOperation::diffList(allocList.getList(),
-                                           getRemoveAllocs(tgt).getList());
+  BasicBlockList tmp = BasicBlockListOperation::intersectList(
+      allocList.getList(), getRemoveAllocs(tgt).getList());
+  return BasicBlockListOperation::diffList(allocList.getList(), tmp);
 }
 
 BasicBlockList BasicBlockInformation::getErrorAddedFreeList(BasicBlock *tgt) {
@@ -352,14 +353,19 @@ void BasicBlockManager::removeAllocatedInError(
     }
   }
 
+  BasicBlockList tmpList = BasicBlockListOperation::intersectList(
+      this->getBasicBlockAllocList(tgt), remove_allocs.getList());
+
   BBMap[tgt].setAllocList(BasicBlockListOperation::diffList(
-      this->getBasicBlockAllocList(tgt), remove_allocs.getList()));
+      this->getBasicBlockAllocList(tgt), tmpList));
 
   BBMap[tgt].setFreeList(BasicBlockListOperation::uniteList(
       this->getBasicBlockFreeList(tgt), remove_allocs.getList()));
 
+  tmpList = BasicBlockListOperation::intersectList(
+      this->getBasicBlockPendingAllocList(tgt), remove_allocs.getList());
   BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::diffList(
-      this->getBasicBlockPendingAllocList(tgt), remove_allocs.getList()));
+      this->getBasicBlockPendingAllocList(tgt), tmpList));
 }
 
 void BasicBlockManager::shrinkFreedFromAlloc(BasicBlock *B) {

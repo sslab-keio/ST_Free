@@ -12,21 +12,24 @@ using Aliases = map<Value *, Value *>;
 
 struct FunctionInformation {
  public:
+  enum ErrorCollectionMethod { EQUALS, LESS_THAN };
+
   /*** Costructor ***/
-  FunctionInformation();
-  FunctionInformation(Function *F);
+  FunctionInformation(); FunctionInformation(Function *F);
 
   /*** Function ***/
   Function &getFunction();
 
   /*** EndPoints ***/
-  void addEndPoint(BasicBlock *B);
-  vector<BasicBlock *> getEndPoint() const;
-  void addSuccessBlock(BasicBlock *B);
-  vector<BasicBlock *> getSuccessBlock() const;
-  void addErrorBlock(int64_t err, BasicBlock *B);
-  vector<pair<int64_t, BasicBlock *>> getErrorBlock() const;
-  bool isErrorBlock(BasicBlock* B);
+  void addEndPoint(BasicBlock *B, ReturnInst *RI);
+  BasicBlock* getEndPoint();
+  ReturnInst* getReturnInst();
+
+  void addSuccessBlockInformation(BasicBlock *B);
+  void addErrorBlockInformation(int64_t err, BasicBlock *B);
+  void addErrorBlockAllocInformation(int64_t err, BasicBlockList BList);
+  void addErrorBlockFreeInformation(int64_t err, BasicBlockList BList);
+  void clearErrorCodeMap(){info_per_error_code = map<int64_t, InformationPerErrorCode>(); }
 
   /*** FreeValue Related ***/
   ValueInformation *addFreeValueFromDifferentFunction(BasicBlock *B,
@@ -139,13 +142,14 @@ struct FunctionInformation {
   /*** get Allocated ***/
   BasicBlockList getAllocatedInReturn();
   BasicBlockList getAllocatedInSuccess();
-  BasicBlockList getAllocatedInError(int errcode);
+  BasicBlockList getAllocatedInError(int errcode, ErrorCollectionMethod method = LESS_THAN);
   bool errorCodeExists(int errcode);
+  bool errorCodeLessThanExists(int errcode);
 
   /*** get Freed ***/
   BasicBlockList getFreedInReturn();
   BasicBlockList getFreedInSuccess();
-  BasicBlockList getFreedInError(int errcode);
+  BasicBlockList getFreedInError(int errcode, ErrorCollectionMethod method = LESS_THAN);
 
   /*** get Freed ***/
   BasicBlockList getPendingStoreInReturn();
@@ -156,13 +160,24 @@ struct FunctionInformation {
 
  private:
   enum AnalysisStat { UNANALYZED, IN_PROGRESS, DIRTY, ANALYZED };
+  struct InformationPerErrorCode {
+      BasicBlockList alloc_list;
+      BasicBlockList free_list;
+    public:
+      InformationPerErrorCode() {};
+      InformationPerErrorCode(BasicBlockList alloc, BasicBlockList free) {
+          alloc_list = alloc;
+          free_list = free;
+      }
+  };
 
   /*** Private Variables ***/
   static UniqueKeyManager UKManage;
   Function *F;
   AnalysisStat stat;
   ArgList args;
-  vector<BasicBlock *> endPoint;
+  BasicBlock * endPoint;
+  ReturnInst* retInst;
   vector<BasicBlock *> successBlock;
   vector<pair<int64_t, BasicBlock *>> errorBlock;
   LocalVarList localVariables;
@@ -175,10 +190,13 @@ struct FunctionInformation {
   map<const UniqueKey *, const UniqueKey *> allocated_alias;
   bool dirty;
 
+  map<int64_t, InformationPerErrorCode> info_per_error_code;
+
   /*** Private Methods ***/
   AnalysisStat getStat();
   void setStat(AnalysisStat);
 };
+
 class FunctionManager {
  public:
   bool exists(Function *);

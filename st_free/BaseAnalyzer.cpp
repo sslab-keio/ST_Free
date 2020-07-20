@@ -52,17 +52,16 @@ void BaseAnalyzer::analyze(Function &F) {
   } while (iterate_counter++ < WORKLIST_MAX_INTERATION &&
            getFunctionInformation()->isDirty());
 
-  this->reversePropagateErrorBlockFreeInfo();
+  // this->buildReturnValueInformation();
+  // this->reversePropagateErrorBlockFreeInfo();
   this->checkAvailability();
-
   getFunctionInformation()->setAnalyzed();
+
   return;
 }
 
 void BaseAnalyzer::analyzeInstructions(BasicBlock &B) {
   for (Instruction &I : B) {
-    if (this->isReturnFunc(&I)) getFunctionInformation()->addEndPoint(&B);
-
     if (InstAnalysisMap.find(I.getOpcode()) != InstAnalysisMap.end())
       (this->*InstAnalysisMap[I.getOpcode()])(&I, B);
   }
@@ -157,24 +156,22 @@ void BaseAnalyzer::analyzeBitCastInst(Instruction *I, BasicBlock &B) {
 void BaseAnalyzer::analyzeReturnInst(Instruction *I, BasicBlock &B) {
   ReturnInst *RI = cast<ReturnInst>(I);
 
-  Type *RetTy = B.getParent()->getReturnType();
+  getFunctionInformation()->addEndPoint(&B, RI);
+  getFunctionInformation()->clearErrorCodeMap();
+
+  Type *RetTy = getFunctionInformation()->getFunction().getReturnType();
   if (RetTy->isIntegerTy()) {
     if (RI->getNumOperands() <= 0) return;
     Value *V = RI->getReturnValue();
-    if (auto Inst = dyn_cast<Instruction>(V)) {
-      generateWarning(
-          I, "[integer call]: " + string(I->getFunction()->getName()));
-    }
     this->checkErrorInstruction(V);
   } else if (RetTy->isPointerTy()) {
     // TODO: add support to pointers
-    generateWarning(I, "[RETURN]: No Error Code Analysis");
-    getFunctionInformation()->addSuccessBlock(&B);
+    generateWarning(RI, "[RETURN]: No Error Code Analysis");
+    getFunctionInformation()->addSuccessBlockInformation(&B);
   } else {
-    generateWarning(I, "[RETURN]: No Error Code Analysis");
-    getFunctionInformation()->addSuccessBlock(&B);
+    generateWarning(RI, "[RETURN]: No Error Code Analysis");
+    getFunctionInformation()->addSuccessBlockInformation(&B);
   }
-
   return;
 }
 
@@ -468,13 +465,12 @@ void BaseAnalyzer::copyAllocatedStatus(Function &Func, BasicBlock &B) {
 
 void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  generateWarning(CI, "Copy Free Status");
+  generateWarning(CI, "Copy Free Status", true);
   for (auto ele : DF->getFreedInSuccess()) {
     generateWarning(
         CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()), true);
-    if (DF->getVManageSize() > 0) DF->printVal();
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
-      generateWarning(CI, "Getting Value Info", true);
+      generateWarning(CI, "Getting Value Info");
       if (vinfo->isArgValue()) {
         generateWarning(CI, "Copying value");
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
@@ -1025,6 +1021,9 @@ ICmpInst *BaseAnalyzer::findAllocICmp(Instruction *I) {
 void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI,
                                     BasicBlock &B) {
   int op = this->getErrorOperand(ICI);
+  CmpInst::Predicate pred = ICI->getPredicate();
+
+  // TODO: update to adjust errocode information
   int errcode = 0;
 
   if (op >= 0) {
@@ -1033,8 +1032,10 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI,
       this->getFunctionInformation()
           ->getBasicBlockInformation(&B)
           ->addSucceedingErrorBlock(errBlock);
+
       BasicBlockWorkList allocated_on_err =
           this->getErrorValues(ICI, B, errcode);
+
       // 1. Get Allocated on Success
       BasicBlockWorkList allocated_on_success = this->getSuccessValues(ICI, B);
       // 2. Success diff allocated_on_err is pure non allocated in err
@@ -1083,8 +1084,6 @@ void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI,
             NULL, Ty, ROOT_INDEX));
   }
 
-  // if (BList.getList().size() > 0)
-  //   generateWarning(BI, "Simple NULL Check error path", true);
   for (auto ele : BList.getList()) {
     this->getFunctionInformation()
         ->getBasicBlockInformation(&B)
@@ -1255,7 +1254,7 @@ bool BaseAnalyzer::errorCodeExists(Instruction *I, BasicBlock &B, int errcode) {
     if (CI) {
       generateWarning(CI, "Error Code");
       Function *DF = CI->getCalledFunction();
-      return this->getFunctionManager()->getElement(DF)->errorCodeExists(
+      return this->getFunctionManager()->getElement(DF)->errorCodeLessThanExists(
           errcode);
     }
   } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
@@ -1364,18 +1363,36 @@ BasicBlockList BaseAnalyzer::getSuccessAllocInCalledFunction(CallInst *CI) {
   return this->getFunctionManager()->getElement(DF)->getAllocatedInSuccess();
 }
 
+void BaseAnalyzer::buildReturnValueInformation() {
+  ReturnInst *RI = getFunctionInformation()->getReturnInst();
+  BasicBlock *B = getFunctionInformation()->getEndPoint();
+
+  Type *RetTy = getFunctionInformation()->getFunction().getReturnType();
+  if (RetTy->isIntegerTy()) {
+    if (RI->getNumOperands() <= 0) return;
+    Value *V = RI->getReturnValue();
+    this->checkErrorInstruction(V);
+  } else if (RetTy->isPointerTy()) {
+    // TODO: add support to pointers
+    generateWarning(RI, "[RETURN]: No Error Code Analysis");
+    getFunctionInformation()->addSuccessBlockInformation(B);
+  } else {
+    generateWarning(RI, "[RETURN]: No Error Code Analysis");
+    getFunctionInformation()->addSuccessBlockInformation(B);
+  }
+}
+
 void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,
                                              Value *inval) {
   if (auto CInt = dyn_cast<ConstantInt>(inval)) {
     generateWarning(I, "Storing constant value to ret");
     int64_t errcode = CInt->getSExtValue();
-    // if (errcode != NO_ERROR) {
     if (errcode < NO_ERROR) {
       generateWarning(I, "[RETURN] ERR: " + to_string(errcode), true);
-      getFunctionInformation()->addErrorBlock(errcode, B);
+      getFunctionInformation()->addErrorBlockInformation(errcode, B);
     } else {
       generateWarning(I, "[RETURN] SUCCESS: " + to_string(errcode), true);
-      getFunctionInformation()->addSuccessBlock(B);
+      getFunctionInformation()->addSuccessBlockInformation(B);
     }
   } else if (auto CI = dyn_cast<CallInst>(inval)) {
     // TODO: Add support for multiple Call Insts
@@ -1433,15 +1450,15 @@ bool BaseAnalyzer::isBidirectionalAlias(Value *V) {
 }
 
 void BaseAnalyzer::reversePropagateErrorBlockFreeInfo() {
-  for (auto err : this->getFunctionInformation()->getErrorBlock()) {
-    for (BasicBlock *preds : predecessors(err.second)) {
-      if (this->getFunctionInformation()->getBasicBlockInformation(preds) &&
-          this->getFunctionInformation()
-              ->getBasicBlockInformation(preds)
-              ->isErrorHandlingBlock())
-        __recursiveReversePropagateErrorBlockFreeInfo(preds);
-    }
-  }
+  // for (auto err : this->getFunctionInformation()->getErrorBlock()) {
+  //   for (BasicBlock *preds : predecessors(err.second)) {
+  //     if (this->getFunctionInformation()->getBasicBlockInformation(preds) &&
+  //         this->getFunctionInformation()
+  //             ->getBasicBlockInformation(preds)
+  //             ->isErrorHandlingBlock())
+  //       __recursiveReversePropagateErrorBlockFreeInfo(preds);
+  //   }
+  // }
   // for (BasicBlock *retBlock :
   // this->getFunctionInformation()->getEndPoint())
   // {

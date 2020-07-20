@@ -31,14 +31,54 @@ FunctionInformation::AnalysisStat FunctionInformation::getStat() {
 
 void FunctionInformation::setStat(AnalysisStat stat) { this->stat = stat; }
 
-void FunctionInformation::addEndPoint(BasicBlock *B) { endPoint.push_back(B); }
-
-void FunctionInformation::addSuccessBlock(BasicBlock *B) {
-  successBlock.push_back(B);
+void FunctionInformation::addEndPoint(BasicBlock *B, ReturnInst *RI) {
+  endPoint = B;
+  retInst = RI;
 }
 
-void FunctionInformation::addErrorBlock(int64_t errcode, BasicBlock *B) {
-  errorBlock.push_back(pair<int64_t, BasicBlock *>(errcode, B));
+void FunctionInformation::addSuccessBlockInformation(BasicBlock *B) {
+  if (!errorCodeExists(0)) {
+    info_per_error_code[0] =
+        InformationPerErrorCode(getAllocList(B), getFreeList(B));
+  } else {
+    addErrorBlockAllocInformation(0, getAllocList(B));
+    addErrorBlockFreeInformation(0, getFreeList(B));
+  }
+}
+
+void FunctionInformation::addErrorBlockInformation(int64_t errcode,
+                                                   BasicBlock *B) {
+  if (!errorCodeExists(errcode)) {
+    info_per_error_code[errcode] =
+        InformationPerErrorCode(getAllocList(B), getFreeList(B));
+  } else {
+    addErrorBlockAllocInformation(errcode, getAllocList(B));
+    addErrorBlockFreeInformation(errcode, getFreeList(B));
+  }
+}
+
+void FunctionInformation::addErrorBlockAllocInformation(int64_t errcode,
+                                                        BasicBlockList BList) {
+  if (!errorCodeExists(errcode)) {
+    info_per_error_code[errcode] =
+        InformationPerErrorCode(BList, BasicBlockList());
+  } else {
+    info_per_error_code[errcode].alloc_list =
+        BasicBlockListOperation::uniteList(
+            info_per_error_code[errcode].alloc_list, BList);
+  }
+}
+
+void FunctionInformation::addErrorBlockFreeInformation(int64_t errcode,
+                                                       BasicBlockList BList) {
+  if (!errorCodeExists(errcode)) {
+    info_per_error_code[errcode] =
+        InformationPerErrorCode(BasicBlockList(), BList);
+  } else {
+    info_per_error_code[errcode].free_list =
+        BasicBlockListOperation::intersectList(
+            info_per_error_code[errcode].free_list, BList);
+  }
 }
 
 ValueInformation *FunctionInformation::addFreeValue(BasicBlock *B, Value *V,
@@ -47,7 +87,6 @@ ValueInformation *FunctionInformation::addFreeValue(BasicBlock *B, Value *V,
   const UniqueKey *UK =
       this->getUniqueKeyManager()->getUniqueKey(V, memTy, num);
   if (UK == NULL) UK = this->getUniqueKeyManager()->addUniqueKey(V, memTy, num);
-  UK->print();
 
   ValueInformation *varinfo = this->getValueInfo(UK);
   if (varinfo == NULL) varinfo = this->addVariable(UK, V, plist);
@@ -177,27 +216,9 @@ void FunctionInformation::addParentType(Type *T, Value *V, Instruction *I,
     (*fVal)->addParent(parentTy, ind);
 }
 
-vector<BasicBlock *> FunctionInformation::getEndPoint() const {
-  return endPoint;
-}
+BasicBlock *FunctionInformation::getEndPoint() { return endPoint; }
 
-vector<BasicBlock *> FunctionInformation::getSuccessBlock() const {
-  return successBlock;
-}
-
-vector<pair<int64_t, BasicBlock *>> FunctionInformation::getErrorBlock() const {
-  return errorBlock;
-}
-
-bool FunctionInformation::isErrorBlock(BasicBlock *B) {
-  if (find_if(errorBlock.begin(), errorBlock.end(),
-              [B](const pair<int64_t, BasicBlock *> ele) {
-                return B == ele.second;
-              }) != errorBlock.end()) {
-    return true;
-  }
-  return false;
-}
+ReturnInst *FunctionInformation::getReturnInst() { return retInst; }
 
 FreedStructList FunctionInformation::getFreedStruct() const {
   return freedStruct;
@@ -500,88 +521,71 @@ bool FunctionInformation::aliasedTypeExists(Value *V) {
 }
 
 BasicBlockList FunctionInformation::getAllocatedInReturn() {
-  for (BasicBlock *B : this->getEndPoint()) {
-    return this->getAllocList(B);
-  }
-  return BasicBlockList();
+  return this->getAllocList(this->getEndPoint());
 }
 
 BasicBlockList FunctionInformation::getAllocatedInSuccess() {
-  BasicBlockList collected_list;
-  for (BasicBlock *B : this->getSuccessBlock()) {
-    collected_list = BasicBlockListOperation::uniteList(collected_list,
-                                                        this->getAllocList(B));
-  }
-  return collected_list;
+  return info_per_error_code[0].alloc_list;
 }
 
-BasicBlockList FunctionInformation::getAllocatedInError(int errcode) {
-  BasicBlockList BBL = BasicBlockList();
-  for (pair<int64_t, BasicBlock *> p : this->getErrorBlock()) {
-    if (errcode == 0 || p.first == errcode) {
-      BasicBlockList tmpBBL = BasicBlockListOperation::diffList(
-          getAllocList(p.second), getFreeList(p.second));
-      // for (auto endBlock : this->getEndPoint()) {
-      //   tmpBBL = diffList(tmpBBL,
-      //   getBasicBlockInformation(p.second)->getRemoveAllocs(endBlock).getList());
-      // }
-      BBL = BasicBlockListOperation::uniteList(BBL, tmpBBL);
+BasicBlockList FunctionInformation::getAllocatedInError(
+    int errcode, ErrorCollectionMethod method) {
+  BasicBlockList collected_info;
+  for (auto code_info : info_per_error_code) {
+    if ((method == EQUALS && code_info.first == errcode) ||
+        (method == LESS_THAN && code_info.first < errcode)) {
+      code_info.second.alloc_list = BasicBlockListOperation::uniteList(
+          collected_info, code_info.second.alloc_list);
     }
   }
-  return BBL;
+  return collected_info;
 }
+
 bool FunctionInformation::errorCodeExists(int errcode) {
-  for (pair<int64_t, BasicBlock *> p : this->getErrorBlock()) {
-    if (p.first < errcode) {
-      return true;
-    }
-  }
+  if (info_per_error_code.find(errcode) != info_per_error_code.end())
+    return true;
+  return false;
+}
+
+bool FunctionInformation::errorCodeLessThanExists(int errcode) {
+  if (find_if(info_per_error_code.begin(), info_per_error_code.end(),
+              [errcode](const pair<int64_t, InformationPerErrorCode> info) {
+                return info.first < errcode;
+              }) != info_per_error_code.end())
+    return true;
   return false;
 }
 
 BasicBlockList FunctionInformation::getFreedInReturn() {
-  for (BasicBlock *B : this->getEndPoint()) {
-    return this->getFreeList(B);
-  }
-  return BasicBlockList();
+  return this->getFreeList(this->getEndPoint());
 }
 
 BasicBlockList FunctionInformation::getFreedInSuccess() {
-  BasicBlockList collected_list;
-  bool is_first = true;
-  for (BasicBlock *B : this->getSuccessBlock()) {
-    generateWarning(B->getFirstNonPHI(), "getting Succesing block");
-    if (is_first) {
-      collected_list = BasicBlockList(this->getFreeList(B));
-      is_first = false;
-    } else {
-      collected_list = BasicBlockListOperation::intersectList(
-          collected_list, this->getFreeList(B));
-    }
-  }
-  return collected_list;
+  return info_per_error_code[0].free_list;
 }
 
-BasicBlockList FunctionInformation::getFreedInError(int errcode) {
-  BasicBlockList BBL = BasicBlockList();
-  for (pair<int64_t, BasicBlock *> p : this->getErrorBlock()) {
-    if (errcode == 0 || p.first == errcode) {
-      // BasicBlockList tmpBBL = diffList(getFreeList(p.second),
-      // getFreeList(p.second)); for (auto endBlock:this->getEndPoint()) {
-      //     // tmpBBL = diffList(tmpBBL,
-      //     getBasicBlockInformation(p.second)->getRemoveAllocs(endBlock).getList());
-      // }
-      // BBL = uniteList(BBL, tmpBBL);
+BasicBlockList FunctionInformation::getFreedInError(
+    int errcode, ErrorCollectionMethod method) {
+  bool first = true;
+  BasicBlockList collected_info;
+
+  for (auto code_info : info_per_error_code) {
+    if ((method == EQUALS && code_info.first == errcode) ||
+        (method == LESS_THAN && code_info.first < errcode)) {
+      if (first) {
+        collected_info = code_info.second.free_list;
+        first = false;
+      } else {
+        code_info.second.free_list = BasicBlockListOperation::intersectList(
+            collected_info, code_info.second.free_list);
+      }
     }
   }
-  return BBL;
+  return collected_info;
 }
 
 BasicBlockList FunctionInformation::getPendingStoreInReturn() {
-  for (BasicBlock *B : this->getEndPoint()) {
-    return this->getPendingStoreList(B);
-  }
-  return BasicBlockList();
+  return this->getPendingStoreList(this->getEndPoint());
 }
 
 void FunctionInformation::setUniqueKeyAlias(const UniqueKey *src,

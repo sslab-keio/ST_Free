@@ -4,10 +4,6 @@ namespace ST_free {
 
 void StageOneAnalyzer::analyzeInstructions(BasicBlock &B) {
   for (Instruction &I : B) {
-    if (this->isReturnFunc(&I)) {
-      getFunctionInformation()->addEndPoint(&B);
-    }
-
     if (InstAnalysisMap.find(I.getOpcode()) != InstAnalysisMap.end())
       (this->*InstAnalysisMap[I.getOpcode()])(&I, B);
   }
