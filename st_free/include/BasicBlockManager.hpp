@@ -36,9 +36,7 @@ class BasicBlockInformation {
   void initLists(const BasicBlockInformation &);
 
   /*** Free Related Methods ***/
-  // void addFree(Value * v, Type * ty, long mem);
   void addFree(const UniqueKey *UK);
-  // bool FreeExists(Value *v, Type * ty, long mem);
   bool FreeExists(const UniqueKey *UK);
   void setFreeList(BasicBlockList);
 
@@ -93,6 +91,19 @@ class BasicBlockInformation {
   void setUnconditionalBranched() { unConditionalBranched = true; }
   bool isUnconditionalBranched() { return unConditionalBranched; }
 
+  /*** Original Lists ***/
+  BasicBlockList getAllocList() const;
+  BasicBlockList getFreeList() const;
+
+  BasicBlockList getErrorRemovedAllocList(BasicBlock *tgt);
+  BasicBlockList getErrorAddedFreeList(BasicBlock *tgt);
+
+  /*** Shrinked Lists ***/
+  // Returns diff of alloc and free
+  // BasicBlockList getShrinkedBaseList() const;
+  // BasicBlockList getShrinkedAllocList(BasicBlock *tgt);
+  // BasicBlockList getShrinkedFreeList(BasicBlock *tgt);
+
   /*** Reverse Propagation ***/
   bool isReversePropagated(){return reversepropagated;}
   void setReversePropagated(){reversepropagated = true;}
@@ -142,12 +153,19 @@ class BasicBlockManager {
   /*** getter ***/
   void set(BasicBlock *B);
   BasicBlockInformation *get(BasicBlock *B);
-  BasicBlockList getBasicBlockFreeList(BasicBlock *src);
   BasicBlockList getBasicBlockAllocList(BasicBlock *src);
-  BasicBlockList getBasicBlockDMZList(BasicBlock *src);
+  BasicBlockList getBasicBlockFreeList(BasicBlock *src);
   BasicBlockList getBasicBlockPendingAllocList(BasicBlock *src);
+
   BasicBlockList getBasicBlockRemoveAllocList(BasicBlock *src, BasicBlock *tgt);
+  BasicBlockList getBasicBlockErrorRemovedAllocList(BasicBlock *src, BasicBlock *tgt);
+  BasicBlockList getBasicBlockErrorAddedFreeList(BasicBlock *src, BasicBlock *tgt);
+
+  BasicBlockList getBasicBlockDMZList(BasicBlock *src);
   LiveVariableList getLiveVariables(BasicBlock *B);
+
+  BasicBlockList getShrinkedBasicBlockFreeList(BasicBlock *src, BasicBlock *tgt);
+  BasicBlockList getShrinkedBasicBlockAllocList(BasicBlock *src, BasicBlock *tgt);
   /*** Mediator ***/
   void CollectInInfo(
       BasicBlock *B, bool isEntryPoint,
@@ -165,6 +183,9 @@ class BasicBlockManager {
   void addFreeInfoFromDMZToPreds(BasicBlock *src);
   bool isPredBlockCorrectlyBranched(BasicBlock *B);
   bool checkIfErrorBlock(BasicBlock *B);
+
+  /*** Optimizer ***/
+  void shrinkFreedFromAlloc(BasicBlock *B);
 
  private:
   map<BasicBlock *, BasicBlockInformation> BBMap;

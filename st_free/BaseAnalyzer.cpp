@@ -27,6 +27,8 @@ void BaseAnalyzer::analyze(Function &F) {
       getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
       this->analyzeInstructions(B);
       getFunctionInformation()->updateSuccessorBlock(B);
+      getFunctionInformation()->getBasicBlockManager()->shrinkFreedFromAlloc(
+          &B);
       // generateWarning(B.getFirstNonPHI(),
       //                 "Free: " + to_string(getFunctionInformation()
       //                                          ->getBasicBlockManager()
@@ -161,15 +163,15 @@ void BaseAnalyzer::analyzeReturnInst(Instruction *I, BasicBlock &B) {
     Value *V = RI->getReturnValue();
     if (auto Inst = dyn_cast<Instruction>(V)) {
       generateWarning(
-          I, "[integer call]: " + string(I->getFunction()->getName()), true);
+          I, "[integer call]: " + string(I->getFunction()->getName()));
     }
     this->checkErrorInstruction(V);
   } else if (RetTy->isPointerTy()) {
     // TODO: add support to pointers
-    generateWarning(I, "[RETURN]: No Error Code Analysis", true);
+    generateWarning(I, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlock(&B);
   } else {
-    generateWarning(I, "[RETURN]: No Error Code Analysis", true);
+    generateWarning(I, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlock(&B);
   }
 
@@ -321,45 +323,75 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
     }
 
     if (!info.isStructRelated) this->collectSimpleFreeInfo(val, info);
+  } else {
+    // When falling into this branch, it is either a value is optimized arg or it
+    // is something else (not really sure). We need to decode this by ourselves
+    // This is a temporary implementation.
+    // TODO: fix this to more stable implementation.
+    generateWarning(CI, "Non Instruction free value found");
 
-    if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
-                              B, info.freeValue, info.memType, info.index)) {
-      generateWarning(CI, "Adding Free Value", true);
-      ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
-          B, NULL, info.memType, info.index, info.indexes);
-
-      if (getFunctionInformation()->isArgValue(info.freeValue)) {
-        generateWarning(CI, "Add Free Arg");
-        valInfo->setArgNumber(
-            getFunctionInformation()->getArgIndex(info.freeValue));
-        if (!info.parentType)
-          getFunctionInformation()->setArgFree(info.freeValue);
-        else if (info.parentType && info.index >= 0) {
-          generateWarning(CI, "parentType add free arg");
-          getFunctionInformation()->setStructMemberArgFreed(info.freeValue,
-                                                            info.indexes);
-        }
+    // Get Top-level Value/Type
+    Type *Ty = V->getType();
+    for (auto user : V->users()) {
+      if (auto BCI = dyn_cast<BitCastInst>(user)) {
+        Ty = BCI->getDestTy();
       }
+    }
 
-      if (!isAlias && !getFunctionInformation()->aliasExists(info.freeValue) &&
-          info.memType && get_type(info.memType)->isStructTy() &&
-          this->isAuthorityChained(info.indexes)) {
-        generateWarning(CI, "Add Freed Struct");
-        getFunctionInformation()->addFreedStruct(
-            B, get_type(info.memType), info.freeValue, CI, info.parentType,
-            valInfo, info.index != ROOT_INDEX);
+    // If additionalParents exists, this means that it is a struct member.
+    // Decode everything back.
+    if (additionalParents.size() > 0) {
+      generateWarning(CI, "reading from additional parents");
+      info.indexes = additionalParents;
+      info.index = additionalParents.back().second;
 
-        /*** Look for any statically allcated struct type,
-         * and add them to freed struct as well ***/
+      if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
+        if (0 <= info.index && info.index < StTy->getNumElements())
+          UpdateIfNull(info.memType, StTy->getElementType(info.index));
+      }
+    }
+
+    UpdateIfNull(info.memType, Ty);
+    UpdateIfNull(info.freeValue, V);
+  }
+
+  if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
+                            B, info.freeValue, info.memType, info.index)) {
+    generateWarning(CI, "Adding Free Value", true);
+    ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
+        B, NULL, info.memType, info.index, info.indexes);
+
+    if (getFunctionInformation()->isArgValue(info.freeValue)) {
+      generateWarning(CI, "Add Free Arg");
+      valInfo->setArgNumber(
+          getFunctionInformation()->getArgIndex(info.freeValue));
+      if (!info.parentType)
+        getFunctionInformation()->setArgFree(info.freeValue);
+      else if (info.parentType && info.index >= 0) {
+        generateWarning(CI, "parentType add free arg");
+        getFunctionInformation()->setStructMemberArgFreed(info.freeValue,
+                                                          info.indexes);
+      }
+    }
+
+    if (!isAlias && !getFunctionInformation()->aliasExists(info.freeValue) &&
+        info.memType && get_type(info.memType)->isStructTy() &&
+        this->isAuthorityChained(info.indexes)) {
+      generateWarning(CI, "Add Freed Struct");
+      getFunctionInformation()->addFreedStruct(
+          B, get_type(info.memType), info.freeValue, CI, info.parentType,
+          valInfo, info.index != ROOT_INDEX);
+
+      /*** Look for any statically allcated struct type,
+       * and add them to freed struct as well ***/
 #if defined(OPTION_NESTED)
-        this->addNestedFree(V, CI, B, info, additionalParents);
+      this->addNestedFree(V, CI, B, info, additionalParents);
 #endif
-      }
+    }
 
-      if (!isAlias && getFunctionInformation()->aliasExists(info.freeValue)) {
-        Value *aliasVal = getFunctionInformation()->getAlias(info.freeValue);
-        if (V != aliasVal) this->addFree(aliasVal, CI, B, true);
-      }
+    if (!isAlias && getFunctionInformation()->aliasExists(info.freeValue)) {
+      Value *aliasVal = getFunctionInformation()->getAlias(info.freeValue);
+      if (V != aliasVal) this->addFree(aliasVal, CI, B, true);
     }
   }
 }
@@ -439,11 +471,10 @@ void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   generateWarning(CI, "Copy Free Status");
   for (auto ele : DF->getFreedInSuccess()) {
     generateWarning(
-        CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()));
-    if (DF->getVManageSize() > 0)
-      DF->printVal();
+        CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()), true);
+    if (DF->getVManageSize() > 0) DF->printVal();
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
-      generateWarning(CI, "Getting Value Info");
+      generateWarning(CI, "Getting Value Info", true);
       if (vinfo->isArgValue()) {
         generateWarning(CI, "Copying value");
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
@@ -923,7 +954,7 @@ void BaseAnalyzer::collectStructMemberFreeInfo(
 
     UpdateIfNull(info.freeValue, getCalledStructFreedValue(I));
     info.isStructRelated = true;
-    generateWarning(I, "Struct element free");
+    generateWarning(I, "Struct element free collected", true);
   }
   return;
 }
@@ -1052,9 +1083,8 @@ void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI,
             NULL, Ty, ROOT_INDEX));
   }
 
-  if (BList.getList().size() > 0)
-    generateWarning(BI, "Simple NULL Check error path", true);
-
+  // if (BList.getList().size() > 0)
+  //   generateWarning(BI, "Simple NULL Check error path", true);
   for (auto ele : BList.getList()) {
     this->getFunctionInformation()
         ->getBasicBlockInformation(&B)
@@ -1269,6 +1299,9 @@ ParentList BaseAnalyzer::decodeErrorTypes(Value *V) {
   }
   if (auto LI = dyn_cast<LoadInst>(comVal)) {
     comVal = LI->getPointerOperand();
+  }
+  if (auto BCI = dyn_cast<BitCastInst>(comVal)) {
+    comVal = BCI->getOperand(0);
   }
 
   if (auto GEle = dyn_cast<GetElementPtrInst>(comVal)) {

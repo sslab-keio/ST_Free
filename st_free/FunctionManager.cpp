@@ -47,6 +47,7 @@ ValueInformation *FunctionInformation::addFreeValue(BasicBlock *B, Value *V,
   const UniqueKey *UK =
       this->getUniqueKeyManager()->getUniqueKey(V, memTy, num);
   if (UK == NULL) UK = this->getUniqueKeyManager()->addUniqueKey(V, memTy, num);
+  UK->print();
 
   ValueInformation *varinfo = this->getValueInfo(UK);
   if (varinfo == NULL) varinfo = this->addVariable(UK, V, plist);
@@ -549,7 +550,7 @@ BasicBlockList FunctionInformation::getFreedInSuccess() {
   BasicBlockList collected_list;
   bool is_first = true;
   for (BasicBlock *B : this->getSuccessBlock()) {
-    generateWarning(B->getFirstNonPHI(), "getting Succesing block", true);
+    generateWarning(B->getFirstNonPHI(), "getting Succesing block");
     if (is_first) {
       collected_list = BasicBlockList(this->getFreeList(B));
       is_first = false;

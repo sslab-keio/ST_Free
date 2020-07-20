@@ -108,8 +108,42 @@ BasicBlockWorkList BasicBlockInformation::getPendingArgAllocList() const {
 
 BasicBlockList BasicBlockWorkList::getList() const { return MarkedValues; }
 
-// void BasicBlockInformation::addFree(Value *v, Type * ty , long mem){
-//     freeList.add(v, ty, mem);
+BasicBlockList BasicBlockInformation::getAllocList() const {
+  return allocList.getList();
+}
+
+BasicBlockList BasicBlockInformation::getFreeList() const {
+  return freeList.getList();
+}
+
+BasicBlockList BasicBlockInformation::getErrorRemovedAllocList(
+    BasicBlock *tgt) {
+  return BasicBlockListOperation::diffList(allocList.getList(),
+                                           getRemoveAllocs(tgt).getList());
+}
+
+BasicBlockList BasicBlockInformation::getErrorAddedFreeList(BasicBlock *tgt) {
+  return BasicBlockListOperation::uniteList(freeList.getList(),
+                                            getRemoveAllocs(tgt).getList());
+}
+
+// BasicBlockList BasicBlockInformation::getShrinkedBaseList() const {
+//   return BasicBlockListOperation::intersectList(freeList.getList(),
+//                                                 allocList.getList());
+// }
+
+// BasicBlockList BasicBlockInformation::getShrinkedAllocList(BasicBlock *tgt) {
+//   BasicBlockList tmpList = BasicBlockListOperation::diffList(
+//       getShrinkedBaseList(), getRemoveAllocs(tgt).getList());
+
+//   return BasicBlockListOperation::diffList(tmpList, getAllocList());
+// }
+
+// BasicBlockList BasicBlockInformation::getShrinkedFreeList(BasicBlock *tgt) {
+//   BasicBlockList tmpList = BasicBlockListOperation::diffList(
+//       getShrinkedBaseList(), getRemoveAllocs(tgt).getList());
+
+//   return BasicBlockListOperation::diffList(tmpList, getFreeList());
 // }
 
 void BasicBlockInformation::addFree(const UniqueKey *UK) { freeList.add(UK); }
@@ -232,7 +266,7 @@ void BasicBlockManager::CollectInInfo(
   BBMap[B].backupFreeAllocInformation();
 
   if (this->checkIfErrorBlock(B)) {
-    generateWarning(B->getFirstNonPHI(), "Is error Block", true);
+    generateWarning(B->getFirstNonPHI(), "Is error Block");
     BBMap[B].setErrorHandlingBlock();
   }
 
@@ -245,27 +279,31 @@ void BasicBlockManager::CollectInInfo(
       this->uniteAllocList(PredBB, B);
       this->uniteDMZList(PredBB, B);
       this->intersectFreeList(PredBB, B);
-      this->copyCorrectlyFreed(PredBB, B);
+      // this->copyCorrectlyFreed(PredBB, B);
     }
-    this->removeAllocatedInError(PredBB, B, alias_map);
+    // this->removeAllocatedInError(PredBB, B, alias_map);
   }
 
-  if (get(B)->isErrorHandlingBlock()) {
-    for (BasicBlock *PredBB : predecessors(B)) {
-      if (this->exists(PredBB) && get(PredBB)->isErrorHandlingBlock() &&
-          get(PredBB)->isUnconditionalBranched()) {
-        generateWarning(PredBB->getFirstNonPHI(), "Error and unconditional");
-        BBMap[B].setFreeList(BasicBlockListOperation::uniteList(
-            this->getBasicBlockFreeList(B),
-            this->getBasicBlockFreeList(PredBB)));
-      }
-    }
-  }
+  // this->shrinkFreedFromAlloc(B);
+  // if (get(B)->isErrorHandlingBlock()) {
+  //   for (BasicBlock *PredBB : predecessors(B)) {
+  //     if (this->exists(PredBB) && get(PredBB)->isErrorHandlingBlock() &&
+  //         get(PredBB)->isUnconditionalBranched()) {
+  //       generateWarning(PredBB->getFirstNonPHI(), "Error and unconditional");
+  //       BBMap[B].setFreeList(BasicBlockListOperation::uniteList(
+  //           this->getBasicBlockFreeList(B),
+  //           this->getBasicBlockFreeList(PredBB)));
+  //     }
+  //   }
+  // }
   return;
 }
 
 void BasicBlockManager::copyAllList(BasicBlock *src, BasicBlock *tgt) {
-  BBMap[tgt].initLists(BBMap[src]);
+  BBMap[tgt].setFreeList(this->getBasicBlockErrorAddedFreeList(src, tgt));
+  BBMap[tgt].setAllocList(this->getBasicBlockErrorRemovedAllocList(src, tgt));
+  BBMap[tgt].setPendingArgAllocList(this->getBasicBlockPendingAllocList(src));
+  BBMap[tgt].setLiveVariables(this->getLiveVariables(src));
   BBMap[tgt].setDMZList(this->getBasicBlockRemoveAllocList(src, tgt));
   return;
 }
@@ -278,13 +316,16 @@ void BasicBlockManager::copyFreed(BasicBlock *src, BasicBlock *tgt) {
 
 void BasicBlockManager::intersectFreeList(BasicBlock *src, BasicBlock *tgt) {
   BBMap[tgt].setFreeList(BasicBlockListOperation::intersectList(
-      this->getBasicBlockFreeList(src), this->getBasicBlockFreeList(tgt)));
+      this->getBasicBlockFreeList(tgt),
+      this->getBasicBlockErrorAddedFreeList(src, tgt)));
   return;
 }
 
 void BasicBlockManager::uniteAllocList(BasicBlock *src, BasicBlock *tgt) {
   BBMap[tgt].setAllocList(BasicBlockListOperation::uniteList(
-      this->getBasicBlockAllocList(tgt), this->getBasicBlockAllocList(src)));
+      this->getBasicBlockAllocList(tgt),
+      this->getBasicBlockErrorRemovedAllocList(src, tgt)));
+
   BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::uniteList(
       this->getBasicBlockPendingAllocList(tgt),
       this->getBasicBlockPendingAllocList(src)));
@@ -311,24 +352,24 @@ void BasicBlockManager::removeAllocatedInError(
     }
   }
 
-  generateWarning(
-      tgt->getFirstNonPHI(),
-      "After Remove Alloc: " + to_string(remove_allocs.getList().size()));
-
   BBMap[tgt].setAllocList(BasicBlockListOperation::diffList(
       this->getBasicBlockAllocList(tgt), remove_allocs.getList()));
-  generateWarning(
-      tgt->getFirstNonPHI(),
-      "After Alloc: " + to_string(getBasicBlockAllocList(tgt).size()));
-  generateWarning(tgt->getFirstNonPHI(),
-                  "Free: " + to_string(getBasicBlockFreeList(tgt).size()));
+
   BBMap[tgt].setFreeList(BasicBlockListOperation::uniteList(
       this->getBasicBlockFreeList(tgt), remove_allocs.getList()));
-  generateWarning(
-      tgt->getFirstNonPHI(),
-      "After Free: " + to_string(getBasicBlockFreeList(tgt).size()));
+
   BBMap[tgt].setPendingArgAllocList(BasicBlockListOperation::diffList(
       this->getBasicBlockPendingAllocList(tgt), remove_allocs.getList()));
+}
+
+void BasicBlockManager::shrinkFreedFromAlloc(BasicBlock *B) {
+  BasicBlockList removable_list = BasicBlockListOperation::intersectList(
+      this->getBasicBlockAllocList(B), this->getBasicBlockFreeList(B));
+
+  BBMap[B].setAllocList(BasicBlockListOperation::diffList(
+      this->getBasicBlockAllocList(B), removable_list));
+  BBMap[B].setFreeList(BasicBlockListOperation::diffList(
+      this->getBasicBlockFreeList(B), removable_list));
 }
 
 void BasicBlockManager::addFreeInfoFromDMZToPreds(BasicBlock *src) {
@@ -371,12 +412,46 @@ LiveVariableList BasicBlockManager::intersectLiveVariables(
 
 BasicBlockList BasicBlockManager::getBasicBlockFreeList(BasicBlock *src) {
   if (this->exists(src)) {
-    return BBMap[src].getWorkList(FREED).getList();
+    return BBMap[src].getFreeList();
   }
   return BasicBlockList();
 }
 
 BasicBlockList BasicBlockManager::getBasicBlockAllocList(BasicBlock *src) {
+  if (this->exists(src)) {
+    return BBMap[src].getAllocList();
+  }
+  return BasicBlockList();
+}
+
+BasicBlockList BasicBlockManager::getBasicBlockErrorAddedFreeList(
+    BasicBlock *src, BasicBlock *tgt) {
+  if (this->exists(src)) {
+    return BBMap[src].getErrorAddedFreeList(tgt);
+  }
+  return BasicBlockList();
+}
+
+BasicBlockList BasicBlockManager::getBasicBlockErrorRemovedAllocList(
+    BasicBlock *src, BasicBlock *tgt) {
+  if (this->exists(src)) {
+    return BBMap[src].getErrorRemovedAllocList(tgt);
+  }
+  return BasicBlockList();
+}
+
+BasicBlockList BasicBlockManager::getShrinkedBasicBlockFreeList(
+    BasicBlock *src, BasicBlock *tgt) {
+  BasicBlockList tmpList;
+  if (this->exists(src)) {
+    tmpList = BBMap[src].getWorkList(FREED).getList();
+    return BBMap[src].getWorkList(FREED).getList();
+  }
+  return tmpList;
+}
+
+BasicBlockList BasicBlockManager::getShrinkedBasicBlockAllocList(
+    BasicBlock *src, BasicBlock *tgt) {
   if (this->exists(src)) {
     return BBMap[src].getWorkList(ALLOCATED).getList();
   }
@@ -506,11 +581,7 @@ bool BasicBlockInformation::isInformationIdenticalToBackup() {
 BasicBlockList BasicBlockListOperation::intersectList(BasicBlockList src,
                                                       BasicBlockList tgt) {
   BasicBlockList tmp;
-  // llvm::sort(src.begin(), src.end());
-  // llvm::sort(tgt.begin(), tgt.end());
 
-  // set_intersection(src.begin(), src.end(), tgt.begin(), tgt.end(),
-  //                  back_inserter(tmp));
   set_intersection(src.begin(), src.end(), tgt.begin(), tgt.end(),
                    inserter(tmp, tmp.end()));
   return tmp;
@@ -519,11 +590,7 @@ BasicBlockList BasicBlockListOperation::intersectList(BasicBlockList src,
 BasicBlockList BasicBlockListOperation::uniteList(BasicBlockList src,
                                                   BasicBlockList tgt) {
   BasicBlockList tmp;
-  // llvm::sort(src.begin(), src.end());
-  // llvm::sort(tgt.begin(), tgt.end());
 
-  // set_union(src.begin(), src.end(), tgt.begin(), tgt.end(),
-  // back_inserter(tmp));
   set_union(src.begin(), src.end(), tgt.begin(), tgt.end(),
             inserter(tmp, tmp.end()));
   return tmp;
@@ -532,11 +599,7 @@ BasicBlockList BasicBlockListOperation::uniteList(BasicBlockList src,
 BasicBlockList BasicBlockListOperation::diffList(BasicBlockList src,
                                                  BasicBlockList tgt) {
   BasicBlockList tmp;
-  // llvm::sort(src.begin(), src.end());
-  // llvm::sort(tgt.begin(), tgt.end());
 
-  // set_difference(src.begin(), src.end(), tgt.begin(), tgt.end(),
-  //                back_inserter(tmp));
   set_difference(src.begin(), src.end(), tgt.begin(), tgt.end(),
                  inserter(tmp, tmp.end()));
   return tmp;
