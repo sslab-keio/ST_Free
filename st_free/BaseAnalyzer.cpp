@@ -321,9 +321,9 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
 
     if (!info.isStructRelated) this->collectSimpleFreeInfo(val, info);
   } else {
-    // When falling into this branch, it is either a value is optimized arg or it
-    // is something else (not really sure). We need to decode this by ourselves
-    // This is a temporary implementation.
+    // When falling into this branch, it is either a value is optimized arg or
+    // it is something else (not really sure). We need to decode this by
+    // ourselves This is a temporary implementation.
     // TODO: fix this to more stable implementation.
     generateWarning(CI, "Non Instruction free value found");
 
@@ -342,7 +342,8 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
       info.indexes = additionalParents;
       info.index = additionalParents.back().second;
 
-      if (auto StTy = dyn_cast<StructType>(get_type(info.indexes.back().first))) {
+      if (auto StTy =
+              dyn_cast<StructType>(get_type(info.indexes.back().first))) {
         if (0 <= info.index && info.index < StTy->getNumElements())
           UpdateIfNull(info.memType, StTy->getElementType(info.index));
       }
@@ -468,7 +469,8 @@ void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
   generateWarning(CI, "Copy Free Status", true);
   for (auto ele : DF->getFreedInSuccess()) {
     generateWarning(
-        CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()), true);
+        CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()),
+        true);
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
       generateWarning(CI, "Getting Value Info");
       if (vinfo->isArgValue()) {
@@ -1254,8 +1256,9 @@ bool BaseAnalyzer::errorCodeExists(Instruction *I, BasicBlock &B, int errcode) {
     if (CI) {
       generateWarning(CI, "Error Code");
       Function *DF = CI->getCalledFunction();
-      return this->getFunctionManager()->getElement(DF)->errorCodeLessThanExists(
-          errcode);
+      return this->getFunctionManager()
+          ->getElement(DF)
+          ->errorCodeLessThanExists(errcode);
     }
   } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
     return true;
@@ -1395,7 +1398,22 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,
       getFunctionInformation()->addSuccessBlockInformation(B);
     }
   } else if (auto CI = dyn_cast<CallInst>(inval)) {
-    // TODO: Add support for multiple Call Insts
+    if (FunctionInformation *DF =
+            getFunctionManager()->getElement(CI->getCalledFunction())) {
+      for (auto err_code_info : DF->getErrorCodeMap()) {
+        int64_t errcode = err_code_info.first;
+
+        if (errcode < NO_ERROR) {
+          generateWarning(I, "[RETURN][CALLINST] ERR: " + to_string(errcode), true);
+          getFunctionInformation()->addErrorBlockFreeInformation(errcode, err_code_info.second.free_list);
+          getFunctionInformation()->addErrorBlockAllocInformation(errcode, err_code_info.second.alloc_list);
+        } else {
+          generateWarning(I, "[RETURN][CALLINST] SUCCESS: " + to_string(errcode), true);
+          getFunctionInformation()->addErrorBlockFreeInformation(0, err_code_info.second.free_list);
+          getFunctionInformation()->addErrorBlockAllocInformation(0, err_code_info.second.alloc_list);
+        }
+      }
+    }
   } else {
     // if (auto Inst = dyn_cast<Instruction>(inval)) {
     //     generateWarning(Inst, Inst->getOpcodeName());
