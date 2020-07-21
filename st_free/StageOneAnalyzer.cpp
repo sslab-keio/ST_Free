@@ -202,7 +202,9 @@ void StageOneAnalyzer::analyzeBranchInst(Instruction *I, BasicBlock &B) {
     if (auto ICI = dyn_cast<ICmpInst>(BI->getCondition())) {
       if (this->isCallInstReturnValue(ICI->getOperand(0))) {
         this->analyzeErrorCode(BI, ICI, B);
-      } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
+      }
+
+      if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
         this->analyzeNullCheck(BI, ICI, B);
       }
     } else if (CallInst *CI = dyn_cast<CallInst>(BI->getCondition())) {

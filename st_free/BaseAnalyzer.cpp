@@ -166,7 +166,7 @@ void BaseAnalyzer::analyzeReturnInst(Instruction *I, BasicBlock &B) {
     this->checkErrorInstruction(V);
   } else if (RetTy->isPointerTy()) {
     // TODO: add support to pointers
-    generateWarning(RI, "[RETURN]: No Error Code Analysis");
+    generateWarning(RI, "[RETURN][POINTER]: No Error Code Analysis", true);
     getFunctionInformation()->addSuccessBlockInformation(&B);
   } else {
     generateWarning(RI, "[RETURN]: No Error Code Analysis");
@@ -1037,15 +1037,18 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI,
 
       BasicBlockWorkList allocated_on_err =
           this->getErrorValues(ICI, B, errcode);
+      generateWarning(BI, "Allocated Err: " + to_string(allocated_on_err.getList().size()), true);
 
       // 1. Get Allocated on Success
       BasicBlockWorkList allocated_on_success = this->getSuccessValues(ICI, B);
+      generateWarning(BI, "Allocated Success: " + to_string(allocated_on_success.getList().size()), true);
+
       // 2. Success diff allocated_on_err is pure non allocated in err
       BasicBlockList diff_list = BasicBlockListOperation::diffList(
           allocated_on_success.getList(), allocated_on_err.getList());
+
       // 3. add it to the list
       for (auto ele : diff_list) {
-        generateWarning(BI, "Remove alloc");
         this->getFunctionInformation()
             ->getBasicBlockInformation(&B)
             ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
@@ -1056,6 +1059,7 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI,
 
 void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI,
                                     BasicBlock &B) {
+  generateWarning(BI, "Analyze NULL Check", true);
   BasicBlockWorkList BList;
 
   // Get which basicblock to pass the data to
@@ -1086,6 +1090,7 @@ void BaseAnalyzer::analyzeNullCheck(BranchInst *BI, ICmpInst *ICI,
             NULL, Ty, ROOT_INDEX));
   }
 
+  generateWarning(BI, "Adding Null value", true);
   for (auto ele : BList.getList()) {
     this->getFunctionInformation()
         ->getBasicBlockInformation(&B)
@@ -1161,29 +1166,44 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
       }
     }
   } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
-    generateWarning(I, "Compare with NULL: Look at allocation");
-    ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
-    Type *Ty = this->getComparedType(comVal, B);
-    if (plist.size() > 0) {
-      if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
-        if (0 <= plist.back().second &&
-            plist.back().second < StTy->getNumElements())
-          Ty = StTy->getElementType(plist.back().second);
-      }
-      if (this->getFunctionInformation()->isAllocatedInBasicBlock(
-              &B, NULL, Ty, plist.back().second)) {
-        BList.add(
-            this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-                NULL, Ty, plist.back().second));
+    CallInst *CI = NULL;
+    generateWarning(I, "Compare with NULL: Error Code");
+    if (auto comValCI = dyn_cast<CallInst>(comVal)) {
+      CI = comValCI;
+    } else {
+      CI = this->getFunctionInformation()
+               ->getBasicBlockInformation(&B)
+               ->getCallInstForVal(comVal);
+    }
+    if (CI) {
+      generateWarning(CI, "Error Code");
+      for (auto ele : this->getErrorAllocInCalledFunction(CI, 0)) {
+        BList.add(ele);
       }
     }
+    // generateWarning(I, "Compare with NULL: Look at allocation", true);
+    // ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
+    // Type *Ty = this->getComparedType(comVal, B);
+    // if (plist.size() > 0) {
+    //   if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
+    //     if (0 <= plist.back().second &&
+    //         plist.back().second < StTy->getNumElements())
+    //       Ty = StTy->getElementType(plist.back().second);
+    //   }
+    //   // if (this->getFunctionInformation()->isAllocatedInBasicBlock(
+    //   //         &B, NULL, Ty, plist.back().second)) {
+    //     BList.add(
+    //         this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+    //             NULL, Ty, plist.back().second));
+    //   // }
+    // }
 
-    if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
-                                                                ROOT_INDEX)) {
-      BList.add(
-          this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-              NULL, Ty, ROOT_INDEX));
-    }
+    // // if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
+    // //                                                             ROOT_INDEX)) {
+    //   BList.add(
+    //       this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+    //           NULL, Ty, ROOT_INDEX));
+    // // }
   }
   return BList;
 }
@@ -1211,30 +1231,21 @@ BasicBlockWorkList BaseAnalyzer::getSuccessValues(Instruction *I,
       }
     }
   } else if (isa<ConstantPointerNull>(ICI->getOperand(1))) {
-    // generateWarning(I, "Compare with NULL: Look at allocation");
-    // ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
-    // Type *Ty = this->getComparedType(comVal, B);
-    // if (plist.size() > 0) {
-    //   if (auto StTy = dyn_cast<StructType>(get_type(plist.back().first))) {
-    //     if (0 <= plist.back().second &&
-    //         plist.back().second < StTy->getNumElements())
-    //       Ty = StTy->getElementType(plist.back().second);
-    //   }
-    //   if (this->getFunctionInformation()->isAllocatedInBasicBlock(
-    //           &B, NULL, Ty, plist.back().second)) {
-    //     BList.add(
-    //         this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-    //             NULL, Ty, plist.back().second));
-    //   }
-    // }
-
-    // if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
-    //                                                             ROOT_INDEX))
-    //                                                             {
-    //   BList.add(
-    //       this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-    //           NULL, Ty, ROOT_INDEX));
-    // }
+    CallInst *CI = NULL;
+    generateWarning(I, "Compare with Int: Error Code");
+    if (auto comValCI = dyn_cast<CallInst>(comVal)) {
+      CI = comValCI;
+    } else {
+      CI = this->getFunctionInformation()
+               ->getBasicBlockInformation(&B)
+               ->getCallInstForVal(comVal);
+    }
+    if (CI) {
+      generateWarning(CI, "Error Code");
+      for (auto ele : this->getSuccessAllocInCalledFunction(CI)) {
+        BList.add(ele);
+      }
+    }
   }
   return BList;
 }
@@ -1414,7 +1425,14 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,
         }
       }
     }
-  } else {
+  } else if (inval->getType()->isPointerTy()) {
+    if (isa<ConstantPointerNull>(inval)) {
+      generateWarning(I, "[RETURN] ERR: NULL", true);
+      getFunctionInformation()->addErrorBlockInformation(-1, B);
+    } else{
+      generateWarning(I, "[RETURN] SUCCESS: Non-NULL", true);
+      getFunctionInformation()->addSuccessBlockInformation(B);
+    }
     // if (auto Inst = dyn_cast<Instruction>(inval)) {
     //     generateWarning(Inst, Inst->getOpcodeName());
     // }
