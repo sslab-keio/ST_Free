@@ -75,8 +75,10 @@ class BaseAnalyzer {
   const StructLayout *getStructLayout(StructType *STy) {
     return dat_layout->getStructLayout(STy);
   }
+
   /*** Availability Analysis ***/
   virtual void checkAvailability();
+
   /*** Instruction Analysis ***/
   virtual void analyzeInstructions(BasicBlock &B);
   virtual void analyzeAllocaInst(Instruction *AI, BasicBlock &B);
@@ -88,6 +90,7 @@ class BaseAnalyzer {
   virtual void analyzeReturnInst(Instruction *RI, BasicBlock &B);
   virtual void analyzeGetElementPtrInst(Instruction *RI, BasicBlock &B);
   bool isReturnFunc(Instruction *I);
+
   /*** add Value ***/
   virtual void addFree(Value *V, CallInst *CI, BasicBlock *B,
                        bool isAlias = false,
@@ -132,6 +135,7 @@ class BaseAnalyzer {
   void buildReturnValueInformation();
   void checkErrorInstruction(Value *v, vector<Instruction*> visited_inst = vector<Instruction*>());
   void checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B, Value *inval, vector<Instruction*> visited_inst);
+
   /*** Store Instruction related funtions ***/
   CallInst *getStoreFromCall(StoreInst *SI);
   bool isStoreToStructMember(StoreInst *SI);
@@ -147,6 +151,7 @@ class BaseAnalyzer {
   vector<pair<Type *, long>> decodeGEPInst(GetElementPtrInst *GEle);
   vector<string> decodeDirectoryName(string str);
   void getStructParents(Instruction *I, vector<pair<Type *, int>> &typeList);
+
   /*** Determinator ***/
   long getMemberIndiceFromByte(StructType *STy, uint64_t byte);
   bool isStructEleAlloc(Instruction *);
@@ -167,15 +172,20 @@ class BaseAnalyzer {
   Value *getFreedValue(Instruction *val);
   Value *getAllocatedValue(Instruction *I);
   bool isCallInstReturnValue(Value *V);
+  bool isAllocStoredInSameBasicBlock(Value *V, BasicBlock *B);
+
   /*** Support Methods ***/
   vector<long> getValueIndices(GetElementPtrInst *inst);
   GetElementPtrInst *getRootGEle(GetElementPtrInst *GEle);
   Type *extractResultElementType(GetElementPtrInst *GEle);
   void reversePropagateErrorBlockFreeInfo();
+
   /*** connector with struct manager***/
   bool isAuthorityChained(ParentList);
+
   /*** find icmp ***/
   ICmpInst *findAllocICmp(Instruction *I);
+
   /*** MethodMap ***/
   map<unsigned, void (ST_free::BaseAnalyzer::*)(Instruction *, BasicBlock &)>
       InstAnalysisMap;

@@ -280,23 +280,9 @@ void BasicBlockManager::CollectInInfo(
       this->uniteAllocList(PredBB, B);
       this->uniteDMZList(PredBB, B);
       this->intersectFreeList(PredBB, B);
-      // this->copyCorrectlyFreed(PredBB, B);
     }
-    // this->removeAllocatedInError(PredBB, B, alias_map);
   }
 
-  // this->shrinkFreedFromAlloc(B);
-  // if (get(B)->isErrorHandlingBlock()) {
-  //   for (BasicBlock *PredBB : predecessors(B)) {
-  //     if (this->exists(PredBB) && get(PredBB)->isErrorHandlingBlock() &&
-  //         get(PredBB)->isUnconditionalBranched()) {
-  //       generateWarning(PredBB->getFirstNonPHI(), "Error and unconditional");
-  //       BBMap[B].setFreeList(BasicBlockListOperation::uniteList(
-  //           this->getBasicBlockFreeList(B),
-  //           this->getBasicBlockFreeList(PredBB)));
-  //     }
-  //   }
-  // }
   return;
 }
 

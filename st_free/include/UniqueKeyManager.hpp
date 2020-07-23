@@ -7,11 +7,6 @@ using namespace llvm;
 
 namespace ST_free {
 class UniqueKey {
- private:
-  Value *v;
-  Type *t;
-  long memberNum;
-
  public:
   Value *getValue() const { return v; }
   Type *getType() const { return t; }
@@ -47,7 +42,13 @@ class UniqueKey {
     if (t == uk.getType()) return memberNum < uk.getNum();
     return t < uk.getType();
   }
+
+ private:
+  Value *v;
+  Type *t;
+  long memberNum;
 };
+
 class UniqueKeyManager {
  private:
   set<UniqueKey> ukmanage;

@@ -99,6 +99,22 @@ ValueInformation *FunctionInformation::addFreeValue(BasicBlock *B, Value *V,
       this->addCorrectlyFreedValue(B, UK);
     }
   }
+
+  // If aliased value exists, free the value as well
+  if (const UniqueKey* aliased_uk = getUniqueKeyAlias(UK)) {
+    addFreeValue(B, const_cast<UniqueKey*>(aliased_uk));
+
+    // For all predecessors that branch from unconditional branches, reverse-
+    // propagate that information back to each predecessor for aliased free
+    for (auto pred_block: predecessors(B)) {
+      BasicBlockInformation *PredBInfo = this->getBasicBlockInformation(pred_block);
+      if (PredBInfo && PredBInfo->isUnconditionalBranched()) {
+        generateWarning(B->getFirstNonPHI(), "Pred block is unconditional", true);
+        generateWarning(B->getFirstNonPHI(), pred_block->getName(), true);
+        addFreeValue(pred_block, const_cast<UniqueKey*>(UK));
+      }
+    }
+  }
   return varinfo;
 }
 
@@ -595,6 +611,34 @@ void FunctionInformation::setUniqueKeyAlias(const UniqueKey *src,
   } else {
     // TODO: Has more than one alias. Think about what needs to be done.
   }
+}
+
+bool FunctionInformation::hasUniqueKeyAlias(const UniqueKey *src) {
+  if (allocated_alias.find(src) != allocated_alias.end()) {
+    return true;
+  }
+  return false;
+}
+
+const UniqueKey* FunctionInformation::getUniqueKeyAlias(const UniqueKey *src) {
+  auto found_alias = allocated_alias.find(src);
+  if (found_alias != allocated_alias.end()) {
+    return found_alias->second;
+  }
+  return NULL;
+}
+
+void FunctionInformation::addPendingAliasedAlloc(const UniqueKey* UK) {
+  pending_alloc_store.push_back(UK);
+}
+
+bool FunctionInformation::checkAndPopPendingAliasedAlloc(const UniqueKey* UK) {
+  auto found_uk = find(pending_alloc_store.begin(), pending_alloc_store.end(), UK);
+  if (found_uk != pending_alloc_store.end()) {
+    pending_alloc_store.erase(found_uk);
+    return true;
+  }
+  return false;
 }
 
 const map<const UniqueKey *, const UniqueKey *>

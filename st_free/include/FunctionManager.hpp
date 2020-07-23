@@ -62,11 +62,11 @@ struct FunctionInformation {
   void addFreedStruct(BasicBlock *B, Type *T, Value *V, Instruction *I,
                       StructType *parent, ValueInformation *valInfo,
                       bool isInStruct = false);
-  // void addFreedStructValue();
   void addParentType(Type *T, Value *V, Instruction *I, StructType *parentTy,
                      int ind);
   FreedStructList getFreedStruct() const;
   bool freedStructExists(FreedStruct *fst);
+
   /** AllocValue Related ***/
   const UniqueKey *addAllocValue(BasicBlock *B, Value *V, Type *T, long mem);
   void addAllocValue(BasicBlock *B, UniqueKey *UK);
@@ -174,8 +174,14 @@ struct FunctionInformation {
   /*** get Freed ***/
   BasicBlockList getPendingStoreInReturn();
 
+  /*** Pending Aliased Alloc Operator ***/
+  void addPendingAliasedAlloc(const UniqueKey* UK);
+  bool checkAndPopPendingAliasedAlloc(const UniqueKey* UK);
+
   /*** UniqueKey alias ***/
   void setUniqueKeyAlias(const UniqueKey *src, const UniqueKey *dest);
+  bool hasUniqueKeyAlias(const UniqueKey *src);
+  const UniqueKey* getUniqueKeyAlias(const UniqueKey *src);
   const map<const UniqueKey *, const UniqueKey *> *getUniqueKeyAliasMap();
 
  private:
@@ -189,8 +195,7 @@ struct FunctionInformation {
   ArgList args;
   BasicBlock *endPoint;
   ReturnInst *retInst;
-  vector<BasicBlock *> successBlock;
-  vector<pair<int64_t, BasicBlock *>> errorBlock;
+
   LocalVarList localVariables;
   FreedStructList freedStruct;
   BasicBlockManager BBManage;
@@ -198,10 +203,14 @@ struct FunctionInformation {
   map<Value *, vector<Function *>> funcPtr;
   map<Value *, Type *> aliasedType;
   Aliases aliasMap;
-  map<const UniqueKey *, const UniqueKey *> allocated_alias;
   bool dirty;
 
+  /*** Return Error Code Map ***/
   map<int64_t, InformationPerErrorCode> info_per_error_code;
+
+  /*** UniqueKey Alias Map for lazy evaluation ***/
+  vector<const UniqueKey *> pending_alloc_store;
+  map<const UniqueKey *, const UniqueKey *> allocated_alias;
 
   /*** Private Methods ***/
   AnalysisStat getStat();

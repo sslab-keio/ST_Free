@@ -166,6 +166,7 @@ class BasicBlockManager {
 
   BasicBlockList getShrinkedBasicBlockFreeList(BasicBlock *src, BasicBlock *tgt);
   BasicBlockList getShrinkedBasicBlockAllocList(BasicBlock *src, BasicBlock *tgt);
+
   /*** Mediator ***/
   void CollectInInfo(
       BasicBlock *B, bool isEntryPoint,

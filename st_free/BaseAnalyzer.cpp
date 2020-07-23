@@ -407,7 +407,14 @@ void BaseAnalyzer::addAlloc(CallInst *CI, BasicBlock *B) {
     getFunctionInformation()->addAliasedType(CI, Ty);
     getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
   }
-  getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
+  const UniqueKey* UK = getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
+
+  if (!isAllocStoredInSameBasicBlock(CI, B)) {
+    generateWarning(CI, "Not Stored in the same block", true);
+    getFunctionInformation()->addPendingAliasedAlloc(UK);
+  }
+
+  // The following addAlloc is added for debugging purposes
   getFunctionInformation()->addAllocValue(B, CI, Ty, ROOT_INDEX);
   return;
 }
@@ -1557,4 +1564,17 @@ bool BaseAnalyzer::isCallInstReturnValue(Value *V) {
 
   return false;
 }
+
+bool BaseAnalyzer::isAllocStoredInSameBasicBlock(Value *V, BasicBlock *B) {
+  Value* stored_value = V;
+  for (auto user : V->users()) {
+    if (auto SI = dyn_cast<StoreInst>(user)) {
+      if (SI->getParent() == B) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 }  // namespace ST_free

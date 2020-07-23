@@ -83,7 +83,10 @@ void StageOneAnalyzer::analyzeStoreInst(Instruction *I, BasicBlock &B) {
                         StTy->getElementType(info.indexes.back().second),
                         info.indexes.back().second);
 
-                getFunctionInformation()->setUniqueKeyAlias(src_uk, dest_uk);
+                if (getFunctionInformation()->checkAndPopPendingAliasedAlloc(src_uk)) {
+                  generateWarning(I, "[After] Found alloc alias in pendling aliased alloc", true);
+                  getFunctionInformation()->setUniqueKeyAlias(dest_uk, src_uk);
+                }
               } else {
                 if (auto CastI = dyn_cast<CastInst>(addVal)) {
                   addVal = CastI->getOperand(0);
@@ -116,7 +119,11 @@ void StageOneAnalyzer::analyzeStoreInst(Instruction *I, BasicBlock &B) {
                       .getFromType(StTy->getElementType(0))) {
             const UniqueKey *tgt_uk = getFunctionInformation()->addAllocValue(
                 &B, NULL, StTy->getElementType(0), 0);
-            getFunctionInformation()->setUniqueKeyAlias(src_uk, tgt_uk);
+
+            // if (getFunctionInformation()->checkAndPopPendingAliasedAlloc(src_uk)) {
+            //   generateWarning(I, "[After] Found alloc alias in pendling aliased alloc", true);
+            //   getFunctionInformation()->setUniqueKeyAlias(src_uk, tgt_uk);
+            // }
           }
         }
       }
