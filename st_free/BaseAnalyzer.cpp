@@ -52,8 +52,6 @@ void BaseAnalyzer::analyze(Function &F) {
   } while (iterate_counter++ < WORKLIST_MAX_INTERATION &&
            getFunctionInformation()->isDirty());
 
-  // this->buildReturnValueInformation();
-  // this->reversePropagateErrorBlockFreeInfo();
   this->checkAvailability();
   getFunctionInformation()->setAnalyzed();
 
@@ -166,8 +164,10 @@ void BaseAnalyzer::analyzeReturnInst(Instruction *I, BasicBlock &B) {
     this->checkErrorInstruction(V);
   } else if (RetTy->isPointerTy()) {
     // TODO: add support to pointers
-    generateWarning(RI, "[RETURN][POINTER]: No Error Code Analysis", true);
-    getFunctionInformation()->addSuccessBlockInformation(&B);
+    generateWarning(RI, "[RETURN][POINTER]: No Error Code Analysis");
+    Value *V = RI->getReturnValue();
+    this->checkErrorInstruction(V);
+    // getFunctionInformation()->addSuccessBlockInformation(&B);
   } else {
     generateWarning(RI, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlockInformation(&B);
@@ -1029,6 +1029,7 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI,
   int errcode = 0;
 
   if (op >= 0) {
+    generateWarning(BI, "Analyzing Error Code", true);
     if (this->errorCodeExists(ICI, B, errcode)) {
       BasicBlock *errBlock = BI->getSuccessor(op);
       this->getFunctionInformation()
@@ -1037,11 +1038,16 @@ void BaseAnalyzer::analyzeErrorCode(BranchInst *BI, ICmpInst *ICI,
 
       BasicBlockWorkList allocated_on_err =
           this->getErrorValues(ICI, B, errcode);
-      generateWarning(BI, "Allocated Err: " + to_string(allocated_on_err.getList().size()), true);
+      generateWarning(
+          BI, "Allocated Err: " + to_string(allocated_on_err.getList().size()),
+          true);
 
       // 1. Get Allocated on Success
       BasicBlockWorkList allocated_on_success = this->getSuccessValues(ICI, B);
-      generateWarning(BI, "Allocated Success: " + to_string(allocated_on_success.getList().size()), true);
+      generateWarning(BI,
+                      "Allocated Success: " +
+                          to_string(allocated_on_success.getList().size()),
+                      true);
 
       // 2. Success diff allocated_on_err is pure non allocated in err
       BasicBlockList diff_list = BasicBlockListOperation::diffList(
@@ -1198,8 +1204,9 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(Instruction *I, BasicBlock &B,
     //   // }
     // }
 
-    // // if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
-    // //                                                             ROOT_INDEX)) {
+    // // if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL,
+    // Ty,
+    // // ROOT_INDEX)) {
     //   BList.add(
     //       this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
     //           NULL, Ty, ROOT_INDEX));
@@ -1256,7 +1263,7 @@ bool BaseAnalyzer::errorCodeExists(Instruction *I, BasicBlock &B, int errcode) {
 
   if (isa<ConstantInt>(ICI->getOperand(1))) {
     CallInst *CI = NULL;
-    generateWarning(I, "Compare with Int: Error Code");
+    generateWarning(I, "Compare with Int: Error Code", true);
     if (auto comValCI = dyn_cast<CallInst>(comVal)) {
       CI = comValCI;
     } else {
@@ -1396,8 +1403,9 @@ void BaseAnalyzer::buildReturnValueInformation() {
   }
 }
 
-void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,
-                                             Value *inval) {
+void BaseAnalyzer::checkErrorCodeAndAddBlock(
+    Instruction *I, BasicBlock *B, Value *inval,
+    vector<Instruction *> visited_inst) {
   if (auto CInt = dyn_cast<ConstantInt>(inval)) {
     generateWarning(I, "Storing constant value to ret");
     int64_t errcode = CInt->getSExtValue();
@@ -1409,19 +1417,26 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,
       getFunctionInformation()->addSuccessBlockInformation(B);
     }
   } else if (auto CI = dyn_cast<CallInst>(inval)) {
+    generateWarning(I, "Storing caall inst value to ret", true);
     if (FunctionInformation *DF =
             getFunctionManager()->getElement(CI->getCalledFunction())) {
       for (auto err_code_info : DF->getErrorCodeMap()) {
         int64_t errcode = err_code_info.first;
 
         if (errcode < NO_ERROR) {
-          generateWarning(I, "[RETURN][CALLINST] ERR: " + to_string(errcode), true);
-          getFunctionInformation()->addErrorBlockFreeInformation(errcode, err_code_info.second.free_list);
-          getFunctionInformation()->addErrorBlockAllocInformation(errcode, err_code_info.second.alloc_list);
+          generateWarning(I, "[RETURN][CALLINST] ERR: " + to_string(errcode),
+                          true);
+          getFunctionInformation()->addErrorBlockFreeInformation(
+              errcode, err_code_info.second.free_list);
+          getFunctionInformation()->addErrorBlockAllocInformation(
+              errcode, err_code_info.second.alloc_list);
         } else {
-          generateWarning(I, "[RETURN][CALLINST] SUCCESS: " + to_string(errcode), true);
-          getFunctionInformation()->addErrorBlockFreeInformation(0, err_code_info.second.free_list);
-          getFunctionInformation()->addErrorBlockAllocInformation(0, err_code_info.second.alloc_list);
+          generateWarning(
+              I, "[RETURN][CALLINST] SUCCESS: " + to_string(errcode), true);
+          getFunctionInformation()->addErrorBlockFreeInformation(
+              0, err_code_info.second.free_list);
+          getFunctionInformation()->addErrorBlockAllocInformation(
+              0, err_code_info.second.alloc_list);
         }
       }
     }
@@ -1429,19 +1444,25 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B,
     if (isa<ConstantPointerNull>(inval)) {
       generateWarning(I, "[RETURN] ERR: NULL", true);
       getFunctionInformation()->addErrorBlockInformation(-1, B);
-    } else{
+    } else {
       generateWarning(I, "[RETURN] SUCCESS: Non-NULL", true);
       getFunctionInformation()->addSuccessBlockInformation(B);
     }
-    // if (auto Inst = dyn_cast<Instruction>(inval)) {
-    //     generateWarning(Inst, Inst->getOpcodeName());
-    // }
-    // this->checkErrorInstruction(inval);
+  } else {
+    if (auto PHI = dyn_cast<PHINode>(inval)) {
+      generateWarning(PHI, "[ERRORINST]: PHINode Instruction Reivisted", true);
+      if (find(visited_inst.begin(), visited_inst.end(), PHI) ==
+          visited_inst.end()) {
+        visited_inst.push_back(PHI);
+        checkErrorInstruction(PHI, visited_inst);
+      }
+    }
   }
   return;
 }
 
-void BaseAnalyzer::checkErrorInstruction(Value *V) {
+void BaseAnalyzer::checkErrorInstruction(Value *V,
+                                         vector<Instruction *> visited_inst) {
   if (auto CInt = dyn_cast<Constant>(V)) {
     // generateWarning(RI, "Const Int");
   }
@@ -1457,7 +1478,7 @@ void BaseAnalyzer::checkErrorInstruction(Value *V) {
       if (auto SI = dyn_cast<StoreInst>(usr)) {
         if (V != SI->getValueOperand())
           this->checkErrorCodeAndAddBlock(SI, SI->getParent(),
-                                          SI->getValueOperand());
+                                          SI->getValueOperand(), visited_inst);
       }
     }
   } else if (auto PHI = dyn_cast<PHINode>(V)) {
@@ -1465,7 +1486,7 @@ void BaseAnalyzer::checkErrorInstruction(Value *V) {
     for (unsigned i = 0; i < PHI->getNumIncomingValues(); i++) {
       if (V != PHI->getIncomingValue(i))
         this->checkErrorCodeAndAddBlock(PHI, PHI->getIncomingBlock(i),
-                                        PHI->getIncomingValue(i));
+                                        PHI->getIncomingValue(i), visited_inst);
     }
   }
   return;

@@ -130,8 +130,8 @@ class BaseAnalyzer {
   BasicBlockList getErrorAllocInCalledFunction(CallInst *CI, int errcode);
   BasicBlockList getSuccessAllocInCalledFunction(CallInst *CI);
   void buildReturnValueInformation();
-  void checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B, Value *inval);
-  void checkErrorInstruction(Value *v);
+  void checkErrorInstruction(Value *v, vector<Instruction*> visited_inst = vector<Instruction*>());
+  void checkErrorCodeAndAddBlock(Instruction *I, BasicBlock *B, Value *inval, vector<Instruction*> visited_inst);
   /*** Store Instruction related funtions ***/
   CallInst *getStoreFromCall(StoreInst *SI);
   bool isStoreToStructMember(StoreInst *SI);
