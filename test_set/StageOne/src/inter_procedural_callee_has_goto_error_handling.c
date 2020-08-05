@@ -8,10 +8,7 @@ struct testA {
 };
 
 struct testB {
-  int x;
-  int y;
-  int z;
-  struct testC *tC;
+  int x; int y; int z; struct testC *tC;
 };
 
 struct testC {
