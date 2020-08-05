@@ -407,7 +407,8 @@ void BaseAnalyzer::addAlloc(CallInst *CI, BasicBlock *B) {
     getFunctionInformation()->addAliasedType(CI, Ty);
     getStructManager()->addAlloc(cast<StructType>(get_type(Ty)));
   }
-  const UniqueKey* UK = getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
+  const UniqueKey *UK =
+      getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
 
   if (!isAllocStoredInSameBasicBlock(CI, B)) {
     generateWarning(CI, "Not Stored in the same block", true);
@@ -998,7 +999,10 @@ void BaseAnalyzer::addNestedFree(Value *V, CallInst *CI, BasicBlock *B,
   int memIndex = 0;
 
   for (auto ele : StTy->elements()) {
-    if (ele->isStructTy()) {
+    if (ele->isStructTy() && find_if(info.indexes.begin(), info.indexes.end(),
+                                     [ele](const pair<Type *, int> &index) {
+                                       return ele == index.first;
+                                     }) != info.indexes.end()) {
       additionalParents.push_back(pair<Type *, int>(ele, memIndex++));
       this->addFree(V, CI, B, false, additionalParents);
       additionalParents.pop_back();
@@ -1566,7 +1570,7 @@ bool BaseAnalyzer::isCallInstReturnValue(Value *V) {
 }
 
 bool BaseAnalyzer::isAllocStoredInSameBasicBlock(Value *V, BasicBlock *B) {
-  Value* stored_value = V;
+  Value *stored_value = V;
   for (auto user : V->users()) {
     if (auto SI = dyn_cast<StoreInst>(user)) {
       if (SI->getParent() == B) {

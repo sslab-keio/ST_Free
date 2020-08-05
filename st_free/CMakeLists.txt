@@ -29,6 +29,7 @@ set(OPTION_NESTED 0 CACHE BOOL "OPTION_NESTED")
 
 #if (STAGE_ONE)
 add_definitions(-DSTAGE_ONE)
+add_definitions(-DOPTION_NESTED)
 # add_definitions(-DSTAGE_PRIMITIVE)
 #endif(STAGE_ONE)
 

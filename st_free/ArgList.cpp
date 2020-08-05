@@ -23,7 +23,8 @@ void ArgStatus::setMemberFreed(vector<int> indexes) {
 
     if (topIndex >= this->size())
       this->extendStatusSize(topIndex - this->size() + 1);
-    structStatus[topIndex].setMemberFreed(indexes);
+    if (structStatus.size() > topIndex)
+      structStatus[topIndex].setMemberFreed(indexes);
     return;
   }
 
