@@ -355,7 +355,7 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
 
   if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
                             B, info.freeValue, info.memType, info.index)) {
-    generateWarning(CI, "Adding Free Value", true);
+    generateWarning(CI, "Adding Free Value");
     ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
         B, NULL, info.memType, info.index, info.indexes);
 
@@ -363,13 +363,13 @@ void BaseAnalyzer::addFree(Value *V, CallInst *CI, BasicBlock *B, bool isAlias,
       generateWarning(CI, "Add Free Arg");
       valInfo->setArgNumber(
           getFunctionInformation()->getArgIndex(info.freeValue));
-      if (!info.parentType)
-        getFunctionInformation()->setArgFree(info.freeValue);
-      else if (info.parentType && info.index >= 0) {
-        generateWarning(CI, "parentType add free arg");
-        getFunctionInformation()->setStructMemberArgFreed(info.freeValue,
-                                                          info.indexes);
-      }
+      // if (!info.parentType)
+      //   getFunctionInformation()->setArgFree(info.freeValue);
+      // else if (info.parentType && info.index >= 0) {
+      //   generateWarning(CI, "parentType add free arg", true);
+      //   getFunctionInformation()->setStructMemberArgFreed(info.freeValue,
+      //                                                     info.indexes);
+      // }
     }
 
     if (!isAlias && !getFunctionInformation()->aliasExists(info.freeValue) &&
@@ -480,7 +480,7 @@ void BaseAnalyzer::copyFreeStatus(Function &Func, CallInst *CI, BasicBlock &B) {
         CI, "Copying Free Status " + to_string(DF->getFreedInSuccess().size()),
         true);
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
-      generateWarning(CI, "Getting Value Info");
+      generateWarning(CI, "Getting Value Info", true);
       if (vinfo->isArgValue()) {
         generateWarning(CI, "Copying value");
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
@@ -998,12 +998,15 @@ void BaseAnalyzer::addNestedFree(Value *V, CallInst *CI, BasicBlock *B,
   StructType *StTy = cast<StructType>(get_type(info.memType));
   int memIndex = 0;
 
-  for (auto ele : StTy->elements()) {
-    if (ele->isStructTy() && find_if(info.indexes.begin(), info.indexes.end(),
-                                     [ele](const pair<Type *, int> &index) {
-                                       return ele == index.first;
-                                     }) != info.indexes.end()) {
-      additionalParents.push_back(pair<Type *, int>(ele, memIndex++));
+  for (auto ele = StTy->element_begin(); ele != StTy->element_end();
+       ele++, memIndex++) {
+    if ((*ele)->isStructTy() &&
+        find_if(info.indexes.begin(), info.indexes.end(),
+                [ele](const pair<Type *, int> &index) {
+                  return *ele == index.first;
+                }) == info.indexes.end()) {
+      generateWarning(CI, "Option Nested Called", true);
+      additionalParents.push_back(pair<Type *, int>(*ele, memIndex));
       this->addFree(V, CI, B, false, additionalParents);
       additionalParents.pop_back();
     }

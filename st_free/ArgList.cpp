@@ -1,10 +1,10 @@
 #include "include/ArgList.hpp"
 
 namespace ST_free {
-bool ArgStatus::isMemberFreed(vector<int> indexes) {
+bool ArgStatus::isMemberFreed(queue<int> indexes) {
   if (indexes.size() > 0) {
     int topIndex = indexes.front();
-    indexes.erase(indexes.begin());
+    indexes.pop();
 
     if (topIndex < structStatus.size())
       return structStatus[topIndex].isMemberFreed(indexes);
@@ -14,10 +14,10 @@ bool ArgStatus::isMemberFreed(vector<int> indexes) {
   return this->isFreed();
 }
 
-void ArgStatus::setMemberFreed(vector<int> indexes) {
+void ArgStatus::setMemberFreed(queue<int> indexes) {
   if (indexes.size() > 0) {
     int topIndex = indexes.front();
-    indexes.erase(indexes.begin());
+    indexes.pop();
 
     if (topIndex >= this->maxSize()) return;
 
@@ -98,17 +98,17 @@ int64_t ArgList::getOperandNum(Value *V) {
 }
 
 void ArgList::setFreed(Value *V) {
-  this->setFreed(V, vector<int>());
+  this->setFreed(V, queue<int>());
   return;
 }
 
-void ArgList::setFreed(Value *V, vector<int> indexes) {
+void ArgList::setFreed(Value *V, queue<int> indexes) {
   int64_t ind = getOperandNum(V);
   if (ind >= 0 && ind < argNum) stats[ind].setMemberFreed(indexes);
   return;
 }
 
-bool ArgList::isFreed(Value *V, vector<int> indexes) {
+bool ArgList::isFreed(Value *V, queue<int> indexes) {
   int64_t ind = getOperandNum(V);
   if (ind >= 0 && ind < argNum) return stats[ind].isMemberFreed(indexes);
   return false;

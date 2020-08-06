@@ -36,8 +36,8 @@ class ArgStatus {
   bool isStruct() { return T && get_type(T)->isStructTy(); }
   uint size() { return statusSize; }
   int maxSize();
-  bool isMemberFreed(vector<int> indexes);
-  void setMemberFreed(vector<int> indexes);
+  bool isMemberFreed(queue<int> indexes);
+  void setMemberFreed(queue<int> indexes);
   void extendStatusSize(int extSize);
   ArgStatus *getStatus(int index) {
     return index >= 0 && index < this->size() ? &structStatus[index] : NULL;
@@ -67,8 +67,8 @@ class ArgList {
   bool isInList(Value *V);
   int64_t getOperandNum(Value *V);
   void setFreed(Value *V);
-  void setFreed(Value *V, vector<int> indexes);
-  bool isFreed(Value *V, vector<int> indexes);
+  void setFreed(Value *V, queue<int> indexes);
+  bool isFreed(Value *V, queue<int> indexes);
 
  private:
   uint64_t argNum;

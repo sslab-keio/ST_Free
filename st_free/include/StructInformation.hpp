@@ -126,11 +126,25 @@ class StructInformation {
     outs() << "\tGV: " << stc[ind].globalVar << "\n";
   }
   /*** Status Related ***/
-  bool isResponsible(int ind) { return memberStats[ind] == ISRESPONSIBLE; };
-  bool isUnknown(int ind) { return memberStats[ind] == ISUNKNOWN; };
-  bool isPrimitive(int ind) { return memberStats[ind] == PRIMITIVE; };
+  bool isResponsible(int ind) {
+    if (0 <= ind && ind < memberStats.size())
+      return memberStats[ind] == ISRESPONSIBLE;
+    return false;
+  };
+  bool isUnknown(int ind) {
+    if (0 <= ind && ind < memberStats.size())
+      return memberStats[ind] == ISUNKNOWN;
+    return false;
+  };
+  bool isPrimitive(int ind) {
+    if (0 <= ind && ind < memberStats.size())
+      return memberStats[ind] == PRIMITIVE;
+    return false;
+  };
   bool isSelfDereference(int ind) {
-    return memberStats[ind] == SELF_DEREFERENCE;
+    if (0 <= ind && ind < memberStats.size())
+      return memberStats[ind] == SELF_DEREFERENCE;
+    return false;
   };
 };
 

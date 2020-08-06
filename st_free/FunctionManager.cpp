@@ -274,9 +274,9 @@ void FunctionInformation::setStructArgAlloc(Value *V, int64_t num) {
 
 void FunctionInformation::setStructMemberArgFreed(Value *V,
                                                   ParentList indexes) {
-  vector<int> ind;
+  queue<int> ind;
   for (auto i : indexes) {
-    if (i.second != ROOT_INDEX) ind.push_back(i.second);
+    if (i.second != ROOT_INDEX) ind.push(i.second);
   }
   args.setFreed(V, ind);
 }
