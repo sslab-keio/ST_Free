@@ -41,7 +41,7 @@ int ArgStatus::maxSize() {
 void ArgStatus::extendStatusSize(int extSize) {
   for (int i = 0; i < extSize && this->size() < this->maxSize();
        i++, statusSize++) {
-    Type *memTy = get_type(T)->getStructElementType(this->size());
+    llvm::Type *memTy = get_type(T)->getStructElementType(this->size());
     structStatus.push_back(ArgStatus(memTy));
   }
 }
@@ -54,10 +54,10 @@ vector<bool> ArgStatus::getFreedList() {
   return freedList;
 }
 
-void ArgList::setArg(uint64_t arg_no, Value *V) {
+void ArgList::setArg(uint64_t arg_no, llvm::Value *V) {
   if (arg_no < arg_list.size()) {
     arg_list[arg_no] = V;
-    if (auto alloca_inst = dyn_cast<AllocaInst>(V))
+    if (auto alloca_inst = llvm::dyn_cast<llvm::AllocaInst>(V))
       stats[arg_no].setType(alloca_inst->getAllocatedType());
     else
       stats[arg_no].setType(V->getType());
@@ -65,31 +65,31 @@ void ArgList::setArg(uint64_t arg_no, Value *V) {
   return;
 }
 
-Value *ArgList::getArg(uint64_t arg_no) {
+llvm::Value *ArgList::getArg(uint64_t arg_no) {
   if (arg_no < arg_list.size()) {
     return arg_list[arg_no];
   }
   return NULL;
 }
 
-void ArgList::setArgs(Function *F) {
+void ArgList::setArgs(llvm::Function *F) {
   int i = 0;
   for (auto args = F->arg_begin(); args != F->arg_end(); args++, i++) {
-    Value *v = getArgAlloca(args);
+    llvm::Value *v = getArgAlloca(args);
     if (!v) v = args;
     if (v) this->setArg(i, v);
   }
   return;
 }
 
-bool ArgList::isInList(Value *V) {
+bool ArgList::isInList(llvm::Value *V) {
   if (find(arg_list.begin(), arg_list.end(), V) != arg_list.end()) {
     return true;
   }
   return false;
 }
 
-int64_t ArgList::getOperandNum(Value *V) {
+int64_t ArgList::getOperandNum(llvm::Value *V) {
   auto ele = find(arg_list.begin(), arg_list.end(), V);
   if (ele != arg_list.end()) {
     return distance(arg_list.begin(), ele);
@@ -97,18 +97,18 @@ int64_t ArgList::getOperandNum(Value *V) {
   return ROOT_INDEX;
 }
 
-void ArgList::setFreed(Value *V) {
+void ArgList::setFreed(llvm::Value *V) {
   this->setFreed(V, queue<int>());
   return;
 }
 
-void ArgList::setFreed(Value *V, queue<int> indexes) {
+void ArgList::setFreed(llvm::Value *V, queue<int> indexes) {
   int64_t ind = getOperandNum(V);
   if (ind >= 0 && ind < argNum) stats[ind].setMemberFreed(indexes);
   return;
 }
 
-bool ArgList::isFreed(Value *V, queue<int> indexes) {
+bool ArgList::isFreed(llvm::Value *V, queue<int> indexes) {
   int64_t ind = getOperandNum(V);
   if (ind >= 0 && ind < argNum) return stats[ind].isMemberFreed(indexes);
   return false;

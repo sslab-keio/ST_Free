@@ -17,7 +17,7 @@ class ArgStatus {
     statusSize = structSize;
     T = NULL;
   }
-  ArgStatus(Type *Ty) {
+  ArgStatus(llvm::Type *Ty) {
     freed = false;
     T = Ty;
     structStatus = vector<ArgStatus>();
@@ -31,8 +31,8 @@ class ArgStatus {
   }
   bool isFreed() { return freed; }
   void setFreed() { freed = true; }
-  void setType(Type *Ty) { T = Ty; }
-  Type *getType() { return T; }
+  void setType(llvm::Type *Ty) { T = Ty; }
+  llvm::Type *getType() { return T; }
   bool isStruct() { return T && get_type(T)->isStructTy(); }
   uint size() { return statusSize; }
   int maxSize();
@@ -47,32 +47,33 @@ class ArgStatus {
  private:
   bool freed;
   vector<ArgStatus> structStatus;
-  Type *T;
+  llvm::Type *T;
   int statusSize;
 };
+
 class ArgList {
  public:
-  ArgList() { arg_list = vector<Value *>(); }
+  ArgList() { arg_list = vector<llvm::Value *>(); }
   explicit ArgList(uint64_t arg_num) {
     argNum = arg_num;
-    arg_list = vector<Value *>(arg_num, NULL);
+    arg_list = vector<llvm::Value *>(arg_num, NULL);
     stats = vector<ArgStatus>(arg_num);
   }
-  void setArg(uint64_t arg_no, Value *V);
-  Value *getArg(uint64_t arg_no);
+  void setArg(uint64_t arg_no, llvm::Value *V);
+  llvm::Value *getArg(uint64_t arg_no);
   ArgStatus *getArgStatus(int arg) {
     return (arg >= 0 && arg < stats.size()) ? &stats[arg] : NULL;
   };
-  void setArgs(Function *F);
-  bool isInList(Value *V);
-  int64_t getOperandNum(Value *V);
-  void setFreed(Value *V);
-  void setFreed(Value *V, queue<int> indexes);
-  bool isFreed(Value *V, queue<int> indexes);
+  void setArgs(llvm::Function *F);
+  bool isInList(llvm::Value *V);
+  int64_t getOperandNum(llvm::Value *V);
+  void setFreed(llvm::Value *V);
+  void setFreed(llvm::Value *V, queue<int> indexes);
+  bool isFreed(llvm::Value *V, queue<int> indexes);
 
  private:
   uint64_t argNum;
-  vector<Value *> arg_list;
+  vector<llvm::Value *> arg_list;
   vector<ArgStatus> stats;
 };
 }  // namespace ST_free

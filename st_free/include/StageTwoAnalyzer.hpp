@@ -4,18 +4,18 @@
 namespace ST_free {
 class StageTwoAnalyzer : public BaseAnalyzer {
  public:
-  StageTwoAnalyzer(Function *func, StructManager *stm)
+  StageTwoAnalyzer(llvm::Function *func, StructManager *stm)
       : BaseAnalyzer(func, stm){};
-  void analyzeDifferentFunc(Function &F);
+  void analyzeDifferentFunc(llvm::Function &F);
 
  protected:
   /*** Availability Analysis ***/
   void checkAvailability();
   /*** Instruction Analysis ***/
-  void analyzeInstructions(BasicBlock &B);
-  void analyzeAllocaInst(AllocaInst *AI, BasicBlock &B);
-  void analyzeStoreInst(StoreInst *SI, BasicBlock &B);
-  void analyzeCallInst(CallInst *CI, BasicBlock &B);
-  void analyzeBranchInst(BranchInst *BI, BasicBlock &B);
+  void analyzeInstructions(llvm::BasicBlock &B);
+  void analyzeAllocaInst(llvm::AllocaInst *AI, llvm::BasicBlock &B);
+  void analyzeStoreInst(llvm::StoreInst *SI, llvm::BasicBlock &B);
+  void analyzeCallInst(llvm::CallInst *CI, llvm::BasicBlock &B);
+  void analyzeBranchInst(llvm::BranchInst *BI, llvm::BasicBlock &B);
 };
 }  // namespace ST_free

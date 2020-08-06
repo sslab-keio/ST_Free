@@ -2,13 +2,13 @@
 
 namespace ST_free {
 void FreedStruct::print() {
-  outs() << "\t[FreedMember]\n";
+  llvm::outs() << "\t[FreedMember]\n";
   for (int ind = 0; ind < FreedMembers.size(); ind++) {
-    outs() << "\t  [" << ind << "] ";
+    llvm::outs() << "\t  [" << ind << "] ";
     if (FreedMembers[ind])
-      outs() << "IsFreed\n";
+      llvm::outs() << "IsFreed\n";
     else
-      outs() << "NotFreed\n";
+      llvm::outs() << "NotFreed\n";
   }
   return;
 }

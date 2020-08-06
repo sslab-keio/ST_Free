@@ -1,7 +1,7 @@
 #include "include/StructInformation.hpp"
 
 namespace ST_free {
-StructInformation::StructInformation(StructType *st) {
+StructInformation::StructInformation(llvm::StructType *st) {
   int ind = 0;
   strTy = st;
 
@@ -9,14 +9,14 @@ StructInformation::StructInformation(StructType *st) {
   freedCounts = vector<int>(st->getNumElements(), 0);
 
   stc = vector<storeCount>(st->getNumElements());
-  funcPtr = vector<vector<Function *>>(st->getNumElements());
+  funcPtr = vector<vector<llvm::Function *>>(st->getNumElements());
   gvinfo = vector<vector<globalVarInfo>>(st->getNumElements());
 
   candidateNum = 0;
   allocNum = 0;
   negativeCount = 0;
 
-  for (Type *ty : st->elements()) {
+  for (llvm::Type *ty : st->elements()) {
     if (!ty->isPointerTy() &&
         (!ty->isArrayTy() || !ty->getArrayElementType()->isPointerTy()))
       memberStats[ind] = NOTPOINTERTY;
@@ -110,8 +110,8 @@ void StructInformation::checkStageBidirectional(CandidateValue *cand,
 bool StructInformation::isBidirectionalReferencing(CandidateValue *cand,
                                                    int ind) {
   ParentList parents = cand->getFreedStruct()->getParentTypes();
-  Type *member = strTy->getElementType(ind);
-  for (pair<Type *, int> parent : parents) {
+  llvm::Type *member = strTy->getElementType(ind);
+  for (pair<llvm::Type *, int> parent : parents) {
     if (get_type(parent.first) == get_type(member)) return true;
   }
   return false;
@@ -126,7 +126,7 @@ bool StructInformation::judgeResponsibility(int ind) {
 
 void StructInformation::incrementFreedCount(int ind) { freedCounts[ind]++; }
 
-void StructInformation::addReferee(StructType *st) { referees.push_back(st); }
+void StructInformation::addReferee(llvm::StructType *st) { referees.push_back(st); }
 
 bool StructInformation::hasSingleReferee() { return referees.size() == 1; }
 
@@ -146,7 +146,7 @@ void StructInformation::setMemberStatUnknown(int num) {
   if (num < memberStats.size()) memberStats[num] = ISUNKNOWN;
 }
 
-void StructInformation::addCandidateValue(Function *F, FreedStruct *fs) {
+void StructInformation::addCandidateValue(llvm::Function *F, FreedStruct *fs) {
   candidates.push_back(new CandidateValue(F, fs));
   candidateNum++;
 }
@@ -165,49 +165,49 @@ void StructInformation::incrementStoreGlobalVar(int ind) {
 }
 
 void StructInformation::print() {
-  outs() << "=== StructInfo: Debug Info===\n";
-  if (strTy->hasName()) outs() << "[Struct]: " << strTy->getName() << "\n";
-  outs() << "[AllocNum]: " << allocNum << "\n";
-  outs() << "[Referees] (TTL: " << referees.size() << ") \n";
+  llvm::outs() << "=== StructInfo: Debug Info===\n";
+  if (strTy->hasName()) llvm::outs() << "[Struct]: " << strTy->getName() << "\n";
+  llvm::outs() << "[AllocNum]: " << allocNum << "\n";
+  llvm::outs() << "[Referees] (TTL: " << referees.size() << ") \n";
   // for (StructType* ty : referees){
   //     outs() << "\t" << *ty << "\n";
   // }
-  outs() << "[Elements]\n";
+  llvm::outs() << "[Elements]\n";
   for (int ind = 0; ind < strTy->getNumElements(); ind++) {
-    outs() << "\t[" << ind << "]: " << *strTy->getElementType(ind) << " ";
+    llvm::outs() << "\t[" << ind << "]: " << *strTy->getElementType(ind) << " ";
     switch (memberStats[ind]) {
       case ISRESPONSIBLE:
-        outs() << "ISRESPONSIBLE";
+        llvm::outs() << "ISRESPONSIBLE";
         break;
       case ISNOTRESPONSIBLE:
-        outs() << "ISNOTRESPONSIBLE";
+        llvm::outs() << "ISNOTRESPONSIBLE";
         break;
       case ISUNKNOWN:
-        outs() << "ISUNKNOWN ";
+        llvm::outs() << "ISUNKNOWN ";
         if (this->judgeResponsibility(ind))
-          outs() << "(Judged Responsible)";
+          llvm::outs() << "(Judged Responsible)";
         else
-          outs() << "(Judged Not Responsible)";
+          llvm::outs() << "(Judged Not Responsible)";
         break;
       case NOTPOINTERTY:
-        outs() << "NOTPOINTERTY";
+        llvm::outs() << "NOTPOINTERTY";
         break;
       case UNALLOCATED:
-        outs() << "UNALLOCATED";
+        llvm::outs() << "UNALLOCATED";
         break;
       case PRIMITIVE:
-        outs() << "PRIMITIVE";
+        llvm::outs() << "PRIMITIVE";
         break;
       case SELF_DEREFERENCE:
-        outs() << "SELF_DEREFERENCE";
+        llvm::outs() << "SELF_DEREFERENCE";
         break;
       default:
-        outs() << "DEFAULT";
+        llvm::outs() << "DEFAULT";
     }
-    outs() << " [" << stc[ind].globalVar << "/" << stc[ind].total << "], "
+    llvm::outs() << " [" << stc[ind].globalVar << "/" << stc[ind].total << "], "
            << freedCounts[ind] << "\n";
   }
-  outs() << "[CandidateNum]: " << candidateNum << "\n";
+  llvm::outs() << "[CandidateNum]: " << candidateNum << "\n";
   // outs() << "[BugCandidates]\n";
   // if(candidates.size() == 0)
   //     outs() << "Empty\n";
@@ -221,65 +221,65 @@ void StructInformation::print() {
   //     cands->print();
   //     outs() << "******\n";
   // }
-  outs() << "=============================\n";
+  llvm::outs() << "=============================\n";
 }
 
 void StructInformation::PrintJson(){
     if (!strTy->hasName())
       return;
-    outs() << "{\n";
-    outs() << "\"StructName\": \"" << strTy->getName() << "\",\n";
-    outs() << "\"Members\": [\n";
+    llvm::outs() << "{\n";
+    llvm::outs() << "\"StructName\": \"" << strTy->getName() << "\",\n";
+    llvm::outs() << "\"Members\": [\n";
     for(int ind = 0; ind < strTy->getNumElements(); ind++){
-      outs() << "{\n";
-      outs() << "\"Type\": " << *strTy->getElementType(ind) << ", \n";
-      outs() << "\"Responsibility\": \"";
+      llvm::outs() << "{\n";
+      llvm::outs() << "\"Type\": " << *strTy->getElementType(ind) << ", \n";
+      llvm::outs() << "\"Responsibility\": \"";
       switch(memberStats[ind]){
           case ISRESPONSIBLE:
-              outs() << "ISRESPONSIBLE";
+              llvm::outs() << "ISRESPONSIBLE";
               break;
           case ISNOTRESPONSIBLE:
-              outs() << "ISNOTRESPONSIBLE";
+              llvm::outs() << "ISNOTRESPONSIBLE";
               break;
           case ISUNKNOWN:
-              outs() << "ISUNKNOWN ";
+              llvm::outs() << "ISUNKNOWN ";
               if(this->judgeResponsibility(ind))
-                  outs() << "(Judged Responsible)";
+                  llvm::outs() << "(Judged Responsible)";
               else
-                  outs() << "(Judged Not Responsible)";
+                  llvm::outs() << "(Judged Not Responsible)";
               break;
           case NOTPOINTERTY:
-              outs() << "NOTPOINTERTY";
+              llvm::outs() << "NOTPOINTERTY";
               break;
           case UNALLOCATED:
-              outs() << "UNALLOCATED";
+              llvm::outs() << "UNALLOCATED";
               break;
           case PRIMITIVE:
-              outs() << "PRIMITIVE";
+              llvm::outs() << "PRIMITIVE";
               break;
           case SELF_DEREFERENCE:
-              outs() << "SELF_DEREFERENCE";
+              llvm::outs() << "SELF_DEREFERENCE";
               break;
           default:
-              outs() << "DEFAULT";
+              llvm::outs() << "DEFAULT";
       }
-      outs() << "\"\n";
-      outs() << "}, \n";
+      llvm::outs() << "\"\n";
+      llvm::outs() << "}, \n";
     }
-    outs() << "]\n";
-    outs() << "},\n";
+    llvm::outs() << "]\n";
+    llvm::outs() << "},\n";
 }
 
-void StructInformation::addFunctionPtr(int ind, Function *func) {
+void StructInformation::addFunctionPtr(int ind, llvm::Function *func) {
   funcPtr[ind].push_back(func);
 }
 
-vector<Function *> StructInformation::getFunctionPtr(int ind) {
+vector<llvm::Function *> StructInformation::getFunctionPtr(int ind) {
   return funcPtr[ind];
 }
 
 void StructInformation::addGVInfo(int ind, vector<string> dirs,
-                                  GlobalVariable *gv) {
+                                  llvm::GlobalVariable *gv) {
   gvinfo[ind].push_back(globalVarInfo(dirs, gv));
   return;
 }
@@ -288,7 +288,7 @@ vector<globalVarInfo> StructInformation::getGVInfo(int ind) {
   return gvinfo[ind];
 }
 
-void StructInformation::changeToNonRefered(StructType *StTy) {
+void StructInformation::changeToNonRefered(llvm::StructType *StTy) {
   for (int i = 0; i < this->getStructType()->getNumElements(); i++) {
     if (StTy == get_type(this->getStructType()->getElementType(i))) {
       this->setMemberStatNotAllocated(i);
@@ -297,31 +297,31 @@ void StructInformation::changeToNonRefered(StructType *StTy) {
 }
 
 /*** [Struct Manager] ***/
-StructManager::StructManager(vector<StructType *> st) {
-  for (StructType *StrTy : st) StructInfo[StrTy] = new StructInformation(StrTy);
+StructManager::StructManager(vector<llvm::StructType *> st) {
+  for (llvm::StructType *StrTy : st) StructInfo[StrTy] = new StructInformation(StrTy);
   this->createDependencies();
   this->changeStats();
 }
 
-void StructManager::addReferee(StructType *tgt, StructType *referee) {
+void StructManager::addReferee(llvm::StructType *tgt, llvm::StructType *referee) {
   // if(!this->exists(tgt))
   //     StructInfo[tgt] = new StructInformation(tgt);
   StructInfo[tgt]->addReferee(referee);
 }
 
-bool StructManager::exists(StructType *st) {
+bool StructManager::exists(llvm::StructType *st) {
   if (StructInfo.find(st) != StructInfo.end()) return true;
   return false;
 }
 
 void StructManager::createDependencies() {
-  queue<StructType *> struct_queue;
+  queue<llvm::StructType *> struct_queue;
   for (auto Stmap : StructInfo) struct_queue.push(Stmap.first);
 
   while (!struct_queue.empty()) {
     for (unsigned i = 0; i < struct_queue.front()->getNumElements(); i++) {
-      Type *member = struct_queue.front()->getElementType(i);
-      if (auto stTy = dyn_cast<StructType>(get_type(member))) {
+      llvm::Type *member = struct_queue.front()->getElementType(i);
+      if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
         if (!this->exists(stTy)) {
           StructInfo[stTy] = new StructInformation(stTy);
           struct_queue.push(stTy);
@@ -336,35 +336,35 @@ void StructManager::createDependencies() {
 void StructManager::changeStats() {
   for (auto Stmap : StructInfo) {
     for (unsigned ind = 0; ind < Stmap.first->getNumElements(); ind++) {
-      Type *member = Stmap.first->getElementType(ind);
+      llvm::Type *member = Stmap.first->getElementType(ind);
       if (this->get(Stmap.first)->isUnknown(ind))
-        if (auto stTy = dyn_cast<StructType>(get_type(member)))
+        if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member)))
           if (StructInfo[stTy]->hasSingleReferee())
             StructInfo[Stmap.first]->setMemberStatResponsible(ind);
     }
   }
 }
 
-void StructManager::addCandidateValue(Function *F, StructType *strTy,
+void StructManager::addCandidateValue(llvm::Function *F, llvm::StructType *strTy,
                                       FreedStruct *fs) {
   if (!this->exists(strTy)) StructInfo[strTy] = new StructInformation(strTy);
 
   StructInfo[strTy]->addCandidateValue(F, fs);
 }
 
-void StructManager::addAlloc(StructType *strTy) {
+void StructManager::addAlloc(llvm::StructType *strTy) {
   if (!this->exists(strTy)) StructInfo[strTy] = new StructInformation(strTy);
 
   StructInfo[strTy]->incrementAllocNum();
 }
 
-void StructManager::addStore(StructType *strTy, int ind) {
+void StructManager::addStore(llvm::StructType *strTy, int ind) {
   if (!this->exists(strTy)) StructInfo[strTy] = new StructInformation(strTy);
 
   StructInfo[strTy]->incrementStoreTotal(ind);
 }
 
-void StructManager::addGlobalVarStore(StructType *strTy, int ind) {
+void StructManager::addGlobalVarStore(llvm::StructType *strTy, int ind) {
   if (!this->exists(strTy)) StructInfo[strTy] = new StructInformation(strTy);
 
   StructInfo[strTy]->incrementStoreGlobalVar(ind);
@@ -377,13 +377,13 @@ void StructManager::print() {
 }
 
 void StructManager::PrintAsJson() {
-  outs() << "======= Printing Struct Relationship as Json =======\n";
-  outs() << "[\n";
+  llvm::outs() << "======= Printing Struct Relationship as Json =======\n";
+  llvm::outs() << "[\n";
   for (auto Stmap : StructInfo) {
     Stmap.second->PrintJson();
   }
-  outs() << "]\n";
-  outs() << "======= Printed Struct Relationship as Json =======\n";
+  llvm::outs() << "]\n";
+  llvm::outs() << "======= Printed Struct Relationship as Json =======\n";
 }
 
 void StructManager::BuildCandidateCount() {
@@ -402,9 +402,9 @@ void StructManager::checkCorrectness() {
 void StructManager::checkNonAllocs() {
   for (auto Stmap : StructInfo) {
     int ind = 0;
-    for (Type *member : Stmap.first->elements()) {
+    for (llvm::Type *member : Stmap.first->elements()) {
       if (member->isPointerTy())
-        if (auto stTy = dyn_cast<StructType>(get_type(member))) {
+        if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
           if (StructInfo[stTy]->hasNoAlloc()) {
             Stmap.second->setMemberStatNotAllocated(ind);
           }
@@ -414,23 +414,23 @@ void StructManager::checkNonAllocs() {
   }
 }
 
-void StructManager::addGlobalVariableInitInfo(Module &M) {
-  for (GlobalVariable &GV : M.globals()) {
+void StructManager::addGlobalVariableInitInfo(llvm::Module &M) {
+  for (llvm::GlobalVariable &GV : M.globals()) {
     if (GV.getValueType()->isStructTy() && GV.hasInitializer()) {
-      Constant *cnst = GV.getInitializer();
+      llvm::Constant *cnst = GV.getInitializer();
       for (int i = 0; i < GV.getValueType()->getStructNumElements(); i++) {
         if (get_type(GV.getValueType()->getStructElementType(i))
                 ->isFunctionTy() &&
             cnst->getAggregateElement(i)) {
-          this->get(cast<StructType>(GV.getValueType()))
-              ->addFunctionPtr(i, cast<Function>(cnst->getAggregateElement(i)));
+          this->get(llvm::cast<llvm::StructType>(GV.getValueType()))
+              ->addFunctionPtr(i, llvm::cast<llvm::Function>(cnst->getAggregateElement(i)));
         }
       }
     }
   }
 }
 
-bool StructManager::structHoldsAuthority(StructType *StTy, long ind) {
+bool StructManager::structHoldsAuthority(llvm::StructType *StTy, long ind) {
   if (this->exists(StTy) && this->get(StTy)->isResponsible(ind)) return true;
   return false;
 }
@@ -438,7 +438,7 @@ bool StructManager::structHoldsAuthority(StructType *StTy, long ind) {
 void StructManager::markNoAlloc() {
   for (auto Stmap : StructInfo) {
     if (Stmap.second->hasNoAlloc()) {
-      for (StructType *StTy : Stmap.second->getReferees()) {
+      for (llvm::StructType *StTy : Stmap.second->getReferees()) {
         if (this->exists(StTy))
           this->get(StTy)->changeToNonRefered(Stmap.first);
       }

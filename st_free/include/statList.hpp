@@ -3,15 +3,15 @@
 namespace ST_free {
 class StatusList {
  private:
-  map<Type *, map<Value *, vector<int>>> st_tab;
+  map<llvm::Type *, map<llvm::Value *, vector<int>>> st_tab;
 
  public:
-  int getStat(Type *, Value *, uint64_t);
-  void setStat(Type *, Value *, uint64_t, int);
-  bool exists(Type *, Value *, uint64_t);
-  bool exists(Type *, Value *);
-  void setList(Type *, Value *);
-  vector<int> *getList(Type *, Value *);
-  size_t getSize(Type *, Value *);
+  int getStat(llvm::Type *, llvm::Value *, uint64_t);
+  void setStat(llvm::Type *, llvm::Value *, uint64_t, int);
+  bool exists(llvm::Type *, llvm::Value *, uint64_t);
+  bool exists(llvm::Type *, llvm::Value *);
+  void setList(llvm::Type *, llvm::Value *);
+  vector<int> *getList(llvm::Type *, llvm::Value *);
+  size_t getSize(llvm::Type *, llvm::Value *);
 };
 }  // namespace ST_free

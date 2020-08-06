@@ -2,15 +2,15 @@
 #pragma once
 
 namespace ST_free {
-LoadInst *find_load(Instruction *);
-Value *getLoadeeValue(Value *);
-Type *get_type(Value *);
-Type *get_type(Type *);
-void generateWarning(Instruction *, std::string, bool print = false);
+llvm::LoadInst *find_load(llvm::Instruction *);
+llvm::Value *getLoadeeValue(llvm::Value *);
+llvm::Type *get_type(llvm::Value *);
+llvm::Type *get_type(llvm::Type *);
+void generateWarning(llvm::Instruction *, std::string, bool print = false);
 void generateWarning(string warn);
-void generateWarning(Instruction *Inst, Value *val);
-void generateError(Instruction *, std::string);
-string parseErrorMessage(StructType *parent, long index);
-Value *getArgAlloca(Value *arg);
-static LoadInst *find_load_recursively(Instruction *val, int TTL);
+void generateWarning(llvm::Instruction *Inst, llvm::Value *val);
+void generateError(llvm::Instruction *, std::string);
+string parseErrorMessage(llvm::StructType *parent, long index);
+llvm::Value *getArgAlloca(llvm::Value *arg);
+static llvm::LoadInst *find_load_recursively(llvm::Instruction *val, int TTL);
 }  // namespace ST_free

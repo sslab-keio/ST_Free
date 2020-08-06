@@ -2,20 +2,20 @@
 
 namespace ST_free {
 void UniqueKey::print() const {
-  outs() << "== Unique Key Info ==\n";
-  outs() << "[Value]: " << this->getValue() << "\n";
-  outs() << "[Type]: " << this->getType() << "\n";
-  outs() << "[memberNum]: " << this->getNum() << "\n";
-  outs() << "=====================\n";
+  llvm::outs() << "== Unique Key Info ==\n";
+  llvm::outs() << "[Value]: " << this->getValue() << "\n";
+  llvm::outs() << "[Type]: " << this->getType() << "\n";
+  llvm::outs() << "[memberNum]: " << this->getNum() << "\n";
+  llvm::outs() << "=====================\n";
 }
 
-const UniqueKey *UniqueKeyManager::addUniqueKey(Value *val, Type *ty,
+const UniqueKey *UniqueKeyManager::addUniqueKey(llvm::Value *val, llvm::Type *ty,
                                                 long mem) {
   auto uk = ukmanage.insert(UniqueKey(val, ty, mem));
   return &(*(uk.first));
 }
 
-const UniqueKey *UniqueKeyManager::getUniqueKey(Value *val, Type *ty,
+const UniqueKey *UniqueKeyManager::getUniqueKey(llvm::Value *val, llvm::Type *ty,
                                                 long mem) {
   auto found = ukmanage.find(UniqueKey(val, ty, mem));
   if (found == ukmanage.end()) return NULL;

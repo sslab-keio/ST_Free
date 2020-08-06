@@ -11,11 +11,11 @@ class BasicBlockWorkList {
   BasicBlockWorkList(const BasicBlockList);
   void add(const UniqueKey *UK);
   bool exists(const UniqueKey *UK);
-  bool typeExists(Type *T);
-  const UniqueKey *getFromType(Type *T);
-  bool valueExists(Value *V);
-  bool fieldExists(Type *T, long ind);
-  const UniqueKey *getUKFromValue(Value *V);
+  bool typeExists(llvm::Type *T);
+  const UniqueKey *getFromType(llvm::Type *T);
+  bool valueExists(llvm::Value *V);
+  bool fieldExists(llvm::Type *T, long ind);
+  const UniqueKey *getUKFromValue(llvm::Value *V);
   BasicBlockList getList() const;
   void setList(BasicBlockList);
 
@@ -23,7 +23,7 @@ class BasicBlockWorkList {
   BasicBlockList MarkedValues;
 };
 
-using LiveVariableList = vector<Value *>;
+using LiveVariableList = vector<llvm::Value *>;
 class BasicBlockInformation {
  public:
   enum BasicBlockInformationStat {
@@ -56,18 +56,18 @@ class BasicBlockInformation {
 
   /*** Live Variable Methods ***/
   void setLiveVariables(LiveVariableList);
-  void addLiveVariable(Value *v);
-  bool LiveVariableExists(Value *v);
-  void incrementRefCount(Value *v);
-  void decrementRefCount(Value *v);
+  void addLiveVariable(llvm::Value *v);
+  bool LiveVariableExists(llvm::Value *v);
+  void incrementRefCount(llvm::Value *v);
+  void decrementRefCount(llvm::Value *v);
 
   /*** Branch Related Methods ***/
   void setCorrectlyBranched();
   bool isCorrectlyBranched();
   void setErrorHandlingBlock();
   bool isErrorHandlingBlock();
-  void addSucceedingErrorBlock(BasicBlock *B);
-  bool isInSucceedingErrorBlock(BasicBlock *B);
+  void addSucceedingErrorBlock(llvm::BasicBlock *B);
+  bool isInSucceedingErrorBlock(llvm::BasicBlock *B);
 
   /*** CorrectlyFreed ***/
   void addCorrectlyFreedValue(const UniqueKey *UK);
@@ -82,12 +82,12 @@ class BasicBlockInformation {
   /*** Utilities ***/
   BasicBlockWorkList getWorkList(int mode) const;
   LiveVariableList getLiveVariables() const;
-  void addStoredCallValues(Value *v, CallInst *CI);
-  vector<pair<Value *, CallInst *>> getStoredCallValues();
-  bool isCallValues(Value *V);
-  CallInst *getCallInstForVal(Value *V);
-  void addRemoveAlloc(BasicBlock *B, UniqueKey *UK);
-  BasicBlockWorkList getRemoveAllocs(BasicBlock *B);
+  void addStoredCallValues(llvm::Value *v, llvm::CallInst *CI);
+  vector<pair<llvm::Value *, llvm::CallInst *>> getStoredCallValues();
+  bool isCallValues(llvm::Value *V);
+  llvm::CallInst *getCallInstForVal(llvm::Value *V);
+  void addRemoveAlloc(llvm::BasicBlock *B, UniqueKey *UK);
+  BasicBlockWorkList getRemoveAllocs(llvm::BasicBlock *B);
   void setUnconditionalBranched() { unConditionalBranched = true; }
   bool isUnconditionalBranched() { return unConditionalBranched; }
 
@@ -95,8 +95,8 @@ class BasicBlockInformation {
   BasicBlockList getAllocList() const;
   BasicBlockList getFreeList() const;
 
-  BasicBlockList getErrorRemovedAllocList(BasicBlock *tgt);
-  BasicBlockList getErrorAddedFreeList(BasicBlock *tgt);
+  BasicBlockList getErrorRemovedAllocList(llvm::BasicBlock *tgt);
+  BasicBlockList getErrorAddedFreeList(llvm::BasicBlock *tgt);
 
   /*** Shrinked Lists ***/
   // Returns diff of alloc and free
@@ -132,9 +132,9 @@ class BasicBlockInformation {
   BasicBlockWorkList BackupFreeList;
   BasicBlockWorkList BackupAllocList;
 
-  vector<pair<Value *, CallInst *>> storedCallValues;
-  map<BasicBlock *, BasicBlockWorkList> removeAllocs;
-  vector<BasicBlock *> succeedingErrorBlocks;
+  vector<pair<llvm::Value *, llvm::CallInst *>> storedCallValues;
+  map<llvm::BasicBlock *, BasicBlockWorkList> removeAllocs;
+  vector<llvm::BasicBlock *> succeedingErrorBlocks;
 
   /*** BasicBlock Status ***/
   bool correctlyBranched;
@@ -151,48 +151,48 @@ class BasicBlockInformation {
 class BasicBlockManager {
  public:
   /*** getter ***/
-  void set(BasicBlock *B);
-  BasicBlockInformation *get(BasicBlock *B);
-  BasicBlockList getBasicBlockAllocList(BasicBlock *src);
-  BasicBlockList getBasicBlockFreeList(BasicBlock *src);
-  BasicBlockList getBasicBlockPendingAllocList(BasicBlock *src);
+  void set(llvm::BasicBlock *B);
+  BasicBlockInformation *get(llvm::BasicBlock *B);
+  BasicBlockList getBasicBlockAllocList(llvm::BasicBlock *src);
+  BasicBlockList getBasicBlockFreeList(llvm::BasicBlock *src);
+  BasicBlockList getBasicBlockPendingAllocList(llvm::BasicBlock *src);
 
-  BasicBlockList getBasicBlockRemoveAllocList(BasicBlock *src, BasicBlock *tgt);
-  BasicBlockList getBasicBlockErrorRemovedAllocList(BasicBlock *src, BasicBlock *tgt);
-  BasicBlockList getBasicBlockErrorAddedFreeList(BasicBlock *src, BasicBlock *tgt);
+  BasicBlockList getBasicBlockRemoveAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  BasicBlockList getBasicBlockErrorRemovedAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  BasicBlockList getBasicBlockErrorAddedFreeList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
 
-  BasicBlockList getBasicBlockDMZList(BasicBlock *src);
-  LiveVariableList getLiveVariables(BasicBlock *B);
+  BasicBlockList getBasicBlockDMZList(llvm::BasicBlock *src);
+  LiveVariableList getLiveVariables(llvm::BasicBlock *B);
 
-  BasicBlockList getShrinkedBasicBlockFreeList(BasicBlock *src, BasicBlock *tgt);
-  BasicBlockList getShrinkedBasicBlockAllocList(BasicBlock *src, BasicBlock *tgt);
+  BasicBlockList getShrinkedBasicBlockFreeList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  BasicBlockList getShrinkedBasicBlockAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
 
   /*** Mediator ***/
   void CollectInInfo(
-      BasicBlock *B, bool isEntryPoint,
+     llvm:: BasicBlock *B, bool isEntryPoint,
       const map<const UniqueKey *, const UniqueKey *> *alias_map);
-  void copyAllList(BasicBlock *src, BasicBlock *tgt);
-  void copyFreed(BasicBlock *src, BasicBlock *tgt);
-  void copyCorrectlyFreed(BasicBlock *src, BasicBlock *tgt);
-  void uniteAllocList(BasicBlock *src, BasicBlock *tgt);
-  void uniteDMZList(BasicBlock *src, BasicBlock *tgt);
-  void intersectFreeList(BasicBlock *src, BasicBlock *tgt);
+  void copyAllList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  void copyFreed(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  void copyCorrectlyFreed(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  void uniteAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  void uniteDMZList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  void intersectFreeList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
   void removeAllocatedInError(
-      BasicBlock *src, BasicBlock *tgt,
+      llvm::BasicBlock *src, llvm::BasicBlock *tgt,
       const map<const UniqueKey *, const UniqueKey *> *alias_map);
-  void updateSuccessorBlock(BasicBlock *src);
-  void addFreeInfoFromDMZToPreds(BasicBlock *src);
-  bool isPredBlockCorrectlyBranched(BasicBlock *B);
-  bool checkIfErrorBlock(BasicBlock *B);
+  void updateSuccessorBlock(llvm::BasicBlock *src);
+  void addFreeInfoFromDMZToPreds(llvm::BasicBlock *src);
+  bool isPredBlockCorrectlyBranched(llvm::BasicBlock *B);
+  bool checkIfErrorBlock(llvm::BasicBlock *B);
 
   /*** Optimizer ***/
-  void shrinkFreedFromAlloc(BasicBlock *B);
+  void shrinkFreedFromAlloc(llvm::BasicBlock *B);
 
  private:
-  map<BasicBlock *, BasicBlockInformation> BBMap;
+  map<llvm::BasicBlock *, BasicBlockInformation> BBMap;
   LiveVariableList intersectLiveVariables(LiveVariableList src,
                                           LiveVariableList tgt);
-  bool exists(BasicBlock *B);
+  bool exists(llvm::BasicBlock *B);
 };
 
 namespace BasicBlockListOperation {

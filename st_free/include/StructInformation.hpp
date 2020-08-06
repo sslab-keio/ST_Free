@@ -21,27 +21,27 @@ namespace ST_free {
  * */
 class CandidateValue {
  private:
-  Function *F;
+  llvm::Function *F;
   FreedStruct *fst;
 
  public:
-  CandidateValue(Function *func, FreedStruct *fs) {
+  CandidateValue(llvm::Function *func, FreedStruct *fs) {
     F = func;
     fst = fs;
   }
   FreedStruct *getFreedStruct() { return fst; };
-  Function *getFunction() { return F; };
+  llvm::Function *getFunction() { return F; };
   unsigned getMemberSize() { return fst->memberSize(); };
   bool memberIsFreed(unsigned ind) { return fst->memberIsFreed(ind); };
   bool memberIsAllocated(unsigned ind) { return fst->memberIsAllocated(ind); };
-  Instruction *getInstruction() { return fst->getInst(); }
-  Type *getTopParent() { return fst->getTopParent(); }
+  llvm::Instruction *getInstruction() { return fst->getInst(); }
+  llvm::Type *getTopParent() { return fst->getTopParent(); }
   void print() { fst->print(); };
 };
 struct globalVarInfo {
   vector<string> dirs;
-  GlobalVariable *GV;
-  globalVarInfo(vector<string> d, GlobalVariable *G) {
+  llvm::GlobalVariable *GV;
+  globalVarInfo(vector<string> d, llvm::GlobalVariable *G) {
     dirs = d;
     GV = G;
   }
@@ -62,12 +62,12 @@ class StructInformation {
       globalVar = 0;
     }
   };
-  StructType *strTy;
-  vector<StructType *> referees;
+  llvm::StructType *strTy;
+  vector<llvm::StructType *> referees;
   vector<int> memberStats;
   vector<int> freedCounts;
   vector<storeCount> stc;
-  vector<vector<Function *>> funcPtr;
+  vector<vector<llvm::Function *>> funcPtr;
   vector<vector<globalVarInfo>> gvinfo;
   int candidateNum;
   int negativeCount;
@@ -92,16 +92,16 @@ class StructInformation {
 
  public:
   StructInformation(){};
-  StructInformation(StructType *st);
-  vector<StructType *> getReferees() { return referees; }
-  void addReferee(StructType *st);
+  StructInformation(llvm::StructType *st);
+  vector<llvm::StructType *> getReferees() { return referees; }
+  void addReferee(llvm::StructType *st);
   bool hasSingleReferee();
-  void changeToNonRefered(StructType *StTy);
+  void changeToNonRefered(llvm::StructType *StTy);
   void setMemberStatUnknown(int num);
   void setMemberStatResponsible(int num);
   void setMemberStatNotResponsible(int num);
   void setMemberStatNotAllocated(int num);
-  void addCandidateValue(Function *F, FreedStruct *fs);
+  void addCandidateValue(llvm::Function *F, FreedStruct *fs);
   void print();
   void PrintJson();
   void BuildCandidateCount();
@@ -113,17 +113,17 @@ class StructInformation {
   void incrementStoreTotal(int ind);
   bool isNotStored(int ind);
   void incrementStoreGlobalVar(int ind);
-  void addFunctionPtr(int ind, Function *func);
-  vector<Function *> getFunctionPtr(int ind);
-  void addGVInfo(int ind, vector<string> dirs, GlobalVariable *gv);
+  void addFunctionPtr(int ind, llvm::Function *func);
+  vector<llvm::Function *> getFunctionPtr(int ind);
+  void addGVInfo(int ind, vector<string> dirs, llvm::GlobalVariable *gv);
   vector<globalVarInfo> getGVInfo(int ind);
-  StructType *getStructType() { return strTy; }
+  llvm::StructType *getStructType() { return strTy; }
   /*** Negative Count Related ***/
   void addNegativePoint() { negativeCount++; }
   int getNegativePoint() { return negativeCount; }
   void printStoreGlobalVar(int ind) {
-    outs() << "\tTotal: " << stc[ind].total << "\n";
-    outs() << "\tGV: " << stc[ind].globalVar << "\n";
+    llvm::outs() << "\tTotal: " << stc[ind].total << "\n";
+    llvm::outs() << "\tGV: " << stc[ind].globalVar << "\n";
   }
   /*** Status Related ***/
   bool isResponsible(int ind) {
@@ -158,28 +158,28 @@ class StructInformation {
 class StructManager {
  public:
   StructManager(){};
-  StructManager(vector<StructType *> st);
-  StructInformation *get(StructType *strTy) { return StructInfo[strTy]; }
+  StructManager(vector<llvm::StructType *> st);
+  StructInformation *get(llvm::StructType *strTy) { return StructInfo[strTy]; }
   TypeRelationManager *getTypeRelationManager() { return &tyRel; };
-  void addCandidateValue(Function *F, StructType *strTy, FreedStruct *fs);
-  void addAlloc(StructType *strTy);
-  void addStore(StructType *strTy, int ind);
-  void addGlobalVarStore(StructType *strTy, int ind);
+  void addCandidateValue(llvm::Function *F, llvm::StructType *strTy, FreedStruct *fs);
+  void addAlloc(llvm::StructType *strTy);
+  void addStore(llvm::StructType *strTy, int ind);
+  void addGlobalVarStore(llvm::StructType *strTy, int ind);
   void print();
   void PrintAsJson();
   void BuildCandidateCount();
   void checkCorrectness();
-  void addGlobalVariableInitInfo(Module &M);
-  bool structHoldsAuthority(StructType *StTy, long ind);
+  void addGlobalVariableInitInfo(llvm::Module &M);
+  bool structHoldsAuthority(llvm::StructType *StTy, long ind);
   void markNoAlloc();
 
  private:
-  map<StructType *, StructInformation *> StructInfo;
+  map<llvm::StructType *, StructInformation *> StructInfo;
   TypeRelationManager tyRel;
-  void addReferee(StructType *referee, StructType *tgt);
+  void addReferee(llvm::StructType *referee, llvm::StructType *tgt);
   void createDependencies();
   void changeStats();
-  bool exists(StructType *);
+  bool exists(llvm::StructType *);
   void checkNonAllocs();
 };
 }  // namespace ST_free

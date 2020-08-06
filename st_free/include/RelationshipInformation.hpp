@@ -2,15 +2,15 @@
 #include "ST_free.hpp"
 
 namespace ST_free {
-using aliasList = vector<Value *>;
+using aliasList = vector<llvm::Value *>;
 struct AliasElement {
-  StructType *stTy;
+  llvm::StructType *stTy;
   int index;
   AliasElement() {
     stTy = NULL;
     index = ROOT_INDEX;
   }
-  AliasElement(StructType *st, int ind) {
+  AliasElement(llvm::StructType *st, int ind) {
     stTy = st;
     index = ind;
   }
@@ -21,7 +21,7 @@ struct AliasElement {
   bool operator==(const struct AliasElement &ae) const {
     return this->stTy == ae.stTy && this->index == ae.index;
   }
-  void set(StructType *st, int ind) {
+  void set(llvm::StructType *st, int ind) {
     stTy = st;
     index = ind;
   }
@@ -40,12 +40,12 @@ class TypeRelationManager {
 };
 class RelationshipInformation {
  public:
-  bool exists(Value *src);
-  aliasList get(Value *src);
-  void add(Value *src, Value *tgt);
-  bool hasRelationship(Value *src, Value *tgt);
+  bool exists(llvm::Value *src);
+  aliasList get(llvm::Value *src);
+  void add(llvm::Value *src, llvm::Value *tgt);
+  bool hasRelationship(llvm::Value *src, llvm::Value *tgt);
 
  private:
-  map<Value *, aliasList> rmap;
+  map<llvm::Value *, aliasList> rmap;
 };
 }  // namespace ST_free

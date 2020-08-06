@@ -1,9 +1,9 @@
 #include "include/ValueInformation.hpp"
 
 namespace ST_free {
-Value *ValueInformation::getValue() const { return V; }
+llvm::Value *ValueInformation::getValue() const { return V; }
 
-Type *ValueInformation::getTopParent() {
+llvm::Type *ValueInformation::getTopParent() {
   if (!parents.empty()) return parents[0].first;
   return NULL;
 }
@@ -36,7 +36,7 @@ ValueInformation *ValueManager::getValueInfo(const UniqueKey *UK) {
 //         vinfos[UniqueKey(val, ty, num)] = new ValueInformation(val);
 // }
 
-void ValueManager::addValueInfo(const UniqueKey *UK, Value *val) {
+void ValueManager::addValueInfo(const UniqueKey *UK, llvm::Value *val) {
   if (!this->exists(UK)) vinfos[UK] = new ValueInformation(val);
   return;
 }
@@ -47,7 +47,7 @@ void ValueManager::addValueInfo(const UniqueKey *UK, Value *val) {
 //         memType, parType, num);
 //     return;
 // }
-void ValueManager::addValueInfo(const UniqueKey *UK, Value *val,
+void ValueManager::addValueInfo(const UniqueKey *UK, llvm::Value *val,
                                 ParentList plist) {
   if (!this->exists(UK)) vinfos[UK] = new ValueInformation(val, plist);
   return;

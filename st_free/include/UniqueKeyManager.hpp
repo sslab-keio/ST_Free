@@ -3,15 +3,14 @@
 #pragma once
 
 using namespace std;
-using namespace llvm;
 
 namespace ST_free {
 class UniqueKey {
  public:
-  Value *getValue() const { return v; }
-  Type *getType() const { return t; }
+  llvm::Value *getValue() const { return v; }
+  llvm::Type *getType() const { return t; }
   long getNum() const { return memberNum; }
-  UniqueKey(Value *val, Type *ty, long mem) {
+  UniqueKey(llvm::Value *val, llvm::Type *ty, long mem) {
     v = val;
     t = ty;
     memberNum = mem;
@@ -30,9 +29,9 @@ class UniqueKey {
     }
     return v < uk.getValue();
   }
-  bool operator<(const Type &T) const { return t < &T; }
-  bool operator<(Type *T) const { return t < T; }
-  bool operator<(const pair<Type *, long> &field) {
+  bool operator<(const llvm::Type &T) const { return t < &T; }
+  bool operator<(llvm::Type *T) const { return t < T; }
+  bool operator<(const pair<llvm::Type *, long> &field) {
     if (t < field.first) {
       return memberNum < field.second;
     }
@@ -44,8 +43,8 @@ class UniqueKey {
   }
 
  private:
-  Value *v;
-  Type *t;
+  llvm::Value *v;
+  llvm::Type *t;
   long memberNum;
 };
 
@@ -54,9 +53,9 @@ class UniqueKeyManager {
   set<UniqueKey> ukmanage;
 
  public:
-  const UniqueKey *addUniqueKey(Value *val, Type *ty, long mem);
-  const UniqueKey *getUniqueKey(Value *val, Type *ty, long mem);
-  const UniqueKey *getUniqueKeyFromField(Type *ty, long mem);
+  const UniqueKey *addUniqueKey(llvm::Value *val, llvm::Type *ty, long mem);
+  const UniqueKey *getUniqueKey(llvm::Value *val, llvm::Type *ty, long mem);
+  const UniqueKey *getUniqueKeyFromField(llvm::Type *ty, long mem);
   // const UniqueKey* getUniqueKey(Type *ty);
   void print();
 };

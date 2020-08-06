@@ -15,14 +15,14 @@ const vector<string> free_funcs = {"free", "kfree", "kzfree", "vfree",
 const vector<string> err_funcs = {"IS_ERR"};
 
 namespace ST_free {
-bool isAllocFunction(Function *F) {
+bool isAllocFunction(llvm::Function *F) {
   if (F && F->hasName()) {
     return findFunctionName(F->getName(), alloc_funcs);
   }
   return false;
 }
 
-bool isFreeFunction(Function *F) {
+bool isFreeFunction(llvm::Function *F) {
   if (F && F->hasName()) {
     string name = F->getName();
     return findFunctionName(F->getName(), free_funcs);
@@ -30,7 +30,7 @@ bool isFreeFunction(Function *F) {
   return false;
 }
 
-bool isIsErrFunction(Function *F) {
+bool isIsErrFunction(llvm::Function *F) {
   if (F && F->hasName()) {
     return findFunctionName(F->getName(), err_funcs);
   }

@@ -1,18 +1,18 @@
 #include "include/RelationshipInformation.hpp"
 
 namespace ST_free {
-bool RelationshipInformation::exists(Value *src) {
+bool RelationshipInformation::exists(llvm::Value *src) {
   if (rmap.find(src) != rmap.end()) return true;
   return false;
 }
 
-void RelationshipInformation::add(Value *src, Value *tgt) {
+void RelationshipInformation::add(llvm::Value *src, llvm::Value *tgt) {
   if (!this->exists(src)) rmap[src] = aliasList();
   rmap[src].push_back(tgt);
   return;
 }
 
-aliasList RelationshipInformation::get(Value *src) {
+aliasList RelationshipInformation::get(llvm::Value *src) {
   if (this->exists(src)) return rmap[src];
   return aliasList();
 }
@@ -52,12 +52,12 @@ ostream &TypeRelationManager::operator<<(ostream &out) {
 }
 
 void TypeRelationManager::print() {
-  outs() << "<RelationManager>\n";
+  llvm::outs() << "<RelationManager>\n";
   for (auto element : typeMap) {
-    outs() << "src: " << *element.first.stTy << " [" << element.first.index
+    llvm::outs() << "src: " << *element.first.stTy << " [" << element.first.index
            << "]\n";
     for (auto srcs : element.second) {
-      outs() << "\ttgt: " << *srcs.stTy << " [" << srcs.index << "]\n";
+      llvm::outs() << "\ttgt: " << *srcs.stTy << " [" << srcs.index << "]\n";
     }
   }
 }

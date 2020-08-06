@@ -44,7 +44,6 @@
 
 #define NO_ERROR 0
 
-using namespace llvm;
 using namespace std;
 
-using ParentList = vector<pair<Type *, int>>;
+using ParentList = vector<pair<llvm::Type *, int>>;

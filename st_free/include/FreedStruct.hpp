@@ -6,13 +6,13 @@ namespace ST_free {
 struct FreedStruct {
  public:
   FreedStruct(){};
-  FreedStruct(Type *Ty, Value *val, Instruction *Inst) {
+  FreedStruct(llvm::Type *Ty, llvm::Value *val, llvm::Instruction *Inst) {
     T = Ty;
     V = val;
     I = Inst;
     FreedMembers = vector<bool>(Ty->getStructNumElements(), false);
   };
-  FreedStruct(Type *Ty, Value *val, Instruction *Inst, ParentList P) {
+  FreedStruct(llvm::Type *Ty, llvm::Value *val, llvm::Instruction *Inst, ParentList P) {
     T = Ty;
     V = val;
     I = Inst;
@@ -20,7 +20,7 @@ struct FreedStruct {
     ParentType = ParentList(P);
     valInfo = NULL;
   };
-  FreedStruct(Type *Ty, Value *val, Instruction *Inst, BasicBlock *freedB,
+  FreedStruct(llvm::Type *Ty, llvm::Value *val, llvm::Instruction *Inst, llvm::BasicBlock *freedB,
               ValueInformation *vinfo, bool hasParent = false) {
     T = Ty;
     V = val;
@@ -31,8 +31,8 @@ struct FreedStruct {
     freedBlock = freedB;
     inStruct = hasParent;
   };
-  FreedStruct(Type *Ty, Value *val, Instruction *Inst, ParentList P,
-              BasicBlock *freedB, ValueInformation *vinfo,
+  FreedStruct(llvm::Type *Ty, llvm::Value *val, llvm::Instruction *Inst, ParentList P,
+              llvm::BasicBlock *freedB, ValueInformation *vinfo,
               bool hasParent = false) {
     T = Ty;
     V = val;
@@ -43,9 +43,9 @@ struct FreedStruct {
     freedBlock = freedB;
     inStruct = hasParent;
   };
-  bool operator==(Value *v) { return V == v; }
-  bool operator==(Type *t) { return this->T == t; }
-  bool operator==(Type t) { return this->T == &t; }
+  bool operator==(llvm::Value *v) { return V == v; }
+  bool operator==(llvm::Type *t) { return this->T == t; }
+  bool operator==(llvm::Type t) { return this->T == &t; }
   bool operator==(FreedStruct *v) {
     return V == v->getValue() && T == v->getType() && I == v->getInst();
   }
@@ -73,20 +73,20 @@ struct FreedStruct {
   unsigned memberSize() { return FreedMembers.size(); }
   void print();
   /*** getter/setter ***/
-  Type *getType() const { return T; }
-  Value *getValue() const { return V; }
-  Instruction *getInst() const { return I; }
+  llvm::Type *getType() const { return T; }
+  llvm::Value *getValue() const { return V; }
+  llvm::Instruction *getInst() const { return I; }
   ValueInformation *getValueInformation() { return valInfo; }
   void setFreedMember(int64_t num) { FreedMembers[num] = true; };
   void setAllocatedMember(int64_t num) { AllocatedMembers[num] = true; };
   vector<bool> getFreedMember() const { return FreedMembers; };
   vector<bool> getAllocatedMember() const { return AllocatedMembers; };
-  BasicBlock *getFreedBlock() const { return freedBlock; };
-  void addParent(StructType *st, int ind) {
-    ParentType.push_back(pair<Type *, int>(st, ind));
+  llvm::BasicBlock *getFreedBlock() const { return freedBlock; };
+  void addParent(llvm::StructType *st, int ind) {
+    ParentType.push_back(pair<llvm::Type *, int>(st, ind));
   }
   // Type *getTopParent(){return this->getValueInformation()->getTopParent();}
-  Type *getTopParent() {
+  llvm::Type *getTopParent() {
     return ParentType.empty() ? NULL : ParentType[0].first;
   }
   ParentList getParentTypes() {
@@ -95,14 +95,14 @@ struct FreedStruct {
   bool isInStruct() { return inStruct; }
 
  private:
-  Type *T;
+  llvm::Type *T;
   ParentList ParentType;
-  Value *V;
-  Instruction *I;
+  llvm::Value *V;
+  llvm::Instruction *I;
   vector<bool> FreedMembers;
   vector<bool> AllocatedMembers;
   ValueInformation *valInfo;
-  BasicBlock *freedBlock;
+  llvm::BasicBlock *freedBlock;
   bool inStruct;
 };
 }  // namespace ST_free

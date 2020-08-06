@@ -11,16 +11,16 @@
 using namespace ST_free;
 
 namespace {
-struct st_free : public ModulePass {
+struct st_free : public llvm::ModulePass {
   static char ID;
 
   st_free() : ModulePass(ID) {}
 
-  virtual void getAnalysisUsage(AnalysisUsage &AU) const override {
+  virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {
   }
 
   /*** Main Modular ***/
-  bool runOnModule(Module &M) override {
+  bool runOnModule(llvm::Module &M) override {
     /*** Collect Struct Information ***/
     StructManager *StManage = new StructManager(M.getIdentifiedStructTypes());
 
@@ -37,12 +37,12 @@ struct st_free : public ModulePass {
 #endif
 
     /*** Additional analysis for Checking force casts ***/
-    for (Function &F : M) {
+    for (llvm::Function &F : M) {
       if (!(F.isDeclaration())) analyze->analyzeAdditionalUnknowns(F);
     }
 
     /*** Main analysis module ***/
-    for (Function &F : M) {
+    for (llvm::Function &F : M) {
       if (!(F.isDeclaration())) analyze->analyze(F);
     }
 
@@ -57,19 +57,19 @@ struct st_free : public ModulePass {
 
 char st_free::ID = 0;
 
-static RegisterPass<st_free> X("st_free", "struct free checker",
+static llvm::RegisterPass<st_free> X("st_free", "struct free checker",
                                false /* Only looks at CFG */,
                                false /* Analysis Pass */);
 
-static void registerSTFreePass(const PassManagerBuilder &,
-                               legacy::PassManagerBase &PM) {
+static void registerSTFreePass(const llvm::PassManagerBuilder &,
+                               llvm::legacy::PassManagerBase &PM) {
   PM.add(new st_free());
 }
 // static RegisterStandardPasses
 //   RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
 //                  registerSTFreePass);
-static RegisterStandardPasses RegisterMyPass(
-    PassManagerBuilder::EP_ModuleOptimizerEarly, registerSTFreePass);
+static llvm::RegisterStandardPasses RegisterMyPass(
+    llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, registerSTFreePass);
 
-static RegisterStandardPasses RegisterMyPass1(
-    PassManagerBuilder::EP_EnabledOnOptLevel0, registerSTFreePass);
+static llvm::RegisterStandardPasses RegisterMyPass1(
+    llvm::PassManagerBuilder::EP_EnabledOnOptLevel0, registerSTFreePass);

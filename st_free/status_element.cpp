@@ -1,10 +1,10 @@
-#include "ST_free.hpp"
+#include "include/ST_free.hpp"
 
 struct status_element {
-  Type* struct_type;
+  llvm::Type* struct_type;
   uint64_t index;
   int status;
-  status_element(Type* t, uint64_t i) {
+  status_element(llvm::Type* t, uint64_t i) {
     struct_type = t;
     index = i;
     status = ALLOCATED;
