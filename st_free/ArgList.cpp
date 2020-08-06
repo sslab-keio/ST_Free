@@ -1,7 +1,7 @@
 #include "include/ArgList.hpp"
 
 namespace ST_free {
-bool ArgStatus::isMemberFreed(queue<int> indexes) {
+bool ArgStatus::isMemberFreed(std::queue<int> indexes) {
   if (indexes.size() > 0) {
     int topIndex = indexes.front();
     indexes.pop();
@@ -14,7 +14,7 @@ bool ArgStatus::isMemberFreed(queue<int> indexes) {
   return this->isFreed();
 }
 
-void ArgStatus::setMemberFreed(queue<int> indexes) {
+void ArgStatus::setMemberFreed(std::queue<int> indexes) {
   if (indexes.size() > 0) {
     int topIndex = indexes.front();
     indexes.pop();
@@ -46,8 +46,8 @@ void ArgStatus::extendStatusSize(int extSize) {
   }
 }
 
-vector<bool> ArgStatus::getFreedList() {
-  vector<bool> freedList;
+std::vector<bool> ArgStatus::getFreedList() {
+  std::vector<bool> freedList;
   for (auto member : structStatus) {
     freedList.push_back(member.isFreed());
   }
@@ -98,17 +98,17 @@ int64_t ArgList::getOperandNum(llvm::Value *V) {
 }
 
 void ArgList::setFreed(llvm::Value *V) {
-  this->setFreed(V, queue<int>());
+  this->setFreed(V, std::queue<int>());
   return;
 }
 
-void ArgList::setFreed(llvm::Value *V, queue<int> indexes) {
+void ArgList::setFreed(llvm::Value *V, std::queue<int> indexes) {
   int64_t ind = getOperandNum(V);
   if (ind >= 0 && ind < argNum) stats[ind].setMemberFreed(indexes);
   return;
 }
 
-bool ArgList::isFreed(llvm::Value *V, queue<int> indexes) {
+bool ArgList::isFreed(llvm::Value *V, std::queue<int> indexes) {
   int64_t ind = getOperandNum(V);
   if (ind >= 0 && ind < argNum) return stats[ind].isMemberFreed(indexes);
   return false;

@@ -4,15 +4,15 @@
 
 using namespace ST_free;
 
-const vector<string> alloc_funcs = {
+const std::vector<std::string> alloc_funcs = {
     "malloc",        "calloc",           "kzalloc",
     "kmalloc",       "zalloc",           "vmalloc",
     "kcalloc",       "vzalloc",          "kzalloc_node",
     "kmalloc_array", "kmem_cache_alloc", "kmem_cache_alloc_node",
     "memdup",        "kmemdup",          "kstrdup"};
-const vector<string> free_funcs = {"free", "kfree", "kzfree", "vfree",
+const std::vector<std::string> free_funcs = {"free", "kfree", "kzfree", "vfree",
                                    "kvfree"};
-const vector<string> err_funcs = {"IS_ERR"};
+const std::vector<std::string> err_funcs = {"IS_ERR"};
 
 namespace ST_free {
 bool isAllocFunction(llvm::Function *F) {
@@ -24,7 +24,7 @@ bool isAllocFunction(llvm::Function *F) {
 
 bool isFreeFunction(llvm::Function *F) {
   if (F && F->hasName()) {
-    string name = F->getName();
+    std::string name = F->getName();
     return findFunctionName(F->getName(), free_funcs);
   }
   return false;
@@ -37,10 +37,10 @@ bool isIsErrFunction(llvm::Function *F) {
   return false;
 }
 
-bool findFunctionName(string name, vector<string> func_list) {
-  auto itr = find_if(func_list.begin(), func_list.end(), [name](string str) {
+bool findFunctionName(std::string name, std::vector<std::string> func_list) {
+  auto itr = find_if(func_list.begin(), func_list.end(), [name](std::string str) {
     size_t ind = name.find(".");
-    string tgt = ind != string::npos ? name.substr(0, ind) : name;
+    std::string tgt = ind != std::string::npos ? name.substr(0, ind) : name;
     return str.compare(tgt) == 0;
   });
 

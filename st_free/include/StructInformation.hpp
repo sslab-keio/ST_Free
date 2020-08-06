@@ -39,9 +39,9 @@ class CandidateValue {
   void print() { fst->print(); };
 };
 struct globalVarInfo {
-  vector<string> dirs;
+  std::vector<std::string> dirs;
   llvm::GlobalVariable *GV;
-  globalVarInfo(vector<string> d, llvm::GlobalVariable *G) {
+  globalVarInfo(std::vector<std::string> d, llvm::GlobalVariable *G) {
     dirs = d;
     GV = G;
   }
@@ -53,47 +53,10 @@ struct globalVarInfo {
  * and allocated times
  **/
 class StructInformation {
- private:
-  struct storeCount {
-    int total;
-    int globalVar;
-    storeCount() {
-      total = 0;
-      globalVar = 0;
-    }
-  };
-  llvm::StructType *strTy;
-  vector<llvm::StructType *> referees;
-  vector<int> memberStats;
-  vector<int> freedCounts;
-  vector<storeCount> stc;
-  vector<vector<llvm::Function *>> funcPtr;
-  vector<vector<globalVarInfo>> gvinfo;
-  int candidateNum;
-  int negativeCount;
-  unsigned int allocNum;
-  vector<CandidateValue *> candidates;
-  bool judgeResponsibility(int ind);
-  bool isBidirectionalReferencing(CandidateValue *cand, int ind);
-  unsigned int getAllocNum() { return allocNum; };
-  bool isAllStoreGlobalVar(int ind) {
-    if (stc[ind].total > 0)
-      if ((stc[ind].total - stc[ind].globalVar) == 0) return true;
-    return false;
-  }
-  bool memberTypeMatchesStructType(int ind) {
-    if (strTy == strTy->getStructElementType(ind)) return true;
-    return false;
-  }
-  void checkStageOne(CandidateValue *cand, long ind);
-  void checkStageTwo(CandidateValue *cand, long ind);
-  void checkStagePrimitive(CandidateValue *cand, long ind);
-  void checkStageBidirectional(CandidateValue *cand, long ind);
-
  public:
   StructInformation(){};
   StructInformation(llvm::StructType *st);
-  vector<llvm::StructType *> getReferees() { return referees; }
+  std::vector<llvm::StructType *> getReferees() { return referees; }
   void addReferee(llvm::StructType *st);
   bool hasSingleReferee();
   void changeToNonRefered(llvm::StructType *StTy);
@@ -106,7 +69,7 @@ class StructInformation {
   void PrintJson();
   void BuildCandidateCount();
   void checkCorrectness();
-  vector<CandidateValue *> getCandidateValue() { return candidates; };
+  std::vector<CandidateValue *> getCandidateValue() { return candidates; };
   void incrementFreedCount(int ind);
   void incrementAllocNum() { allocNum++; }
   bool hasNoAlloc() { return allocNum == 0; }
@@ -114,9 +77,9 @@ class StructInformation {
   bool isNotStored(int ind);
   void incrementStoreGlobalVar(int ind);
   void addFunctionPtr(int ind, llvm::Function *func);
-  vector<llvm::Function *> getFunctionPtr(int ind);
-  void addGVInfo(int ind, vector<string> dirs, llvm::GlobalVariable *gv);
-  vector<globalVarInfo> getGVInfo(int ind);
+  std::vector<llvm::Function *> getFunctionPtr(int ind);
+  void addGVInfo(int ind, std::vector<std::string> dirs, llvm::GlobalVariable *gv);
+  std::vector<globalVarInfo> getGVInfo(int ind);
   llvm::StructType *getStructType() { return strTy; }
   /*** Negative Count Related ***/
   void addNegativePoint() { negativeCount++; }
@@ -146,6 +109,44 @@ class StructInformation {
       return memberStats[ind] == SELF_DEREFERENCE;
     return false;
   };
+
+ private:
+  struct storeCount {
+    int total;
+    int globalVar;
+    storeCount() {
+      total = 0;
+      globalVar = 0;
+    }
+  };
+  llvm::StructType *strTy;
+  std::vector<llvm::StructType *> referees;
+  std::vector<int> memberStats;
+  std::vector<int> freedCounts;
+  std::vector<storeCount> stc;
+  std::vector<std::vector<llvm::Function *>> funcPtr;
+  std::vector<std::vector<globalVarInfo>> gvinfo;
+  int candidateNum;
+  int negativeCount;
+  unsigned int allocNum;
+  std::vector<CandidateValue *> candidates;
+  bool judgeResponsibility(int ind);
+  bool isBidirectionalReferencing(CandidateValue *cand, int ind);
+  unsigned int getAllocNum() { return allocNum; };
+  bool isAllStoreGlobalVar(int ind) {
+    if (stc[ind].total > 0)
+      if ((stc[ind].total - stc[ind].globalVar) == 0) return true;
+    return false;
+  }
+  bool memberTypeMatchesStructType(int ind) {
+    if (strTy == strTy->getStructElementType(ind)) return true;
+    return false;
+  }
+  void checkStageOne(CandidateValue *cand, long ind);
+  void checkStageTwo(CandidateValue *cand, long ind);
+  void checkStagePrimitive(CandidateValue *cand, long ind);
+  void checkStageBidirectional(CandidateValue *cand, long ind);
+
 };
 
 /** Class
@@ -158,7 +159,7 @@ class StructInformation {
 class StructManager {
  public:
   StructManager(){};
-  StructManager(vector<llvm::StructType *> st);
+  StructManager(std::vector<llvm::StructType *> st);
   StructInformation *get(llvm::StructType *strTy) { return StructInfo[strTy]; }
   TypeRelationManager *getTypeRelationManager() { return &tyRel; };
   void addCandidateValue(llvm::Function *F, llvm::StructType *strTy, FreedStruct *fs);
@@ -174,7 +175,7 @@ class StructManager {
   void markNoAlloc();
 
  private:
-  map<llvm::StructType *, StructInformation *> StructInfo;
+  std::map<llvm::StructType *, StructInformation *> StructInfo;
   TypeRelationManager tyRel;
   void addReferee(llvm::StructType *referee, llvm::StructType *tgt);
   void createDependencies();

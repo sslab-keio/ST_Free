@@ -133,8 +133,8 @@ class BaseAnalyzer {
   BasicBlockList getErrorAllocInCalledFunction(llvm::CallInst *CI, int errcode);
   BasicBlockList getSuccessAllocInCalledFunction(llvm::CallInst *CI);
   void buildReturnValueInformation();
-  void checkErrorInstruction(llvm::Value *v, vector<llvm::Instruction*> visited_inst = vector<llvm::Instruction*>());
-  void checkErrorCodeAndAddBlock(llvm::Instruction *I, llvm::BasicBlock *B, llvm::Value *inval, vector<llvm::Instruction*> visited_inst);
+  void checkErrorInstruction(llvm::Value *v, std::vector<llvm::Instruction*> visited_inst = std::vector<llvm::Instruction*>());
+  void checkErrorCodeAndAddBlock(llvm::Instruction *I, llvm::BasicBlock *B, llvm::Value *inval, std::vector<llvm::Instruction*> visited_inst);
 
   /*** Store Instruction related funtions ***/
   llvm::CallInst *getStoreFromCall(llvm::StoreInst *SI);
@@ -148,9 +148,9 @@ class BaseAnalyzer {
   void changeAuthority(llvm::StoreInst *SI, llvm::CastInst *CI, llvm::GetElementPtrInst *GEle);
   bool isAllocCast(llvm::CastInst *CI);
   bool isCastToVoid(llvm::CastInst *CI);
-  vector<pair<llvm::Type *, long>> decodeGEPInst(llvm::GetElementPtrInst *GEle);
-  vector<string> decodeDirectoryName(string str);
-  void getStructParents(llvm::Instruction *I, vector<pair<llvm::Type *, int>> &typeList);
+  std::vector<std::pair<llvm::Type *, long>> decodeGEPInst(llvm::GetElementPtrInst *GEle);
+  std::vector<std::string> decodeDirectoryName(std::string str);
+  void getStructParents(llvm::Instruction *I, std::vector<std::pair<llvm::Type *, int>> &typeList);
 
   /*** Determinator ***/
   long getMemberIndiceFromByte(llvm::StructType *STy, uint64_t byte);
@@ -175,7 +175,7 @@ class BaseAnalyzer {
   bool isAllocStoredInSameBasicBlock(llvm::Value *V, llvm::BasicBlock *B);
 
   /*** Support Methods ***/
-  vector<long> getValueIndices(llvm::GetElementPtrInst *inst);
+  std::vector<long> getValueIndices(llvm::GetElementPtrInst *inst);
   llvm::GetElementPtrInst *getRootGEle(llvm::GetElementPtrInst *GEle);
   llvm::Type *extractResultElementType(llvm::GetElementPtrInst *GEle);
   void reversePropagateErrorBlockFreeInfo();
@@ -187,7 +187,7 @@ class BaseAnalyzer {
   llvm::ICmpInst *findAllocICmp(llvm::Instruction *I);
 
   /*** MethodMap ***/
-  map<unsigned, void (ST_free::BaseAnalyzer::*)(llvm::Instruction *, llvm::BasicBlock &)>
+  std::map<unsigned, void (ST_free::BaseAnalyzer::*)(llvm::Instruction *, llvm::BasicBlock &)>
       InstAnalysisMap;
 
  private:
@@ -199,6 +199,6 @@ class BaseAnalyzer {
   const llvm::DataLayout *dat_layout;
   /*** Current Function/ Stacked Functions ***/
   FunctionInformation *FEle;
-  stack<llvm::Function *> functionStack;
+  std::stack<llvm::Function *> functionStack;
 };
 }  // namespace ST_free

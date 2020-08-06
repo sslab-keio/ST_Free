@@ -2,7 +2,7 @@
 #include "ST_free.hpp"
 
 namespace ST_free {
-using aliasList = vector<llvm::Value *>;
+using aliasList = std::vector<llvm::Value *>;
 struct AliasElement {
   llvm::StructType *stTy;
   int index;
@@ -30,13 +30,13 @@ class TypeRelationManager {
  public:
   bool exists(AliasElement src);
   void add(AliasElement src, AliasElement tgt);
-  vector<AliasElement> getRelationshipList(AliasElement src);
+  std::vector<AliasElement> getRelationshipList(AliasElement src);
   bool hadRelationship(AliasElement src, AliasElement tgt);
-  ostream &operator<<(ostream &out);
+  std::ostream &operator<<(std::ostream &out);
   void print();
 
  private:
-  map<AliasElement, vector<AliasElement>> typeMap;
+  std::map<AliasElement, std::vector<AliasElement>> typeMap;
 };
 class RelationshipInformation {
  public:
@@ -46,6 +46,6 @@ class RelationshipInformation {
   bool hasRelationship(llvm::Value *src, llvm::Value *tgt);
 
  private:
-  map<llvm::Value *, aliasList> rmap;
+  std::map<llvm::Value *, aliasList> rmap;
 };
 }  // namespace ST_free

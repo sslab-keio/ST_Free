@@ -4,7 +4,7 @@
 #include "ValueInformation.hpp"
 
 namespace ST_free {
-using BasicBlockList = set<const UniqueKey *>;
+using BasicBlockList = std::set<const UniqueKey *>;
 class BasicBlockWorkList {
  public:
   BasicBlockWorkList();
@@ -23,7 +23,7 @@ class BasicBlockWorkList {
   BasicBlockList MarkedValues;
 };
 
-using LiveVariableList = vector<llvm::Value *>;
+using LiveVariableList = std::vector<llvm::Value *>;
 class BasicBlockInformation {
  public:
   enum BasicBlockInformationStat {
@@ -83,7 +83,7 @@ class BasicBlockInformation {
   BasicBlockWorkList getWorkList(int mode) const;
   LiveVariableList getLiveVariables() const;
   void addStoredCallValues(llvm::Value *v, llvm::CallInst *CI);
-  vector<pair<llvm::Value *, llvm::CallInst *>> getStoredCallValues();
+  std::vector<std::pair<llvm::Value *, llvm::CallInst *>> getStoredCallValues();
   bool isCallValues(llvm::Value *V);
   llvm::CallInst *getCallInstForVal(llvm::Value *V);
   void addRemoveAlloc(llvm::BasicBlock *B, UniqueKey *UK);
@@ -132,9 +132,9 @@ class BasicBlockInformation {
   BasicBlockWorkList BackupFreeList;
   BasicBlockWorkList BackupAllocList;
 
-  vector<pair<llvm::Value *, llvm::CallInst *>> storedCallValues;
-  map<llvm::BasicBlock *, BasicBlockWorkList> removeAllocs;
-  vector<llvm::BasicBlock *> succeedingErrorBlocks;
+  std::vector<std::pair<llvm::Value *, llvm::CallInst *>> storedCallValues;
+  std::map<llvm::BasicBlock *, BasicBlockWorkList> removeAllocs;
+  std::vector<llvm::BasicBlock *> succeedingErrorBlocks;
 
   /*** BasicBlock Status ***/
   bool correctlyBranched;
@@ -170,7 +170,7 @@ class BasicBlockManager {
   /*** Mediator ***/
   void CollectInInfo(
      llvm:: BasicBlock *B, bool isEntryPoint,
-      const map<const UniqueKey *, const UniqueKey *> *alias_map);
+      const std::map<const UniqueKey *, const UniqueKey *> *alias_map);
   void copyAllList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
   void copyFreed(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
   void copyCorrectlyFreed(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
@@ -179,7 +179,7 @@ class BasicBlockManager {
   void intersectFreeList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
   void removeAllocatedInError(
       llvm::BasicBlock *src, llvm::BasicBlock *tgt,
-      const map<const UniqueKey *, const UniqueKey *> *alias_map);
+      const std::map<const UniqueKey *, const UniqueKey *> *alias_map);
   void updateSuccessorBlock(llvm::BasicBlock *src);
   void addFreeInfoFromDMZToPreds(llvm::BasicBlock *src);
   bool isPredBlockCorrectlyBranched(llvm::BasicBlock *B);
@@ -189,7 +189,7 @@ class BasicBlockManager {
   void shrinkFreedFromAlloc(llvm::BasicBlock *B);
 
  private:
-  map<llvm::BasicBlock *, BasicBlockInformation> BBMap;
+  std::map<llvm::BasicBlock *, BasicBlockInformation> BBMap;
   LiveVariableList intersectLiveVariables(LiveVariableList src,
                                           LiveVariableList tgt);
   bool exists(llvm::BasicBlock *B);

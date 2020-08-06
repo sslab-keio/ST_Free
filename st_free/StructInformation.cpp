@@ -5,12 +5,12 @@ StructInformation::StructInformation(llvm::StructType *st) {
   int ind = 0;
   strTy = st;
 
-  memberStats = vector<int>(st->getNumElements(), ISUNKNOWN);
-  freedCounts = vector<int>(st->getNumElements(), 0);
+  memberStats = std::vector<int>(st->getNumElements(), ISUNKNOWN);
+  freedCounts = std::vector<int>(st->getNumElements(), 0);
 
-  stc = vector<storeCount>(st->getNumElements());
-  funcPtr = vector<vector<llvm::Function *>>(st->getNumElements());
-  gvinfo = vector<vector<globalVarInfo>>(st->getNumElements());
+  stc = std::vector<storeCount>(st->getNumElements());
+  funcPtr = std::vector<std::vector<llvm::Function *>>(st->getNumElements());
+  gvinfo = std::vector<std::vector<globalVarInfo>>(st->getNumElements());
 
   candidateNum = 0;
   allocNum = 0;
@@ -63,12 +63,12 @@ void StructInformation::checkCorrectness() {
 }
 
 void StructInformation::checkStageOne(CandidateValue *cand, long ind) {
-  string warningStr("MEMBER NOT FREED(");
+  std::string warningStr("MEMBER NOT FREED(");
   if (this->isResponsible(ind)) {
     if (this->judgeResponsibility(ind) && !this->isAllStoreGlobalVar(ind) &&
         !this->isBidirectionalReferencing(cand, ind) &&
         cand->memberIsAllocated(ind)) {
-      string message = warningStr;
+      std::string message = warningStr;
       message += parseErrorMessage(this->getStructType(), ind);
       message += ")";
       generateError(cand->getInstruction(), message);
@@ -78,10 +78,10 @@ void StructInformation::checkStageOne(CandidateValue *cand, long ind) {
 }
 
 void StructInformation::checkStageTwo(CandidateValue *cand, long ind) {
-  string warningStr("MEMBER NOT FREED(");
+  std::string warningStr("MEMBER NOT FREED(");
   if (this->isUnknown(ind)) {
     if (this->judgeResponsibility(ind)) {
-      string message = warningStr;
+      std::string message = warningStr;
       message += parseErrorMessage(this->getStructType(), ind);
       message += ")";
       generateError(cand->getInstruction(), message);
@@ -91,9 +91,9 @@ void StructInformation::checkStageTwo(CandidateValue *cand, long ind) {
 }
 
 void StructInformation::checkStagePrimitive(CandidateValue *cand, long ind) {
-  string warningStr("MEMBER NOT FREED(");
+  std::string warningStr("MEMBER NOT FREED(");
   if (this->isPrimitive(ind)) {
-    string message = warningStr;
+    std::string message = warningStr;
     message += parseErrorMessage(this->getStructType(), ind);
     message += ")";
     generateError(cand->getInstruction(), message);
@@ -111,7 +111,7 @@ bool StructInformation::isBidirectionalReferencing(CandidateValue *cand,
                                                    int ind) {
   ParentList parents = cand->getFreedStruct()->getParentTypes();
   llvm::Type *member = strTy->getElementType(ind);
-  for (pair<llvm::Type *, int> parent : parents) {
+  for (std::pair<llvm::Type *, int> parent : parents) {
     if (get_type(parent.first) == get_type(member)) return true;
   }
   return false;
@@ -274,17 +274,17 @@ void StructInformation::addFunctionPtr(int ind, llvm::Function *func) {
   funcPtr[ind].push_back(func);
 }
 
-vector<llvm::Function *> StructInformation::getFunctionPtr(int ind) {
+std::vector<llvm::Function *> StructInformation::getFunctionPtr(int ind) {
   return funcPtr[ind];
 }
 
-void StructInformation::addGVInfo(int ind, vector<string> dirs,
+void StructInformation::addGVInfo(int ind, std::vector<std::string> dirs,
                                   llvm::GlobalVariable *gv) {
   gvinfo[ind].push_back(globalVarInfo(dirs, gv));
   return;
 }
 
-vector<globalVarInfo> StructInformation::getGVInfo(int ind) {
+std::vector<globalVarInfo> StructInformation::getGVInfo(int ind) {
   return gvinfo[ind];
 }
 
@@ -297,7 +297,7 @@ void StructInformation::changeToNonRefered(llvm::StructType *StTy) {
 }
 
 /*** [Struct Manager] ***/
-StructManager::StructManager(vector<llvm::StructType *> st) {
+StructManager::StructManager(std::vector<llvm::StructType *> st) {
   for (llvm::StructType *StrTy : st) StructInfo[StrTy] = new StructInformation(StrTy);
   this->createDependencies();
   this->changeStats();
@@ -315,7 +315,7 @@ bool StructManager::exists(llvm::StructType *st) {
 }
 
 void StructManager::createDependencies() {
-  queue<llvm::StructType *> struct_queue;
+  std::queue<llvm::StructType *> struct_queue;
   for (auto Stmap : StructInfo) struct_queue.push(Stmap.first);
 
   while (!struct_queue.empty()) {

@@ -67,13 +67,13 @@ llvm::Type* get_type(llvm::Type* t) {
   return val_type;
 }
 
-void generateWarning(llvm::Instruction* Inst, string warn, bool print) {
+void generateWarning(llvm::Instruction* Inst, std::string warn, bool print) {
   if (const llvm::DebugLoc& Loc = Inst->getDebugLoc()) {
     unsigned line = Loc.getLine();
     unsigned col = Loc.getCol();
     if (print) {
       llvm::outs() << "[WARNING] ";
-      llvm::outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
+      llvm::outs() << std::string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
       llvm::outs() << warn << "\n";
     }
   }
@@ -84,22 +84,22 @@ void generateWarning(llvm::Instruction* Inst, llvm::Value* val) {
     unsigned line = Loc.getLine();
     unsigned col = Loc.getCol();
     llvm::outs() << "[WARNING] ";
-    llvm::outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
+    llvm::outs() << std::string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
     llvm::outs() << *val << "\n";
   }
 }
 
-void generateWarning(string warn) {
+void generateWarning(std::string warn) {
   DEBUG_WITH_TYPE("st_free", llvm::outs() << "[WARNING] ");
   DEBUG_WITH_TYPE("st_free", llvm::outs() << warn << "\n");
 }
 
-void generateError(llvm::Instruction* Inst, string warn) {
+void generateError(llvm::Instruction* Inst, std::string warn) {
   if (const llvm::DebugLoc& Loc = Inst->getDebugLoc()) {
     unsigned line = Loc.getLine();
     unsigned col = Loc.getCol();
     llvm::outs() << "[ERROR] ";
-    llvm::outs() << string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
+    llvm::outs() << std::string(Loc->getFilename()) << ":" << line << ":" << col << ": ";
     llvm::outs() << warn << "\n";
   }
 }
@@ -112,8 +112,9 @@ llvm::Value* getArgAlloca(llvm::Value* arg) {
   }
   return NULL;
 }
-string parseErrorMessage(llvm::StructType* parent, long index) {
-  string message = "";
+
+std::string parseErrorMessage(llvm::StructType* parent, long index) {
+  std::string message = "";
 
   message += "Parent: ";
   if (parent && parent->hasName())
@@ -122,7 +123,7 @@ string parseErrorMessage(llvm::StructType* parent, long index) {
     message += "Unavailable";
 
   message += " index:";
-  message += to_string(index);
+  message += std::to_string(index);
   return message;
 }
 }  // namespace ST_free

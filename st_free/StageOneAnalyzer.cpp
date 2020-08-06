@@ -158,16 +158,16 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I, llvm::BasicBlock &
 void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I, llvm::BasicBlock &B) {
   llvm::CallInst *CI = llvm::cast<llvm::CallInst>(I);
 
-  vector<llvm::Function *> funcLists;
+  std::vector<llvm::Function *> funcLists;
   if (CI->isIndirectCall()) {
     if (llvm::LoadInst *LI = llvm::dyn_cast<llvm::LoadInst>(CI->getCalledValue())) {
-      vector<pair<llvm::Type *, int>> typeList;
+      std::vector<std::pair<llvm::Type *, int>> typeList;
 
       funcLists = getFunctionInformation()->getPointedFunctions(
           LI->getPointerOperand());
       if (const llvm::DebugLoc &Loc = CI->getDebugLoc()) {
-        vector<string> dirs =
-            this->decodeDirectoryName(string(Loc->getFilename()));
+        std::vector<std::string> dirs =
+            this->decodeDirectoryName(std::string(Loc->getFilename()));
         this->getStructParents(LI, typeList);
         // if(typeList.size() > 0){
         //     cast<StructType>(typeList[0].first);
@@ -256,7 +256,7 @@ void StageOneAnalyzer::checkAvailability() {
 
   for (FreedStruct *freedStruct : fsl) {
     llvm::StructType *strTy = llvm::cast<llvm::StructType>(freedStruct->getType());
-    vector<bool> alreadyFreed = freedStruct->getFreedMember();
+    std::vector<bool> alreadyFreed = freedStruct->getFreedMember();
 
     for (int ind = 0; ind < strTy->getNumElements(); ind++) {
       llvm::Type *t = strTy->getElementType(ind);
@@ -267,7 +267,7 @@ void StageOneAnalyzer::checkAvailability() {
               freedStruct->getFreedBlock(), NULL, t, ind)) {
         generateWarning(
             freedStruct->getInst(),
-            "[INDEXED VERSION] Allocated(second) + ind :" + to_string(ind));
+            "[INDEXED VERSION] Allocated(second) + ind :" + std::to_string(ind));
         getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
       }
 

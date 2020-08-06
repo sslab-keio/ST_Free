@@ -259,7 +259,7 @@ bool BasicBlockManager::exists(llvm::BasicBlock *B) {
 
 void BasicBlockManager::CollectInInfo(
     llvm::BasicBlock *B, bool isEntryPoint,
-    const map<const UniqueKey *, const UniqueKey *> *alias_map) {
+    const std::map<const UniqueKey *, const UniqueKey *> *alias_map) {
   bool isFirst = true;
 
   if (isEntryPoint) this->set(B);
@@ -326,11 +326,11 @@ void BasicBlockManager::uniteDMZList(llvm::BasicBlock *src, llvm::BasicBlock *tg
 
 void BasicBlockManager::removeAllocatedInError(
     llvm::BasicBlock *src, llvm::BasicBlock *tgt,
-    const map<const UniqueKey *, const UniqueKey *> *alias_map) {
+    const std::map<const UniqueKey *, const UniqueKey *> *alias_map) {
   BasicBlockWorkList remove_allocs = this->get(src)->getRemoveAllocs(tgt);
 
   generateWarning(tgt->getFirstNonPHI(),
-                  "Remove Alloc: " + to_string(remove_allocs.getList().size()));
+                  "Remove Alloc: " + std::to_string(remove_allocs.getList().size()));
 
   for (auto ele : this->get(src)->getRemoveAllocs(tgt).getList()) {
     auto aliased_value = alias_map->find(ele);
@@ -498,17 +498,17 @@ void BasicBlockManager::updateSuccessorBlock(llvm::BasicBlock *src) {
 }
 
 void BasicBlockInformation::addStoredCallValues(llvm::Value *v, llvm::CallInst *CI) {
-  storedCallValues.push_back(pair<llvm::Value *, llvm::CallInst *>(v, CI));
+  storedCallValues.push_back(std::pair<llvm::Value *, llvm::CallInst *>(v, CI));
 }
 
-vector<pair<llvm::Value *, llvm::CallInst *>> BasicBlockInformation::getStoredCallValues() {
+std::vector<std::pair<llvm::Value *, llvm::CallInst *>> BasicBlockInformation::getStoredCallValues() {
   return storedCallValues;
 }
 
 bool BasicBlockInformation::isCallValues(llvm::Value *V) {
   auto fele =
       find_if(storedCallValues.begin(), storedCallValues.end(),
-              [V](pair<llvm::Value *, llvm::CallInst *> &p) { return p.first == V; });
+              [V](std::pair<llvm::Value *, llvm::CallInst *> &p) { return p.first == V; });
   if (fele != storedCallValues.end()) return true;
   return false;
 }
@@ -516,7 +516,7 @@ bool BasicBlockInformation::isCallValues(llvm::Value *V) {
 llvm::CallInst *BasicBlockInformation::getCallInstForVal(llvm::Value *V) {
   auto fele =
       find_if(storedCallValues.begin(), storedCallValues.end(),
-              [V](pair<llvm::Value *, llvm::CallInst *> &p) { return p.first == V; });
+              [V](std::pair<llvm::Value *, llvm::CallInst *> &p) { return p.first == V; });
   if (fele != storedCallValues.end()) return (*fele).second;
   return NULL;
 }

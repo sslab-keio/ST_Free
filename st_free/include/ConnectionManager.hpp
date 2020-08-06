@@ -8,6 +8,6 @@ class ConnectionManager {
   void set();
 
  private:
-  map<StructInformation *, StructInformation *> connectionMap;
+  std::map<StructInformation *, StructInformation *> connectionMap;
 };
 }  // namespace ST_free

@@ -36,10 +36,10 @@ bool StatusList::exists(llvm::Type *T, llvm::Value *V) {
 
 void StatusList::setList(llvm::Type *T, llvm::Value *V) {
   if (!this->exists(T, V))
-    st_tab[T][V] = vector<int>(llvm::cast<llvm::StructType>(T)->getNumElements(), NO_ALLOC);
+    st_tab[T][V] = std::vector<int>(llvm::cast<llvm::StructType>(T)->getNumElements(), NO_ALLOC);
 }
 
-vector<int> *StatusList::getList(llvm::Type *T, llvm::Value *V) {
+std::vector<int> *StatusList::getList(llvm::Type *T, llvm::Value *V) {
   if (this->exists(T, V)) return &st_tab[T][V];
   return NULL;
 }

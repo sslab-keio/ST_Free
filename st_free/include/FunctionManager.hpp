@@ -6,9 +6,9 @@
 #include "UniqueKeyManager.hpp"
 
 namespace ST_free {
-using FreedStructList = vector<FreedStruct *>;
-using LocalVarList = vector<FreedStruct *>;
-using Aliases = map<llvm::Value *, llvm::Value *>;
+using FreedStructList = std::vector<FreedStruct *>;
+using LocalVarList = std::vector<FreedStruct *>;
+using Aliases = std::map<llvm::Value *, llvm::Value *>;
 
 struct FunctionInformation {
  public:
@@ -42,9 +42,9 @@ struct FunctionInformation {
   void addErrorBlockAllocInformation(int64_t err, BasicBlockList BList);
   void addErrorBlockFreeInformation(int64_t err, BasicBlockList BList);
   void clearErrorCodeMap() {
-    info_per_error_code = map<int64_t, InformationPerErrorCode>();
+    info_per_error_code = std::map<int64_t, InformationPerErrorCode>();
   }
-  map<int64_t, FunctionInformation::InformationPerErrorCode>&
+  std::map<int64_t, FunctionInformation::InformationPerErrorCode>&
       getErrorCodeMap() {
     return info_per_error_code;
   }
@@ -115,8 +115,8 @@ struct FunctionInformation {
   void setArgAlloc(llvm::Value *V);
   void setStructMemberFreed(FreedStruct *fstruct, int64_t num);
   void setStructMemberAllocated(FreedStruct *fstruct, int64_t num);
-  vector<bool> getStructMemberFreed(llvm::Type *T);
-  void copyStructMemberFreed(llvm::Type *T, vector<bool> members);
+  std::vector<bool> getStructMemberFreed(llvm::Type *T);
+  void copyStructMemberFreed(llvm::Type *T, std::vector<bool> members);
   void setStructArgFree(llvm::Value *V, int64_t num);
   void setStructArgAlloc(llvm::Value *V, int64_t num);
   void setStructMemberArgFreed(llvm::Value *V, ParentList indexes);
@@ -147,7 +147,7 @@ struct FunctionInformation {
 
   /*** Func Ptr related ***/
   void addFunctionPointerInfo(llvm::Value *val, llvm::Function *func);
-  vector<llvm::Function *> getPointedFunctions(llvm::Value *val);
+  std::vector<llvm::Function *> getPointedFunctions(llvm::Value *val);
 
   /*** UniqueKeys ***/
   UniqueKeyManager *getUniqueKeyManager() { return &UKManage; }
@@ -182,7 +182,7 @@ struct FunctionInformation {
   void setUniqueKeyAlias(const UniqueKey *src, const UniqueKey *dest);
   bool hasUniqueKeyAlias(const UniqueKey *src);
   const UniqueKey* getUniqueKeyAlias(const UniqueKey *src);
-  const map<const UniqueKey *, const UniqueKey *> *getUniqueKeyAliasMap();
+  const std::map<const UniqueKey *, const UniqueKey *> *getUniqueKeyAliasMap();
 
  private:
   enum AnalysisStat { UNANALYZED, IN_PROGRESS, DIRTY, ANALYZED };
@@ -200,17 +200,17 @@ struct FunctionInformation {
   FreedStructList freedStruct;
   BasicBlockManager BBManage;
   ValueManager VManage;
-  map<llvm::Value *, vector<llvm::Function *>> funcPtr;
-  map<llvm::Value *, llvm::Type *> aliasedType;
+  std::map<llvm::Value *, std::vector<llvm::Function *>> funcPtr;
+  std::map<llvm::Value *, llvm::Type *> aliasedType;
   Aliases aliasMap;
   bool dirty;
 
   /*** Return Error Code Map ***/
-  map<int64_t, InformationPerErrorCode> info_per_error_code;
+  std::map<int64_t, InformationPerErrorCode> info_per_error_code;
 
   /*** UniqueKey Alias Map for lazy evaluation ***/
-  vector<const UniqueKey *> pending_alloc_store;
-  map<const UniqueKey *, const UniqueKey *> allocated_alias;
+  std::vector<const UniqueKey *> pending_alloc_store;
+  std::map<const UniqueKey *, const UniqueKey *> allocated_alias;
 
   /*** Private Methods ***/
   AnalysisStat getStat();
@@ -223,6 +223,6 @@ class FunctionManager {
   FunctionInformation *getElement(llvm::Function *F);
 
  private:
-  map<llvm::Function *, FunctionInformation *> func_map;
+  std::map<llvm::Function *, FunctionInformation *> func_map;
 };
 }  // namespace ST_free

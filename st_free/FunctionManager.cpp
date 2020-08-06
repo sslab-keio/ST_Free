@@ -274,7 +274,7 @@ void FunctionInformation::setStructArgAlloc(llvm::Value *V, int64_t num) {
 
 void FunctionInformation::setStructMemberArgFreed(llvm::Value *V,
                                                   ParentList indexes) {
-  queue<int> ind;
+  std::queue<int> ind;
   for (auto i : indexes) {
     if (i.second != ROOT_INDEX) ind.push(i.second);
   }
@@ -377,14 +377,14 @@ void FunctionInformation::setStructMemberAllocated(FreedStruct *fstruct,
   }
 }
 
-vector<bool> FunctionInformation::getStructMemberFreed(llvm::Type *T) {
+std::vector<bool> FunctionInformation::getStructMemberFreed(llvm::Type *T) {
   auto fs = find_if(freedStruct.begin(), freedStruct.end(),
                     [T](FreedStruct *f) { return *f == T; });
   if (fs != freedStruct.end()) return (*fs)->getFreedMember();
-  return vector<bool>();
+  return std::vector<bool>();
 }
 
-void FunctionInformation::copyStructMemberFreed(llvm::Type *T, vector<bool> members) {
+void FunctionInformation::copyStructMemberFreed(llvm::Type *T, std::vector<bool> members) {
   auto fs = find_if(freedStruct.begin(), freedStruct.end(),
                     [T](FreedStruct *f) { return *f == T; });
   if (fs != freedStruct.end()) {
@@ -518,7 +518,7 @@ void FunctionInformation::addFunctionPointerInfo(llvm::Value *val, llvm::Functio
   funcPtr[val].push_back(func);
 }
 
-vector<llvm::Function *> FunctionInformation::getPointedFunctions(llvm::Value *val) {
+std::vector<llvm::Function *> FunctionInformation::getPointedFunctions(llvm::Value *val) {
   return funcPtr[val];
 }
 
@@ -565,7 +565,7 @@ bool FunctionInformation::errorCodeExists(int errcode) {
 
 bool FunctionInformation::errorCodeLessThanExists(int errcode) {
   if (find_if(info_per_error_code.begin(), info_per_error_code.end(),
-              [errcode](const pair<int64_t, InformationPerErrorCode> info) {
+              [errcode](const std::pair<int64_t, InformationPerErrorCode> info) {
                 return info.first < errcode;
               }) != info_per_error_code.end())
     return true;
@@ -641,7 +641,7 @@ bool FunctionInformation::checkAndPopPendingAliasedAlloc(const UniqueKey* UK) {
   return false;
 }
 
-const map<const UniqueKey *, const UniqueKey *>
+const std::map<const UniqueKey *, const UniqueKey *>
     *FunctionInformation::getUniqueKeyAliasMap() {
   return &allocated_alias;
 }

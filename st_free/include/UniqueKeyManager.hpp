@@ -2,8 +2,6 @@
 #include "support_funcs.hpp"
 #pragma once
 
-using namespace std;
-
 namespace ST_free {
 class UniqueKey {
  public:
@@ -31,7 +29,7 @@ class UniqueKey {
   }
   bool operator<(const llvm::Type &T) const { return t < &T; }
   bool operator<(llvm::Type *T) const { return t < T; }
-  bool operator<(const pair<llvm::Type *, long> &field) {
+  bool operator<(const std::pair<llvm::Type *, long> &field) {
     if (t < field.first) {
       return memberNum < field.second;
     }
@@ -50,7 +48,7 @@ class UniqueKey {
 
 class UniqueKeyManager {
  private:
-  set<UniqueKey> ukmanage;
+  std::set<UniqueKey> ukmanage;
 
  public:
   const UniqueKey *addUniqueKey(llvm::Value *val, llvm::Type *ty, long mem);

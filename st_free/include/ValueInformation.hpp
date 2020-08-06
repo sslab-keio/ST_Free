@@ -58,7 +58,7 @@ class ValueInformation {
 };
 class ValueManager {
  private:
-  map<const UniqueKey *, ValueInformation *> vinfos;
+  std::map<const UniqueKey *, ValueInformation *> vinfos;
 
  public:
   bool exists(const UniqueKey *UK);

@@ -27,7 +27,7 @@ void TypeRelationManager::add(AliasElement src, AliasElement tgt) {
   typeMap[tgt].push_back(src);
 }
 
-vector<AliasElement> TypeRelationManager::getRelationshipList(
+std::vector<AliasElement> TypeRelationManager::getRelationshipList(
     AliasElement src) {
   return typeMap[src];
 }
@@ -40,7 +40,7 @@ bool TypeRelationManager::hadRelationship(AliasElement src, AliasElement tgt) {
   return false;
 }
 
-ostream &TypeRelationManager::operator<<(ostream &out) {
+std::ostream &TypeRelationManager::operator<<(std::ostream &out) {
   out << "<RelationManager>\n";
   for (auto element : typeMap) {
     out << "src: " << element.first.stTy << " [" << element.first.index
