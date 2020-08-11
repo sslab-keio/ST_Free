@@ -54,6 +54,15 @@ struct globalVarInfo {
  **/
 class StructInformation {
  public:
+  // enum StructMemberStats {
+  //     ISRESPONSIBLE,
+  //     ISNOTRESPONSIBLE,
+  //     ISUNKNOWN,
+  //     NOTPOINTERTY,
+  //     UNALLOCATED,
+  //     PRIMITIVE,
+  //     SELF_DEREFERENCE
+  // };
   StructInformation(){};
   StructInformation(llvm::StructType *st);
   std::vector<llvm::StructType *> getReferees() { return referees; }
@@ -107,6 +116,11 @@ class StructInformation {
   bool isSelfDereference(int ind) {
     if (0 <= ind && ind < memberStats.size())
       return memberStats[ind] == SELF_DEREFERENCE;
+    return false;
+  };
+  bool isNotPointerTy(int ind) {
+    if (0 <= ind && ind < memberStats.size())
+      return memberStats[ind] == NOTPOINTERTY;
     return false;
   };
 

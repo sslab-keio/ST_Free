@@ -9,6 +9,7 @@ struct testC {
 struct testB {
     int x;
     int y;
+    int z;
     struct testC *tC;
 };
 

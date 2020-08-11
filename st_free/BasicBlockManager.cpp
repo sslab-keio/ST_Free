@@ -357,6 +357,7 @@ void BasicBlockManager::removeAllocatedInError(
 void BasicBlockManager::shrinkFreedFromAlloc(llvm::BasicBlock *B) {
   BasicBlockList removable_list = BasicBlockListOperation::intersectList(
       this->getBasicBlockAllocList(B), this->getBasicBlockFreeList(B));
+  generateWarning(B->getFirstNonPHI(), "Removable: " + std::to_string(removable_list.size()), true);
 
   BBMap[B].setAllocList(BasicBlockListOperation::diffList(
       this->getBasicBlockAllocList(B), removable_list));
