@@ -200,10 +200,12 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
 
   // Try checking bitcast included calls
   if (funcLists.empty()) {
-    if (auto *ConstExpr = llvm::dyn_cast<llvm::ConstantExpr>(CI->getCalledOperand())) {
+    if (auto *ConstExpr =
+            llvm::dyn_cast<llvm::ConstantExpr>(CI->getCalledOperand())) {
       if (ConstExpr->isCast()) {
         generateWarning(CI, "Call Inst is value", true);
-        if (auto *func = llvm::dyn_cast<llvm::Function>(ConstExpr->getOperand(0))) {
+        if (auto *func =
+                llvm::dyn_cast<llvm::Function>(ConstExpr->getOperand(0))) {
           funcLists.push_back(func);
         }
       }

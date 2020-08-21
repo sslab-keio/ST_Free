@@ -1155,12 +1155,9 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
             NULL, Ty, plist.back().second));
   }
 
-  // if (this->getFunctionInformation()->isAllocatedInBasicBlock(&B, NULL, Ty,
-  //                                                             ROOT_INDEX)) {
-    BList.add(
-        this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-            NULL, Ty, ROOT_INDEX));
-  // }
+  BList.add(
+      this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+          NULL, Ty, ROOT_INDEX));
 
   for (auto ele : BList.getList()) {
     generateWarning(BI, "Adding Null value", true);

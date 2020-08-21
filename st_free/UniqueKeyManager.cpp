@@ -4,7 +4,7 @@ namespace ST_free {
 void UniqueKey::print() const {
   llvm::outs() << "== Unique Key Info ==\n";
   llvm::outs() << "[Value]: " << this->getValue() << "\n";
-  llvm::outs() << "[Type]: " << this->getType() << "\n";
+  llvm::outs() << "[Type]: " << *this->getType() << "\n";
   llvm::outs() << "[memberNum]: " << this->getNum() << "\n";
   llvm::outs() << "=====================\n";
 }

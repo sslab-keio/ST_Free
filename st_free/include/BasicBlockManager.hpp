@@ -10,9 +10,11 @@ class BasicBlockWorkList {
   BasicBlockWorkList();
   BasicBlockWorkList(const BasicBlockList);
   void add(const UniqueKey *UK);
+  void add(BasicBlockList list);
   bool exists(const UniqueKey *UK);
   bool typeExists(llvm::Type *T);
   const UniqueKey *getFromType(llvm::Type *T);
+  BasicBlockList getWithParentType(llvm::Type *T);
   bool valueExists(llvm::Value *V);
   bool fieldExists(llvm::Type *T, long ind);
   const UniqueKey *getUKFromValue(llvm::Value *V);
@@ -95,8 +97,12 @@ class BasicBlockInformation {
   BasicBlockList getAllocList() const;
   BasicBlockList getFreeList() const;
 
-  BasicBlockList getErrorRemovedAllocList(llvm::BasicBlock *tgt);
-  BasicBlockList getErrorAddedFreeList(llvm::BasicBlock *tgt);
+  BasicBlockList getErrorRemovedAllocList(
+      llvm::BasicBlock *tgt,
+      BasicBlockWorkList free_pool = BasicBlockWorkList());
+  BasicBlockList getErrorAddedFreeList(
+      llvm::BasicBlock *tgt,
+      BasicBlockWorkList free_pool = BasicBlockWorkList());
 
   /*** Shrinked Lists ***/
   // Returns diff of alloc and free
@@ -105,8 +111,8 @@ class BasicBlockInformation {
   // BasicBlockList getShrinkedFreeList(BasicBlock *tgt);
 
   /*** Reverse Propagation ***/
-  bool isReversePropagated(){return reversepropagated;}
-  void setReversePropagated(){reversepropagated = true;}
+  bool isReversePropagated() { return reversepropagated; }
+  void setReversePropagated() { reversepropagated = true; }
   /*** Status Information ***/
   BasicBlockInformationStat getStatus() { return information_status; };
   void setStatusToAnalyzing() {
@@ -157,26 +163,38 @@ class BasicBlockManager {
   BasicBlockList getBasicBlockFreeList(llvm::BasicBlock *src);
   BasicBlockList getBasicBlockPendingAllocList(llvm::BasicBlock *src);
 
-  BasicBlockList getBasicBlockRemoveAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
-  BasicBlockList getBasicBlockErrorRemovedAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
-  BasicBlockList getBasicBlockErrorAddedFreeList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  BasicBlockList getBasicBlockRemoveAllocList(
+      llvm::BasicBlock *src, llvm::BasicBlock *tgt,
+      BasicBlockWorkList free_pool = BasicBlockWorkList());
+  BasicBlockList getBasicBlockErrorRemovedAllocList(
+      llvm::BasicBlock *src, llvm::BasicBlock *tgt,
+      BasicBlockWorkList free_pool = BasicBlockWorkList());
+  BasicBlockList getBasicBlockErrorAddedFreeList(
+      llvm::BasicBlock *src, llvm::BasicBlock *tgt,
+      BasicBlockWorkList free_pool = BasicBlockWorkList());
 
   BasicBlockList getBasicBlockDMZList(llvm::BasicBlock *src);
   LiveVariableList getLiveVariables(llvm::BasicBlock *B);
 
-  BasicBlockList getShrinkedBasicBlockFreeList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
-  BasicBlockList getShrinkedBasicBlockAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  BasicBlockList getShrinkedBasicBlockFreeList(llvm::BasicBlock *src,
+                                               llvm::BasicBlock *tgt);
+  BasicBlockList getShrinkedBasicBlockAllocList(llvm::BasicBlock *src,
+                                                llvm::BasicBlock *tgt);
 
   /*** Mediator ***/
   void CollectInInfo(
-     llvm:: BasicBlock *B, bool isEntryPoint,
+      llvm::BasicBlock *B, bool isEntryPoint,
       const std::map<const UniqueKey *, const UniqueKey *> *alias_map);
-  void copyAllList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  void copyAllList(llvm::BasicBlock *src, llvm::BasicBlock *tgt,
+                   BasicBlockWorkList free_pool = BasicBlockWorkList());
   void copyFreed(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
   void copyCorrectlyFreed(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
-  void uniteAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
-  void uniteDMZList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
-  void intersectFreeList(llvm::BasicBlock *src, llvm::BasicBlock *tgt);
+  void uniteAllocList(llvm::BasicBlock *src, llvm::BasicBlock *tgt,
+                      BasicBlockWorkList free_pool = BasicBlockWorkList());
+  void uniteDMZList(llvm::BasicBlock *src, llvm::BasicBlock *tgt,
+                    BasicBlockWorkList free_pool = BasicBlockWorkList());
+  void intersectFreeList(llvm::BasicBlock *src, llvm::BasicBlock *tgt,
+                         BasicBlockWorkList free_pool = BasicBlockWorkList());
   void removeAllocatedInError(
       llvm::BasicBlock *src, llvm::BasicBlock *tgt,
       const std::map<const UniqueKey *, const UniqueKey *> *alias_map);
