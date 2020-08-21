@@ -108,6 +108,7 @@ class BaseAnalyzer {
   void collectSimpleFreeInfo(llvm::Instruction *I, struct collectedInfo &info);
   void addNestedFree(llvm::Value *V, llvm::CallInst *CI, llvm::BasicBlock *B,
                      struct collectedInfo &I, ParentList &additionalParents);
+
   /*** Argument Status ***/
   void copyArgStatus(llvm::Function &Func, llvm::CallInst *CI, llvm::BasicBlock &B);
   void copyArgStatusRecursively(llvm::Function &Func, llvm::CallInst *CI, llvm::BasicBlock &B,

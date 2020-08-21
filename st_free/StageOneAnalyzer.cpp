@@ -167,9 +167,12 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
   llvm::CallInst *CI = llvm::cast<llvm::CallInst>(I);
 
   std::vector<llvm::Function *> funcLists;
+
+  // Support indirect calls
   if (CI->isIndirectCall()) {
     if (llvm::LoadInst *LI =
             llvm::dyn_cast<llvm::LoadInst>(CI->getCalledValue())) {
+      generateWarning(CI, "Found Indirect Called Function", true);
       std::vector<std::pair<llvm::Type *, int>> typeList;
 
       funcLists = getFunctionInformation()->getPointedFunctions(
@@ -190,11 +193,27 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
     }
   }
 
+  // Normal calls
   if (llvm::Function *called_function = CI->getCalledFunction()) {
     funcLists.push_back(called_function);
   }
 
+  // Try checking bitcast included calls
+  if (funcLists.empty()) {
+    if (auto *ConstExpr = llvm::dyn_cast<llvm::ConstantExpr>(CI->getCalledOperand())) {
+      if (ConstExpr->isCast()) {
+        generateWarning(CI, "Call Inst is value", true);
+        if (auto *func = llvm::dyn_cast<llvm::Function>(ConstExpr->getOperand(0))) {
+          funcLists.push_back(func);
+        }
+      }
+    }
+  }
+
   for (llvm::Function *called_function : funcLists) {
+    if (called_function && called_function->hasName())
+      generateWarning(CI, called_function->getName());
+
     if (isAllocFunction(called_function)) {
       this->addAlloc(CI, &B);
     } else if (isFreeFunction(called_function)) {
@@ -202,6 +221,8 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
            arguments++) {
         this->addFree(llvm::cast<llvm::Value>(arguments), CI, &B);
       }
+    } else if (isSpecializedFreeFunction(called_function)) {
+      generateWarning(CI, "Is Specialized Free", true);
     } else {
       this->analyzeDifferentFunc((llvm::Function &)(*called_function));
       this->copyAllocatedStatus((llvm::Function &)(*called_function), B);

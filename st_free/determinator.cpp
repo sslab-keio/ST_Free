@@ -12,7 +12,10 @@ const std::vector<std::string> alloc_funcs = {
     "memdup",        "kmemdup",          "kstrdup"};
 const std::vector<std::string> free_funcs = {"free", "kfree", "kzfree", "vfree",
                                    "kvfree"};
+
 const std::vector<std::string> err_funcs = {"IS_ERR"};
+
+const std::vector<std::string> specialized_free_funcs = {"put_device", "kobject_put"};
 
 namespace ST_free {
 bool isAllocFunction(llvm::Function *F) {
@@ -33,6 +36,13 @@ bool isFreeFunction(llvm::Function *F) {
 bool isIsErrFunction(llvm::Function *F) {
   if (F && F->hasName()) {
     return findFunctionName(F->getName(), err_funcs);
+  }
+  return false;
+}
+
+bool isSpecializedFreeFunction(llvm::Function* F) {
+  if (F && F->hasName()) {
+    return findFunctionName(F->getName(), specialized_free_funcs);
   }
   return false;
 }
