@@ -173,7 +173,7 @@ void BaseAnalyzer::analyzeReturnInst(llvm::Instruction *I,
     llvm::Value *V = RI->getReturnValue();
     this->checkErrorInstruction(V);
   } else {
-    generateWarning(RI, "[RETURN]: No Error Code Analysis", true);
+    generateWarning(RI, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlockInformation(&B);
   }
   return;
@@ -315,15 +315,15 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
   struct collectedInfo info;
   if (llvm::Instruction *val = llvm::dyn_cast<llvm::Instruction>(V)) {
     if (isStructEleFree(val) || additionalParents.size() > 0) {
-      generateWarning(CI, "Struct Element Free", true);
+      generateWarning(CI, "Struct Element Free");
       this->collectStructMemberFreeInfo(val, info, additionalParents);
     }
 
     if (isStructFree(val)) {
-      generateWarning(CI, "Struct Free", true);
+      generateWarning(CI, "Struct Free");
       this->collectStructFreeInfo(val, info);
     } else if (isOptimizedStructFree(val)) {
-      generateWarning(CI, "Optimized Struct Free", true);
+      generateWarning(CI, "Optimized Struct Free");
       this->collectOptimizedStructFreeInfo(val, info);
     }
 
@@ -333,7 +333,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
     // it is something else (not really sure). We need to decode this by
     // ourselves This is a temporary implementation.
     // TODO: fix this to more stable implementation.
-    generateWarning(CI, "Non Instruction free value found", true);
+    generateWarning(CI, "Non Instruction free value found");
 
     // Get Top-level Value/Type
     llvm::Type *Ty = V->getType();
@@ -346,7 +346,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
     // If additionalParents exists, this means that it is a struct member.
     // Decode everything back.
     if (additionalParents.size() > 0) {
-      generateWarning(CI, "reading from additional parents", true);
+      generateWarning(CI, "reading from additional parents");
       info.indexes = additionalParents;
       info.index = additionalParents.back().second;
 
@@ -363,12 +363,12 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 
   if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
                             B, info.freeValue, info.memType, info.index)) {
-    generateWarning(CI, "Adding Free Value", true);
+    generateWarning(CI, "Adding Free Value");
     ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
         B, NULL, info.memType, info.index, info.indexes);
 
     if (getFunctionInformation()->isArgValue(info.freeValue)) {
-      generateWarning(CI, "Add Free Arg", true);
+      generateWarning(CI, "Add Free Arg");
       valInfo->setArgNumber(
           getFunctionInformation()->getArgIndex(info.freeValue));
       // if (!info.parentType)
@@ -383,7 +383,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
     if (!isAlias && !getFunctionInformation()->aliasExists(info.freeValue) &&
         info.memType && get_type(info.memType)->isStructTy() &&
         this->isAuthorityChained(info.indexes)) {
-      generateWarning(CI, "Add Freed Struct", true);
+      generateWarning(CI, "Add Freed Struct");
       getFunctionInformation()->addFreedStruct(
           B, get_type(info.memType), info.freeValue, CI, info.parentType,
           valInfo, info.index != ROOT_INDEX);
@@ -420,7 +420,7 @@ void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
       getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
 
   if (!isAllocStoredInSameBasicBlock(CI, B)) {
-    generateWarning(CI, "Not Stored in the same block", true);
+    generateWarning(CI, "Not Stored in the same block");
     getFunctionInformation()->addPendingAliasedAlloc(UK);
   }
 
@@ -970,7 +970,7 @@ void BaseAnalyzer::collectStructMemberFreeInfo(
     ParentList &additionalParents) {
   llvm::GetElementPtrInst *GEle = getFreeStructEleInfo(I);
   if (GEle != NULL) {
-    generateWarning(GEle, "GetElementPtr Inst found", true);
+    generateWarning(GEle, "GetElementPtr Inst found");
     this->getStructParents(GEle, info.indexes);
     llvm::GetElementPtrInst *tmpGEle = GEle;
     if (llvm::isa<llvm::GetElementPtrInst>(GEle->getPointerOperand()))
@@ -999,7 +999,7 @@ void BaseAnalyzer::collectStructMemberFreeInfo(
 
     UpdateIfNull(info.freeValue, getCalledStructFreedValue(I));
     info.isStructRelated = true;
-    generateWarning(I, "Struct element free collected", true);
+    generateWarning(I, "Struct element free collected");
   }
   return;
 }
@@ -1008,7 +1008,7 @@ void BaseAnalyzer::collectSimpleFreeInfo(
     llvm::Instruction *I, struct BaseAnalyzer::collectedInfo &info) {
   UpdateIfNull(info.freeValue, getFreedValue(I));
   if (info.freeValue) UpdateIfNull(info.memType, info.freeValue->getType());
-  generateWarning(I, "Value Free", true);
+  generateWarning(I, "Value Free");
   return;
 }
 
@@ -1052,6 +1052,16 @@ void BaseAnalyzer::addNestedFree(llvm::Value *V, llvm::CallInst *CI,
     }
   }
   return;
+}
+
+void BaseAnalyzer::addRefcountedFree(llvm::Value* V, llvm::CallInst *CI, llvm::BasicBlock *B) {
+  llvm::Value* decoded_value = V;
+  generateWarning(CI, "Add Refcounted Free", true);
+  if (llvm::Instruction *I = llvm::dyn_cast<llvm::Instruction>(V)) {
+    if (llvm::GetElementPtrInst *GEle = getFreeStructEleInfo(I))
+      decoded_value = GEle->getPointerOperand();
+  }
+  this->addFree(decoded_value , CI, B);
 }
 
 llvm::ICmpInst *BaseAnalyzer::findAllocICmp(llvm::Instruction *I) {

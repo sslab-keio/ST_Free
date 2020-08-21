@@ -222,7 +222,10 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
         this->addFree(llvm::cast<llvm::Value>(arguments), CI, &B);
       }
     } else if (isSpecializedFreeFunction(called_function)) {
-      generateWarning(CI, "Is Specialized Free", true);
+      for (auto arguments = CI->arg_begin(); arguments != CI->arg_end();
+           arguments++) {
+        this->addRefcountedFree(llvm::cast<llvm::Value>(arguments), CI, &B);
+      }
     } else {
       this->analyzeDifferentFunc((llvm::Function &)(*called_function));
       this->copyAllocatedStatus((llvm::Function &)(*called_function), B);
