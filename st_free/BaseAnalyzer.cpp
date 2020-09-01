@@ -410,12 +410,22 @@ void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
       Ty = CastI->getDestTy();
     } else if (auto SI = llvm::dyn_cast<llvm::StoreInst>(usr)) {
       generateWarning(CI, "struct store");
+      if (!Ty->isStructTy()) {
+        if (auto BCI =
+                llvm::dyn_cast<llvm::BitCastInst>(SI->getPointerOperand())) {
+          generateWarning(CI, "bit cast found", true);
+          Ty = get_type(BCI->getSrcTy());
+        }
+      }
     }
   }
+
   if (get_type(Ty)->isStructTy()) {
+    generateWarning(CI, "Stored in Struct", true);
     getFunctionInformation()->addAliasedType(CI, Ty);
     getStructManager()->addAlloc(llvm::cast<llvm::StructType>(get_type(Ty)));
   }
+
   const UniqueKey *UK =
       getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
 
@@ -478,6 +488,10 @@ void BaseAnalyzer::copyArgStatusRecursively(
 void BaseAnalyzer::copyAllocatedStatus(llvm::Function &Func,
                                        llvm::BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
+  generateWarning(
+      B.getFirstNonPHI(),
+      "Copied alloc: " + std::to_string(DF->getAllocatedInReturn().size()),
+      true);
   for (auto ele : DF->getAllocatedInReturn()) {
     getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
   }
@@ -500,6 +514,10 @@ void BaseAnalyzer::copyFreeStatus(llvm::Function &Func, llvm::CallInst *CI,
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
           addFree(CI->getArgOperand(vinfo->getArgNumber()), CI, &B, false,
                   vinfo->getParents());
+      } else {
+        generateWarning(CI, "Falling into this pit", true);
+        getFunctionInformation()->addFreeValue(&B,
+                                               const_cast<UniqueKey *>(ele));
       }
     }
   }
@@ -811,7 +829,6 @@ llvm::GetElementPtrInst *BaseAnalyzer::getFreeStructEleInfo(
 }
 
 bool BaseAnalyzer::isStructFree(llvm::Instruction *val) {
-
   if (getStructFreedValue(val) != NULL) return true;
   return false;
 }
@@ -830,8 +847,7 @@ llvm::Type *BaseAnalyzer::getStructType(llvm::Instruction *val) {
     llvm::Type *tgt_type = get_type(load_inst->getPointerOperandType());
     if (tgt_type && get_type(tgt_type)->isStructTy()) return tgt_type;
   } else if (auto *BCI = llvm::dyn_cast<llvm::BitCastInst>(val)) {
-    if(get_type(BCI->getSrcTy())->isStructTy())
-      return BCI->getSrcTy();
+    if (get_type(BCI->getSrcTy())->isStructTy()) return BCI->getSrcTy();
   }
   return NULL;
 }
@@ -861,8 +877,7 @@ llvm::Value *BaseAnalyzer::getStructFreedValue(llvm::Instruction *val,
               get_type(this->getFunctionInformation()->getAliasedType(V))))
         return V;
   } else if (auto *BCI = llvm::dyn_cast<llvm::BitCastInst>(val)) {
-      if(get_type(BCI->getSrcTy())->isStructTy())
-          return BCI->getOperand(0);
+    if (get_type(BCI->getSrcTy())->isStructTy()) return BCI->getOperand(0);
   }
   return NULL;
 }
@@ -988,6 +1003,8 @@ void BaseAnalyzer::collectStructMemberFreeInfo(
       if (0 <= info.index && info.index < StTy->getNumElements())
         UpdateIfNull(info.memType, StTy->getElementType(info.index));
       else if (ROOT_INDEX < info.index) {
+        // generateWarning(I, "[Index Over?] Exceeded: " +
+        // std::to_string(info.index), true);
         // TODO: add solid support to negative indice of GEP (a.k.a.
         // container_of)
       }
@@ -1054,14 +1071,15 @@ void BaseAnalyzer::addNestedFree(llvm::Value *V, llvm::CallInst *CI,
   return;
 }
 
-void BaseAnalyzer::addRefcountedFree(llvm::Value* V, llvm::CallInst *CI, llvm::BasicBlock *B) {
-  llvm::Value* decoded_value = V;
+void BaseAnalyzer::addRefcountedFree(llvm::Value *V, llvm::CallInst *CI,
+                                     llvm::BasicBlock *B) {
+  llvm::Value *decoded_value = V;
   generateWarning(CI, "Add Refcounted Free", true);
   if (llvm::Instruction *I = llvm::dyn_cast<llvm::Instruction>(V)) {
     if (llvm::GetElementPtrInst *GEle = getFreeStructEleInfo(I))
       decoded_value = GEle->getPointerOperand();
   }
-  this->addFree(decoded_value , CI, B);
+  this->addFree(decoded_value, CI, B);
 }
 
 llvm::ICmpInst *BaseAnalyzer::findAllocICmp(llvm::Instruction *I) {
@@ -1155,9 +1173,8 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
             NULL, Ty, plist.back().second));
   }
 
-  BList.add(
-      this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-          NULL, Ty, ROOT_INDEX));
+  BList.add(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+      NULL, Ty, ROOT_INDEX));
 
   for (auto ele : BList.getList()) {
     generateWarning(BI, "Adding Null value", true);

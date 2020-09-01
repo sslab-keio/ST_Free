@@ -26,7 +26,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
   if (this->isStoreToStructMember(SI)) {
     generateWarning(SI, "is Store to struct member", true);
     if (llvm::GetElementPtrInst *GEle = getStoredStruct(SI)) {
-      generateWarning(SI, "found GetElementPtrInst");
+      generateWarning(SI, "found GetElementPtrInst", true);
       struct collectedInfo info;
       ParentList plist;
 
@@ -59,7 +59,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
       llvm::Value *addVal = SI->getValueOperand();
       if (llvm::LoadInst *LI = llvm::dyn_cast<llvm::LoadInst>(addVal)) {
-        generateWarning(SI, "is Store to struct member", true);
+        generateWarning(SI, "found load", true);
         if (llvm::isa<llvm::AllocaInst>(LI->getPointerOperand()))
           addVal = LI->getPointerOperand();
       }
@@ -70,14 +70,17 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                 get_type(info.indexes.back().first))) {
           if (ROOT_INDEX < info.indexes.back().second &&
               info.indexes.back().second < StTy->getNumElements()) {
-            generateWarning(I, "[Before] Looking for alloc alias");
+            generateWarning(I, "[Before] Looking for alloc alias", true);
+            if (StTy->hasName())
+              generateWarning(I, StTy->getName(), true);
+            generateWarning(I, std::to_string(info.indexes.back().second), true);
             if (const UniqueKey *src_uk =
                     this->getFunctionInformation()
                         ->getBasicBlockInformation(&B)
                         ->getWorkList(ALLOCATED)
                         .getFromType(
                             StTy->getElementType(info.indexes.back().second))) {
-              generateWarning(I, "[After] Found alloc alias");
+              generateWarning(I, "[After] Found alloc alias", true);
               const UniqueKey *dest_uk =
                   getFunctionInformation()->addAllocValue(
                       &B, NULL,
@@ -203,7 +206,6 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
     if (auto *ConstExpr =
             llvm::dyn_cast<llvm::ConstantExpr>(CI->getCalledOperand())) {
       if (ConstExpr->isCast()) {
-        generateWarning(CI, "Call Inst is value", true);
         if (auto *func =
                 llvm::dyn_cast<llvm::Function>(ConstExpr->getOperand(0))) {
           funcLists.push_back(func);
@@ -214,7 +216,7 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
 
   for (llvm::Function *called_function : funcLists) {
     if (called_function && called_function->hasName())
-      generateWarning(CI, called_function->getName());
+      generateWarning(CI, called_function->getName(), true);
 
     if (isAllocFunction(called_function)) {
       this->addAlloc(CI, &B);
