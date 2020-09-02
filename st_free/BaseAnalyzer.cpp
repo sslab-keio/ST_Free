@@ -379,11 +379,10 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
       //                                                     info.indexes);
       // }
     }
-
-    if (!isAlias && !getFunctionInformation()->aliasExists(info.freeValue) &&
+    if (!isAlias &&
         info.memType && get_type(info.memType)->isStructTy() &&
         this->isAuthorityChained(info.indexes)) {
-      generateWarning(CI, "Add Freed Struct");
+      generateWarning(CI, "Add Freed Struct", true);
       getFunctionInformation()->addFreedStruct(
           B, get_type(info.memType), info.freeValue, CI, info.parentType,
           valInfo, info.index != ROOT_INDEX);
@@ -405,6 +404,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 
 void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
   llvm::Type *Ty = CI->getType();
+  generateWarning(CI, "Add alloc", true);
   for (llvm::User *usr : CI->users()) {
     if (auto CastI = llvm::dyn_cast<llvm::CastInst>(usr)) {
       Ty = CastI->getDestTy();
@@ -486,10 +486,11 @@ void BaseAnalyzer::copyArgStatusRecursively(
 }
 
 void BaseAnalyzer::copyAllocatedStatus(llvm::Function &Func,
+                                       llvm::CallInst *CI, 
                                        llvm::BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
   generateWarning(
-      B.getFirstNonPHI(),
+      CI,
       "Copied alloc: " + std::to_string(DF->getAllocatedInReturn().size()),
       true);
   for (auto ele : DF->getAllocatedInReturn()) {
@@ -553,6 +554,7 @@ llvm::CallInst *BaseAnalyzer::getStoreFromCall(llvm::StoreInst *SI) {
 
 bool BaseAnalyzer::isStoreToStructMember(llvm::StoreInst *SI) {
   llvm::Value *v = SI->getPointerOperand();
+  if (auto LI = llvm::dyn_cast<llvm::LoadInst>(v)) v = LI->getPointerOperand();
   if (auto BCI = llvm::dyn_cast<llvm::CastInst>(v)) v = BCI->getOperand(0);
   if (llvm::GetElementPtrInst *gEle =
           llvm::dyn_cast<llvm::GetElementPtrInst>(v)) {
@@ -648,6 +650,14 @@ void BaseAnalyzer::changeAuthority(llvm::StoreInst *SI, llvm::CastInst *CI,
     }
   }
   return;
+}
+
+bool BaseAnalyzer::isDirectStoreFromAlloc(llvm::StoreInst *SI) {
+  if (auto CI = llvm::dyn_cast<llvm::CallInst>(SI->getValueOperand())) {
+    if (isAllocFunction(CI->getCalledFunction()))
+      return true;
+  }
+  return false;
 }
 
 std::vector<std::string> BaseAnalyzer::decodeDirectoryName(std::string fname) {

@@ -325,6 +325,8 @@ void StructManager::createDependencies() {
   while (!struct_queue.empty()) {
     for (unsigned i = 0; i < struct_queue.front()->getNumElements(); i++) {
       llvm::Type *member = struct_queue.front()->getElementType(i);
+      if (member->isArrayTy())
+        member = member->getArrayElementType();
       if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
         if (!this->exists(stTy)) {
           StructInfo[stTy] = new StructInformation(stTy);
@@ -342,6 +344,8 @@ void StructManager::changeStats() {
     for (unsigned ind = 0; ind < Stmap.first->getNumElements(); ind++) {
       llvm::Type *member = Stmap.first->getElementType(ind);
       if (this->get(Stmap.first)->isUnknown(ind))
+      if (member->isArrayTy())
+        member = member->getArrayElementType();
         if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member)))
           if (StructInfo[stTy]->hasSingleReferee())
             StructInfo[Stmap.first]->setMemberStatResponsible(ind);

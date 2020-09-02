@@ -94,7 +94,14 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                     true);
                 getFunctionInformation()->setUniqueKeyAlias(dest_uk, src_uk);
               }
-            } else {
+            } else if (isDirectStoreFromAlloc(SI)) {
+              generateWarning(I, "[After] Found alloc alias as direct store", true);
+              const UniqueKey *dest_uk =
+                  getFunctionInformation()->addAllocValue(
+                      &B, NULL,
+                      StTy->getElementType(info.indexes.back().second),
+                      info.indexes.back().second);
+            } else{
               if (auto CastI = llvm::dyn_cast<llvm::CastInst>(addVal)) {
                 addVal = CastI->getOperand(0);
               }
@@ -115,7 +122,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
     }
   } else if (this->isStoreToStruct(SI)) {
     if (llvm::StructType *StTy = this->getStoreeStruct(SI)) {
-      generateWarning(SI, "is Store To Struct");
+      generateWarning(SI, "is Store To Struct", true);
       if (llvm::StructType *SrcTy = this->getStorerStruct(SI)) {
         if (StTy != SrcTy && get_type(StTy->getElementType(0)) == SrcTy) {
           if (const UniqueKey *src_uk =
@@ -147,10 +154,13 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
       getFunctionInformation()->setAlias(GEle, SI->getPointerOperand());
     }
   } else if (this->isStoreFromStruct(SI)) {
-    generateWarning(SI, "is Store from struct");
+    generateWarning(SI, "is Store from struct", true);
     valueEle.set(llvm::cast<llvm::StructType>(
                      get_type(SI->getValueOperand()->getType())),
                  ROOT_INDEX);
+    if (llvm::StructType *SrcTy = this->getStorerStruct(SI)) {
+      generateWarning(SI, "Found Storer Struct", true);
+    }
   }
 
   if (valueEle.stTy != NULL && pointerEle.stTy != NULL) {
@@ -232,7 +242,8 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
       }
     } else {
       this->analyzeDifferentFunc((llvm::Function &)(*called_function));
-      this->copyAllocatedStatus((llvm::Function &)(*called_function), B);
+      generateWarning(CI, "Copy all the status", true);
+      this->copyAllocatedStatus((llvm::Function &)(*called_function), CI, B);
       this->copyFreeStatus((llvm::Function &)(*called_function), CI, B);
       this->evaluatePendingStoredValue((llvm::Function &)(*called_function), CI,
                                        B);
@@ -303,7 +314,7 @@ void StageOneAnalyzer::checkAvailability() {
 
     for (int ind = 0; ind < strTy->getNumElements(); ind++) {
       llvm::Type *t = strTy->getElementType(ind);
-      if (!t->isPointerTy() || isFuncPointer(t) || alreadyFreed[ind]) continue;
+      if (isFuncPointer(t) || alreadyFreed[ind]) continue;
 
       // Add to Allocated
       if (getFunctionInformation()->isAllocatedInBasicBlock(

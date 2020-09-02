@@ -116,7 +116,7 @@ class BaseAnalyzer {
                                 llvm::Value *arg, ArgStatus *ArgStat, int ind,
                                 llvm::Type *parentType, ParentList plist,
                                 bool isFirst = false);
-  void copyAllocatedStatus(llvm::Function &Func, llvm::BasicBlock &B);
+  void copyAllocatedStatus(llvm::Function &Func, llvm::CallInst *CI, llvm::BasicBlock &B);
   void copyFreeStatus(llvm::Function &Func, llvm::CallInst *CI, llvm::BasicBlock &B);
   void evaluatePendingStoredValue(llvm::Function &Func, llvm::CallInst *CI, llvm::BasicBlock &B);
   /*** Branch Instruction(Error Code Analysis) ***/
@@ -148,6 +148,7 @@ class BaseAnalyzer {
   bool isStoreFromStruct(llvm::StoreInst *SI);
   void checkAndChangeActualAuthority(llvm::StoreInst *SI);
   void changeAuthority(llvm::StoreInst *SI, llvm::CastInst *CI, llvm::GetElementPtrInst *GEle);
+  bool isDirectStoreFromAlloc(llvm::StoreInst *SI);
   bool isAllocCast(llvm::CastInst *CI);
   bool isCastToVoid(llvm::CastInst *CI);
   std::vector<std::pair<llvm::Type *, long>> decodeGEPInst(llvm::GetElementPtrInst *GEle);
