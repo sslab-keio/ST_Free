@@ -23,20 +23,18 @@ void BaseAnalyzer::analyze(llvm::Function &F) {
   do {
     getFunctionInformation()->setInProgress();
     for (llvm::BasicBlock &B : F) {
-      generateWarning(B.getFirstNonPHI(), B.getName());
+      STFREE_LOG(B.getFirstNonPHI(), B.getName());
       getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
-      // generateWarning(B.getFirstNonPHI(),
-      //                 "Free: " + std::to_string(getFunctionInformation()
-      //                                          ->getBasicBlockManager()
-      //                                          ->getBasicBlockFreeList(&B)
-      //                                          .size()),
-      //                 true);
-      // generateWarning(B.getFirstNonPHI(),
-      //                 "Alloc: " + std::to_string(getFunctionInformation()
-      //                                           ->getBasicBlockManager()
-      //                                           ->getBasicBlockAllocList(&B)
-      //                                           .size()),
-      //                 true);
+      STFREE_LOG(B.getFirstNonPHI(),
+                      "Free: " + std::to_string(getFunctionInformation()
+                                               ->getBasicBlockManager()
+                                               ->getBasicBlockFreeList(&B)
+                                               .size()));
+      STFREE_LOG(B.getFirstNonPHI(),
+                      "Alloc: " + std::to_string(getFunctionInformation()
+                                                ->getBasicBlockManager()
+                                                ->getBasicBlockAllocList(&B)
+                                                .size()));
       this->analyzeInstructions(B);
       getFunctionInformation()->updateSuccessorBlock(B);
       getFunctionInformation()->getBasicBlockManager()->shrinkFreedFromAlloc(
@@ -44,7 +42,7 @@ void BaseAnalyzer::analyze(llvm::Function &F) {
       if (!getFunctionInformation()
                ->getBasicBlockInformation(&B)
                ->isInformationIdenticalToBackup()) {
-        generateWarning(B.getFirstNonPHI(), "Information not Identical");
+        STFREE_LOG(B.getFirstNonPHI(), "Information not Identical");
         getFunctionInformation()->getBasicBlockInformation(&B)->clearBackup();
         getFunctionInformation()->setDirty();
       }
@@ -73,14 +71,14 @@ void BaseAnalyzer::analyzeICmpInst(llvm::Instruction *I, llvm::BasicBlock &B) {}
 void BaseAnalyzer::analyzeStoreInst(llvm::Instruction *I, llvm::BasicBlock &B) {
   llvm::StoreInst *SI = llvm::cast<llvm::StoreInst>(I);
   if (this->isStoreToStructMember(SI)) {
-    generateWarning(SI, "is Store to struct");
+    STFREE_LOG(SI, "is Store to struct");
     llvm::GetElementPtrInst *GEle = getStoredStruct(SI);
     stManage->addStore(
         llvm::cast<llvm::StructType>(GEle->getSourceElementType()),
         getValueIndices(GEle).back());
 
     if (llvm::isa<llvm::GlobalValue>(SI->getValueOperand())) {
-      generateWarning(SI, "GolbalVariable Store");
+      STFREE_LOG(SI, "GolbalVariable Store");
       stManage->addGlobalVarStore(
           llvm::cast<llvm::StructType>(GEle->getSourceElementType()),
           getValueIndices(GEle).back());
@@ -92,7 +90,7 @@ void BaseAnalyzer::analyzeStoreInst(llvm::Instruction *I, llvm::BasicBlock &B) {
   }
 
   if (this->isStoreFromStructMember(SI)) {
-    generateWarning(SI, "is Store from struct");
+    STFREE_LOG(SI, "is Store from struct");
     llvm::GetElementPtrInst *GEle = getStoredStructEle(SI);
     if (llvm::isa<llvm::AllocaInst>(SI->getPointerOperand())) {
       getFunctionInformation()->setAlias(GEle, SI->getPointerOperand());
@@ -128,7 +126,7 @@ void BaseAnalyzer::analyzeBranchInst(llvm::Instruction *I,
                                      llvm::BasicBlock &B) {
   llvm::BranchInst *BI = llvm::cast<llvm::BranchInst>(I);
   if (this->isCorrectlyBranched(BI)) {
-    generateWarning(BI, "Correctly Branched");
+    STFREE_LOG(BI, "Correctly Branched");
     getFunctionInformation()->setCorrectlyBranched(&B);
   }
 }
@@ -169,11 +167,11 @@ void BaseAnalyzer::analyzeReturnInst(llvm::Instruction *I,
     this->checkErrorInstruction(V);
   } else if (RetTy->isPointerTy()) {
     // TODO: add support to pointers
-    generateWarning(RI, "[RETURN][POINTER]: No Error Code Analysis");
+    STFREE_LOG(RI, "[RETURN][POINTER]: No Error Code Analysis");
     llvm::Value *V = RI->getReturnValue();
     this->checkErrorInstruction(V);
   } else {
-    generateWarning(RI, "[RETURN]: No Error Code Analysis");
+    STFREE_LOG(RI, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlockInformation(&B);
   }
   return;
@@ -315,15 +313,15 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
   struct collectedInfo info;
   if (llvm::Instruction *val = llvm::dyn_cast<llvm::Instruction>(V)) {
     if (isStructEleFree(val) || additionalParents.size() > 0) {
-      generateWarning(CI, "Struct Element Free");
+      STFREE_LOG(CI, "Struct Element Free");
       this->collectStructMemberFreeInfo(val, info, additionalParents);
     }
 
     if (isStructFree(val)) {
-      generateWarning(CI, "Struct Free");
+      STFREE_LOG(CI, "Struct Free");
       this->collectStructFreeInfo(val, info);
     } else if (isOptimizedStructFree(val)) {
-      generateWarning(CI, "Optimized Struct Free");
+      STFREE_LOG(CI, "Optimized Struct Free");
       this->collectOptimizedStructFreeInfo(val, info);
     }
 
@@ -333,7 +331,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
     // it is something else (not really sure). We need to decode this by
     // ourselves This is a temporary implementation.
     // TODO: fix this to more stable implementation.
-    generateWarning(CI, "Non Instruction free value found");
+    STFREE_LOG(CI, "Non Instruction free value found");
 
     // Get Top-level Value/Type
     llvm::Type *Ty = V->getType();
@@ -346,7 +344,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
     // If additionalParents exists, this means that it is a struct member.
     // Decode everything back.
     if (additionalParents.size() > 0) {
-      generateWarning(CI, "reading from additional parents");
+      STFREE_LOG(CI, "reading from additional parents");
       info.indexes = additionalParents;
       info.index = additionalParents.back().second;
 
@@ -363,18 +361,18 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 
   if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
                             B, info.freeValue, info.memType, info.index)) {
-    generateWarning(CI, "Adding Free Value");
+    STFREE_LOG(CI, "Adding Free Value");
     ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
         B, NULL, info.memType, info.index, info.indexes);
 
     if (getFunctionInformation()->isArgValue(info.freeValue)) {
-      generateWarning(CI, "Add Free Arg");
+      STFREE_LOG(CI, "Add Free Arg");
       valInfo->setArgNumber(
           getFunctionInformation()->getArgIndex(info.freeValue));
       // if (!info.parentType)
       //   getFunctionInformation()->setArgFree(info.freeValue);
       // else if (info.parentType && info.index >= 0) {
-      //   generateWarning(CI, "parentType add free arg", true);
+      //   STFREE_LOG(CI, "parentType add free arg", true);
       //   getFunctionInformation()->setStructMemberArgFreed(info.freeValue,
       //                                                     info.indexes);
       // }
@@ -382,7 +380,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
     if (!isAlias &&
         info.memType && get_type(info.memType)->isStructTy() &&
         this->isAuthorityChained(info.indexes)) {
-      generateWarning(CI, "Add Freed Struct", true);
+      STFREE_LOG(CI, "Add Freed Struct");
       getFunctionInformation()->addFreedStruct(
           B, get_type(info.memType), info.freeValue, CI, info.parentType,
           valInfo, info.index != ROOT_INDEX);
@@ -404,16 +402,16 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 
 void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
   llvm::Type *Ty = CI->getType();
-  generateWarning(CI, "Add alloc", true);
+  STFREE_LOG(CI, "Add alloc");
   for (llvm::User *usr : CI->users()) {
     if (auto CastI = llvm::dyn_cast<llvm::CastInst>(usr)) {
       Ty = CastI->getDestTy();
     } else if (auto SI = llvm::dyn_cast<llvm::StoreInst>(usr)) {
-      generateWarning(CI, "struct store");
+      STFREE_LOG(CI, "struct store");
       if (!Ty->isStructTy()) {
         if (auto BCI =
                 llvm::dyn_cast<llvm::BitCastInst>(SI->getPointerOperand())) {
-          generateWarning(CI, "bit cast found", true);
+          STFREE_LOG(CI, "bit cast found");
           Ty = get_type(BCI->getSrcTy());
         }
       }
@@ -421,7 +419,7 @@ void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
   }
 
   if (get_type(Ty)->isStructTy()) {
-    generateWarning(CI, "Stored in Struct", true);
+    STFREE_LOG(CI, "Stored in Struct");
     getFunctionInformation()->addAliasedType(CI, Ty);
     getStructManager()->addAlloc(llvm::cast<llvm::StructType>(get_type(Ty)));
   }
@@ -430,7 +428,7 @@ void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
       getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
 
   if (!isAllocStoredInSameBasicBlock(CI, B)) {
-    generateWarning(CI, "Not Stored in the same block");
+    STFREE_LOG(CI, "Not Stored in the same block");
     getFunctionInformation()->addPendingAliasedAlloc(UK);
   }
 
@@ -464,12 +462,12 @@ void BaseAnalyzer::copyArgStatusRecursively(
     llvm::Value *arg, ArgStatus *ArgStat, int ind, llvm::Type *ParentType,
     ParentList plist, bool isFirst) {
   if (ArgStat && ArgStat->isStruct()) {
-    generateWarning(CI, "Args is Struct");
+    STFREE_LOG(CI, "Args is Struct");
     if (!isFirst)
       plist.push_back(std::pair<llvm::Type *, int>(ParentType, ind));
 
     if (ArgStat->isFreed()) {
-      generateWarning(CI, "Copy Args Stat");
+      STFREE_LOG(CI, "Copy Args Stat");
       this->addFree(arg, CI, &B, false, plist);
       llvm::Type *T = get_type(ArgStat->getType());
       if (llvm::isa<llvm::StructType>(T))
@@ -489,10 +487,9 @@ void BaseAnalyzer::copyAllocatedStatus(llvm::Function &Func,
                                        llvm::CallInst *CI, 
                                        llvm::BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  generateWarning(
+  STFREE_LOG(
       CI,
-      "Copied alloc: " + std::to_string(DF->getAllocatedInReturn().size()),
-      true);
+      "Copied alloc: " + std::to_string(DF->getAllocatedInReturn().size()));
   for (auto ele : DF->getAllocatedInReturn()) {
     getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
   }
@@ -502,21 +499,20 @@ void BaseAnalyzer::copyAllocatedStatus(llvm::Function &Func,
 void BaseAnalyzer::copyFreeStatus(llvm::Function &Func, llvm::CallInst *CI,
                                   llvm::BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
-  generateWarning(CI, "Copy Free Status", true);
+  STFREE_LOG(CI, "Copy Free Status");
   for (auto ele : DF->getFreedInSuccess()) {
-    generateWarning(
+    STFREE_LOG(
         CI,
-        "Copying Free Status " + std::to_string(DF->getFreedInSuccess().size()),
-        true);
+        "Copying Free Status " + std::to_string(DF->getFreedInSuccess().size()));
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
-      generateWarning(CI, "Getting Value Info", true);
+      STFREE_LOG(CI, "Getting Value Info");
       if (vinfo->isArgValue()) {
-        generateWarning(CI, "Copying value");
+        STFREE_LOG(CI, "Copying value");
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
           addFree(CI->getArgOperand(vinfo->getArgNumber()), CI, &B, false,
                   vinfo->getParents());
       } else {
-        generateWarning(CI, "Falling into this pit", true);
+        STFREE_LOG(CI, "Falling into this pit");
         getFunctionInformation()->addFreeValue(&B,
                                                const_cast<UniqueKey *>(ele));
       }
@@ -614,10 +610,10 @@ void BaseAnalyzer::checkAndChangeActualAuthority(llvm::StoreInst *SI) {
   if (this->isStoreToStructMember(SI)) {
     llvm::GetElementPtrInst *GEle = getStoredStruct(SI);
     if (GEle && llvm::isa<llvm::StructType>(GEle->getSourceElementType())) {
-      generateWarning(SI, "Found StoreInst to struct member");
+      STFREE_LOG(SI, "Found StoreInst to struct member");
 
       if (auto PN = llvm::dyn_cast<llvm::PHINode>(SI->getValueOperand())) {
-        generateWarning(SI, "is PhiInst");
+        STFREE_LOG(SI, "is PhiInst");
         for (int i = 0; i < PN->getNumIncomingValues(); i++) {
           if (auto CI = llvm::dyn_cast<llvm::CastInst>(PN->getIncomingValue(i)))
             CastInsts.push_back(CI);
@@ -635,7 +631,7 @@ void BaseAnalyzer::checkAndChangeActualAuthority(llvm::StoreInst *SI) {
 void BaseAnalyzer::changeAuthority(llvm::StoreInst *SI, llvm::CastInst *CI,
                                    llvm::GetElementPtrInst *GEle) {
   ParentList indexes;
-  generateWarning(SI, "is Casted Store");
+  STFREE_LOG(SI, "is Casted Store");
   this->getStructParents(GEle, indexes);
 
   if (indexes.size() > 0 &&
@@ -644,7 +640,7 @@ void BaseAnalyzer::changeAuthority(llvm::StoreInst *SI, llvm::CastInst *CI,
       !this->isAllocCast(CI) && !this->isCastToVoid(CI)) {
     if (llvm::StructType *StTy =
             llvm::dyn_cast<llvm::StructType>(indexes.back().first)) {
-      generateWarning(SI, "Change back to Unknown");
+      STFREE_LOG(SI, "Change back to Unknown");
       getStructManager()->get(StTy)->setMemberStatUnknown(
           indexes.back().second);
     }
@@ -804,7 +800,7 @@ bool BaseAnalyzer::isStructEleFree(llvm::Instruction *val) {
   if (l_inst && l_inst->getOperandList()) {
     llvm::Value *V = l_inst->getPointerOperand();
     if (auto bit_cast_inst = llvm::dyn_cast<llvm::BitCastInst>(V)) {
-      generateWarning(val, "found BitCast");
+      STFREE_LOG(val, "found BitCast");
       V = bit_cast_inst->getOperand(0);
     }
     if (auto GEle = llvm::dyn_cast<llvm::GetElementPtrInst>(V)) {
@@ -828,7 +824,7 @@ llvm::GetElementPtrInst *BaseAnalyzer::getFreeStructEleInfo(
   if (l_inst != NULL && l_inst->getOperandList() != NULL) {
     llvm::Value *V = l_inst->getPointerOperand();
     if (auto bit_cast_inst = llvm::dyn_cast<llvm::BitCastInst>(V)) {
-      generateWarning(val, "found BitCast");
+      STFREE_LOG(val, "found BitCast");
       V = bit_cast_inst->getOperand(0);
     }
     if (auto GEle = llvm::dyn_cast<llvm::GetElementPtrInst>(V)) {
@@ -995,7 +991,7 @@ void BaseAnalyzer::collectStructMemberFreeInfo(
     ParentList &additionalParents) {
   llvm::GetElementPtrInst *GEle = getFreeStructEleInfo(I);
   if (GEle != NULL) {
-    generateWarning(GEle, "GetElementPtr Inst found");
+    STFREE_LOG(GEle, "GetElementPtr Inst found");
     this->getStructParents(GEle, info.indexes);
     llvm::GetElementPtrInst *tmpGEle = GEle;
     if (llvm::isa<llvm::GetElementPtrInst>(GEle->getPointerOperand()))
@@ -1013,7 +1009,7 @@ void BaseAnalyzer::collectStructMemberFreeInfo(
       if (0 <= info.index && info.index < StTy->getNumElements())
         UpdateIfNull(info.memType, StTy->getElementType(info.index));
       else if (ROOT_INDEX < info.index) {
-        // generateWarning(I, "[Index Over?] Exceeded: " +
+        // STFREE_LOG(I, "[Index Over?] Exceeded: " +
         // std::to_string(info.index), true);
         // TODO: add solid support to negative indice of GEP (a.k.a.
         // container_of)
@@ -1026,7 +1022,7 @@ void BaseAnalyzer::collectStructMemberFreeInfo(
 
     UpdateIfNull(info.freeValue, getCalledStructFreedValue(I));
     info.isStructRelated = true;
-    generateWarning(I, "Struct element free collected");
+    STFREE_LOG(I, "Struct element free collected");
   }
   return;
 }
@@ -1035,7 +1031,7 @@ void BaseAnalyzer::collectSimpleFreeInfo(
     llvm::Instruction *I, struct BaseAnalyzer::collectedInfo &info) {
   UpdateIfNull(info.freeValue, getFreedValue(I));
   if (info.freeValue) UpdateIfNull(info.memType, info.freeValue->getType());
-  generateWarning(I, "Value Free");
+  STFREE_LOG(I, "Value Free");
   return;
 }
 
@@ -1072,7 +1068,7 @@ void BaseAnalyzer::addNestedFree(llvm::Value *V, llvm::CallInst *CI,
                 [ele](const std::pair<llvm::Type *, int> &index) {
                   return *ele == index.first;
                 }) == info.indexes.end()) {
-      generateWarning(CI, "Option Nested Called", true);
+      STFREE_LOG(CI, "Option Nested Called");
       additionalParents.push_back(std::pair<llvm::Type *, int>(StTy, memIndex));
       this->addFree(V, CI, B, false, additionalParents);
       additionalParents.pop_back();
@@ -1084,7 +1080,7 @@ void BaseAnalyzer::addNestedFree(llvm::Value *V, llvm::CallInst *CI,
 void BaseAnalyzer::addRefcountedFree(llvm::Value *V, llvm::CallInst *CI,
                                      llvm::BasicBlock *B) {
   llvm::Value *decoded_value = V;
-  generateWarning(CI, "Add Refcounted Free", true);
+  STFREE_LOG(CI, "Add Refcounted Free");
   if (llvm::Instruction *I = llvm::dyn_cast<llvm::Instruction>(V)) {
     if (llvm::GetElementPtrInst *GEle = getFreeStructEleInfo(I))
       decoded_value = GEle->getPointerOperand();
@@ -1121,7 +1117,7 @@ void BaseAnalyzer::analyzeErrorCode(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
   int errcode = 0;
 
   if (op >= 0) {
-    generateWarning(BI, "Analyzing Error Code", true);
+    STFREE_LOG(BI, "Analyzing Error Code");
     if (this->errorCodeExists(ICI, B, errcode)) {
       llvm::BasicBlock *errBlock = BI->getSuccessor(op);
       this->getFunctionInformation()
@@ -1130,17 +1126,15 @@ void BaseAnalyzer::analyzeErrorCode(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
 
       BasicBlockWorkList allocated_on_err =
           this->getErrorValues(ICI, B, errcode);
-      generateWarning(
+      STFREE_LOG(
           BI,
-          "Allocated Err: " + std::to_string(allocated_on_err.getList().size()),
-          true);
+          "Allocated Err: " + std::to_string(allocated_on_err.getList().size()));
 
       // 1. Get Allocated on Success
       BasicBlockWorkList allocated_on_success = this->getSuccessValues(ICI, B);
-      generateWarning(BI,
+      STFREE_LOG(BI,
                       "Allocated Success: " +
-                          std::to_string(allocated_on_success.getList().size()),
-                      true);
+                          std::to_string(allocated_on_success.getList().size()));
 
       // 2. Success diff allocated_on_err is pure non allocated in err
       BasicBlockList diff_list = BasicBlockListOperation::diffList(
@@ -1158,7 +1152,7 @@ void BaseAnalyzer::analyzeErrorCode(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
 
 void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
                                     llvm::BasicBlock &B) {
-  generateWarning(BI, "Analyze NULL Check", true);
+  STFREE_LOG(BI, "Analyze NULL Check");
   BasicBlockWorkList BList;
 
   // Get which basicblock to pass the data to
@@ -1187,7 +1181,7 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
       NULL, Ty, ROOT_INDEX));
 
   for (auto ele : BList.getList()) {
-    generateWarning(BI, "Adding Null value", true);
+    STFREE_LOG(BI, "Adding Null value");
     this->getFunctionInformation()
         ->getBasicBlockInformation(&B)
         ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
@@ -1197,7 +1191,7 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
 void BaseAnalyzer::analyzeErrorCheckFunction(llvm::BranchInst *BI,
                                              llvm::CallInst *CI,
                                              llvm::BasicBlock &B) {
-  generateWarning(CI, "Calling IS_ERR()");
+  STFREE_LOG(CI, "Calling IS_ERR()");
   llvm::BasicBlock *errBlock = BI->getSuccessor(0);
   this->getFunctionInformation()
       ->getBasicBlockInformation(&B)
@@ -1210,7 +1204,7 @@ void BaseAnalyzer::analyzeErrorCheckFunction(llvm::BranchInst *BI,
   ParentList plist = this->decodeErrorTypes(tgt_val);
   llvm::Type *Ty = this->getComparedType(decodeComparedValue(tgt_val), B);
   if (plist.size() > 0) {
-    generateWarning(CI, "Calling IS_ERR(): plist");
+    STFREE_LOG(CI, "Calling IS_ERR(): plist");
     if (auto StTy =
             llvm::dyn_cast<llvm::StructType>(get_type(plist.back().first))) {
       if (0 <= plist.back().second &&
@@ -1219,7 +1213,7 @@ void BaseAnalyzer::analyzeErrorCheckFunction(llvm::BranchInst *BI,
     }
     if (this->getFunctionInformation()->isAllocatedInBasicBlock(
             &B, NULL, Ty, plist.back().second)) {
-      generateWarning(CI, "Calling IS_ERR(): plist found alloc");
+      STFREE_LOG(CI, "Calling IS_ERR(): plist found alloc");
       this->getFunctionInformation()
           ->getBasicBlockInformation(&B)
           ->addRemoveAlloc(
@@ -1250,7 +1244,7 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(llvm::Instruction *I,
 
   if (llvm::isa<llvm::ConstantInt>(ICI->getOperand(1))) {
     llvm::CallInst *CI = NULL;
-    generateWarning(I, "Compare with Int: Error Code");
+    STFREE_LOG(I, "Compare with Int: Error Code");
     if (auto comValCI = llvm::dyn_cast<llvm::CallInst>(comVal)) {
       CI = comValCI;
     } else {
@@ -1259,14 +1253,14 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(llvm::Instruction *I,
                ->getCallInstForVal(comVal);
     }
     if (CI) {
-      generateWarning(CI, "Error Code");
+      STFREE_LOG(CI, "Error Code");
       for (auto ele : this->getErrorAllocInCalledFunction(CI, errcode)) {
         BList.add(ele);
       }
     }
   } else if (llvm::isa<llvm::ConstantPointerNull>(ICI->getOperand(1))) {
     llvm::CallInst *CI = NULL;
-    generateWarning(I, "Compare with NULL: Error Code");
+    STFREE_LOG(I, "Compare with NULL: Error Code");
     if (auto comValCI = llvm::dyn_cast<llvm::CallInst>(comVal)) {
       CI = comValCI;
     } else {
@@ -1275,12 +1269,12 @@ BasicBlockWorkList BaseAnalyzer::getErrorValues(llvm::Instruction *I,
                ->getCallInstForVal(comVal);
     }
     if (CI) {
-      generateWarning(CI, "Error Code");
+      STFREE_LOG(CI, "Error Code");
       for (auto ele : this->getErrorAllocInCalledFunction(CI, 0)) {
         BList.add(ele);
       }
     }
-    // generateWarning(I, "Compare with NULL: Look at allocation", true);
+    // STFREE_LOG(I, "Compare with NULL: Look at allocation", true);
     // ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
     // Type *Ty = this->getComparedType(comVal, B);
     // if (plist.size() > 0) {
@@ -1316,7 +1310,7 @@ BasicBlockWorkList BaseAnalyzer::getSuccessValues(llvm::Instruction *I,
 
   if (llvm::isa<llvm::ConstantInt>(ICI->getOperand(1))) {
     llvm::CallInst *CI = NULL;
-    generateWarning(I, "Compare with Int: Error Code");
+    STFREE_LOG(I, "Compare with Int: Error Code");
     if (auto comValCI = llvm::dyn_cast<llvm::CallInst>(comVal)) {
       CI = comValCI;
     } else {
@@ -1325,14 +1319,14 @@ BasicBlockWorkList BaseAnalyzer::getSuccessValues(llvm::Instruction *I,
                ->getCallInstForVal(comVal);
     }
     if (CI) {
-      generateWarning(CI, "Error Code");
+      STFREE_LOG(CI, "Error Code");
       for (auto ele : this->getSuccessAllocInCalledFunction(CI)) {
         BList.add(ele);
       }
     }
   } else if (llvm::isa<llvm::ConstantPointerNull>(ICI->getOperand(1))) {
     llvm::CallInst *CI = NULL;
-    generateWarning(I, "Compare with Int: Error Code");
+    STFREE_LOG(I, "Compare with Int: Error Code");
     if (auto comValCI = llvm::dyn_cast<llvm::CallInst>(comVal)) {
       CI = comValCI;
     } else {
@@ -1341,7 +1335,7 @@ BasicBlockWorkList BaseAnalyzer::getSuccessValues(llvm::Instruction *I,
                ->getCallInstForVal(comVal);
     }
     if (CI) {
-      generateWarning(CI, "Error Code");
+      STFREE_LOG(CI, "Error Code");
       for (auto ele : this->getSuccessAllocInCalledFunction(CI)) {
         BList.add(ele);
       }
@@ -1357,7 +1351,7 @@ bool BaseAnalyzer::errorCodeExists(llvm::Instruction *I, llvm::BasicBlock &B,
 
   if (llvm::isa<llvm::ConstantInt>(ICI->getOperand(1))) {
     llvm::CallInst *CI = NULL;
-    generateWarning(I, "Compare with Int: Error Code", true);
+    STFREE_LOG(I, "Compare with Int: Error Code");
     if (auto comValCI = llvm::dyn_cast<llvm::CallInst>(comVal)) {
       CI = comValCI;
     } else {
@@ -1366,7 +1360,7 @@ bool BaseAnalyzer::errorCodeExists(llvm::Instruction *I, llvm::BasicBlock &B,
                ->getCallInstForVal(comVal);
     }
     if (CI) {
-      generateWarning(CI, "Error Code");
+      STFREE_LOG(CI, "Error Code");
       llvm::Function *DF = CI->getCalledFunction();
       return this->getFunctionManager()
           ->getElement(DF)
@@ -1471,7 +1465,7 @@ int BaseAnalyzer::getErrorOperand(llvm::ICmpInst *ICI) {
 BasicBlockList BaseAnalyzer::getErrorAllocInCalledFunction(llvm::CallInst *CI,
                                                            int errcode) {
   llvm::Function *DF = CI->getCalledFunction();
-  generateWarning(CI, "Called Error");
+  STFREE_LOG(CI, "Called Error");
   return this->getFunctionManager()->getElement(DF)->getAllocatedInError(
       errcode);
 }
@@ -1479,7 +1473,7 @@ BasicBlockList BaseAnalyzer::getErrorAllocInCalledFunction(llvm::CallInst *CI,
 BasicBlockList BaseAnalyzer::getSuccessAllocInCalledFunction(
     llvm::CallInst *CI) {
   llvm::Function *DF = CI->getCalledFunction();
-  generateWarning(CI, "Called Success");
+  STFREE_LOG(CI, "Called Success");
   return this->getFunctionManager()->getElement(DF)->getAllocatedInSuccess();
 }
 
@@ -1494,10 +1488,10 @@ void BaseAnalyzer::buildReturnValueInformation() {
     this->checkErrorInstruction(V);
   } else if (RetTy->isPointerTy()) {
     // TODO: add support to pointers
-    generateWarning(RI, "[RETURN]: No Error Code Analysis");
+    STFREE_LOG(RI, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlockInformation(B);
   } else {
-    generateWarning(RI, "[RETURN]: No Error Code Analysis");
+    STFREE_LOG(RI, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlockInformation(B);
   }
 }
@@ -1506,33 +1500,32 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(
     llvm::Instruction *I, llvm::BasicBlock *B, llvm::Value *inval,
     std::vector<llvm::Instruction *> visited_inst) {
   if (auto CInt = llvm::dyn_cast<llvm::ConstantInt>(inval)) {
-    generateWarning(I, "Storing constant value to ret");
+    STFREE_LOG(I, "Storing constant value to ret");
     int64_t errcode = CInt->getSExtValue();
     if (errcode < NO_ERROR) {
-      generateWarning(I, "[RETURN] ERR: " + std::to_string(errcode), true);
+      STFREE_LOG(I, "[RETURN] ERR: " + std::to_string(errcode));
       getFunctionInformation()->addErrorBlockInformation(errcode, B);
     } else {
-      generateWarning(I, "[RETURN] SUCCESS: " + std::to_string(errcode), true);
+      STFREE_LOG(I, "[RETURN] SUCCESS: " + std::to_string(errcode));
       getFunctionInformation()->addSuccessBlockInformation(B);
     }
   } else if (auto CI = llvm::dyn_cast<llvm::CallInst>(inval)) {
-    generateWarning(I, "Storing caall inst value to ret", true);
+    STFREE_LOG(I, "Storing caall inst value to ret");
     if (FunctionInformation *DF =
             getFunctionManager()->getElement(CI->getCalledFunction())) {
       for (auto err_code_info : DF->getErrorCodeMap()) {
         int64_t errcode = err_code_info.first;
 
         if (errcode < NO_ERROR) {
-          generateWarning(
-              I, "[RETURN][CALLINST] ERR: " + std::to_string(errcode), true);
+          STFREE_LOG(
+              I, "[RETURN][CALLINST] ERR: " + std::to_string(errcode));
           getFunctionInformation()->addErrorBlockFreeInformation(
               errcode, err_code_info.second.free_list);
           getFunctionInformation()->addErrorBlockAllocInformation(
               errcode, err_code_info.second.alloc_list);
         } else {
-          generateWarning(
-              I, "[RETURN][CALLINST] SUCCESS: " + std::to_string(errcode),
-              true);
+          STFREE_LOG(
+              I, "[RETURN][CALLINST] SUCCESS: " + std::to_string(errcode));
           getFunctionInformation()->addErrorBlockFreeInformation(
               0, err_code_info.second.free_list);
           getFunctionInformation()->addErrorBlockAllocInformation(
@@ -1542,15 +1535,15 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(
     }
   } else if (inval->getType()->isPointerTy()) {
     if (llvm::isa<llvm::ConstantPointerNull>(inval)) {
-      generateWarning(I, "[RETURN] ERR: NULL", true);
+      STFREE_LOG(I, "[RETURN] ERR: NULL");
       getFunctionInformation()->addErrorBlockInformation(-1, B);
     } else {
-      generateWarning(I, "[RETURN] SUCCESS: Non-NULL", true);
+      STFREE_LOG(I, "[RETURN] SUCCESS: Non-NULL");
       getFunctionInformation()->addSuccessBlockInformation(B);
     }
   } else {
     if (auto PHI = llvm::dyn_cast<llvm::PHINode>(inval)) {
-      generateWarning(PHI, "[ERRORINST]: PHINode Instruction Reivisted", true);
+      STFREE_LOG(PHI, "[ERRORINST]: PHINode Instruction Reivisted");
       if (find(visited_inst.begin(), visited_inst.end(), PHI) ==
           visited_inst.end()) {
         visited_inst.push_back(PHI);
@@ -1564,16 +1557,16 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(
 void BaseAnalyzer::checkErrorInstruction(
     llvm::Value *V, std::vector<llvm::Instruction *> visited_inst) {
   if (auto CInt = llvm::dyn_cast<llvm::Constant>(V)) {
-    // generateWarning(RI, "Const Int");
+    STFREE_LOG(RI, "Const Int");
   }
   if (auto CI = llvm::dyn_cast<llvm::CallInst>(V)) {
-    generateWarning(CI, "[ERRORINST]: Call Inst", true);
+    STFREE_LOG(CI, "[ERRORINST]: Call Inst");
     if (CI->getCalledFunction()) {
-      generateWarning(CI, CI->getFunction()->getName(), true);
+      STFREE_LOG(CI, CI->getFunction()->getName());
     }
   }
   if (auto LI = llvm::dyn_cast<llvm::LoadInst>(V)) {
-    generateWarning(LI, "[ERRORINST]: Load Instruction", true);
+    STFREE_LOG(LI, "[ERRORINST]: Load Instruction");
     for (auto usr : LI->getPointerOperand()->users()) {
       if (auto SI = llvm::dyn_cast<llvm::StoreInst>(usr)) {
         if (V != SI->getValueOperand())
@@ -1582,7 +1575,7 @@ void BaseAnalyzer::checkErrorInstruction(
       }
     }
   } else if (auto PHI = llvm::dyn_cast<llvm::PHINode>(V)) {
-    generateWarning(PHI, "[ERRORINST]: PHINode Instruction", true);
+    STFREE_LOG(PHI, "[ERRORINST]: PHINode Instruction");
     for (unsigned i = 0; i < PHI->getNumIncomingValues(); i++) {
       if (V != PHI->getIncomingValue(i))
         this->checkErrorCodeAndAddBlock(PHI, PHI->getIncomingBlock(i),
