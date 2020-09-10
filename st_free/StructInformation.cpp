@@ -10,6 +10,7 @@ StructInformation::StructInformation(llvm::StructType *st) {
 
   stc = std::vector<storeCount>(st->getNumElements());
   funcPtr = std::vector<std::vector<llvm::Function *>>(st->getNumElements());
+  function_ptr_map = std::vector<FunctionPtrMap>(st->getNumElements());
   gvinfo = std::vector<std::vector<globalVarInfo>>(st->getNumElements());
 
   candidateNum = 0;
@@ -272,12 +273,14 @@ void StructInformation::PrintJson() {
   llvm::outs() << "},\n";
 }
 
-void StructInformation::addFunctionPtr(int ind, llvm::Function *func) {
-  funcPtr[ind].push_back(func);
+void StructInformation::addFunctionPtr(int ind, llvm::Function *func,
+                                       std::string path) {
+  function_ptr_map[ind].addFunction(path, func);
 }
 
-std::vector<llvm::Function *> StructInformation::getFunctionPtr(int ind) {
-  return funcPtr[ind];
+std::vector<llvm::Function *> StructInformation::getFunctionPtr(
+    int ind, std::string path) {
+  return function_ptr_map[ind].getFunctionCandidates(path);
 }
 
 void StructInformation::addGVInfo(int ind, std::vector<std::string> dirs,
@@ -325,8 +328,7 @@ void StructManager::createDependencies() {
   while (!struct_queue.empty()) {
     for (unsigned i = 0; i < struct_queue.front()->getNumElements(); i++) {
       llvm::Type *member = struct_queue.front()->getElementType(i);
-      if (member->isArrayTy())
-        member = member->getArrayElementType();
+      if (member->isArrayTy()) member = member->getArrayElementType();
       if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
         if (!this->exists(stTy)) {
           StructInfo[stTy] = new StructInformation(stTy);
@@ -344,11 +346,10 @@ void StructManager::changeStats() {
     for (unsigned ind = 0; ind < Stmap.first->getNumElements(); ind++) {
       llvm::Type *member = Stmap.first->getElementType(ind);
       if (this->get(Stmap.first)->isUnknown(ind))
-      if (member->isArrayTy())
-        member = member->getArrayElementType();
-        if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member)))
-          if (StructInfo[stTy]->hasSingleReferee())
-            StructInfo[Stmap.first]->setMemberStatResponsible(ind);
+        if (member->isArrayTy()) member = member->getArrayElementType();
+      if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member)))
+        if (StructInfo[stTy]->hasSingleReferee())
+          StructInfo[Stmap.first]->setMemberStatResponsible(ind);
     }
   }
 }
@@ -431,9 +432,17 @@ void StructManager::addGlobalVariableInitInfo(llvm::Module &M) {
         if (get_type(GV.getValueType()->getStructElementType(i))
                 ->isFunctionTy() &&
             cnst->getAggregateElement(i)) {
-          this->get(llvm::cast<llvm::StructType>(GV.getValueType()))
-              ->addFunctionPtr(
-                  i, llvm::cast<llvm::Function>(cnst->getAggregateElement(i)));
+          llvm::SmallVector<llvm::DIGlobalVariableExpression *, 1> debug_info;
+          GV.getDebugInfo(debug_info);
+          for (auto dbg : debug_info) {
+            std::string path_name =
+                std::string(dbg->getVariable()->getDirectory()) + "/" +
+                std::string(dbg->getVariable()->getFilename());
+            this->get(llvm::cast<llvm::StructType>(GV.getValueType()))
+                ->addFunctionPtr(
+                    i, llvm::cast<llvm::Function>(cnst->getAggregateElement(i)),
+                    path_name);
+          }
         }
       }
     }
@@ -457,4 +466,37 @@ void StructManager::markNoAlloc() {
     }
   }
 }
+
+std::pair<std::string, std::string> FunctionPtrMap::decodeDirName(
+    std::string path) {
+  size_t path_point = path.find("/");
+
+  if (path_point == -1) {
+    return std::pair<std::string, std::string>(path, "");
+  }
+  return std::pair<std::string, std::string>(path.substr(0, path_point),
+                                             path.substr(path_point + 1));
+}
+
+void FunctionPtrMap::addFunction(std::string path, llvm::Function *func) {
+  std::pair<std::string, std::string> paths = decodeDirName(path);
+
+  if (paths.second != "") {
+    if (sub_dirs.find(paths.first) == sub_dirs.end())
+      sub_dirs[paths.first] = FunctionPtrMap(paths.first);
+    sub_dirs[paths.first].addFunction(paths.second, func);
+  }
+  funcs.push_back(func);
+}
+
+std::vector<llvm::Function *> FunctionPtrMap::getFunctionCandidates(
+    std::string candidate_path) {
+  std::pair<std::string, std::string> paths = decodeDirName(candidate_path);
+
+  if (sub_dirs.find(paths.first) != sub_dirs.end() && paths.second != "")
+    return getFunctionCandidates(paths.second);
+
+  return funcs;
+}
+
 }  // namespace ST_free

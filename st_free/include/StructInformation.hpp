@@ -46,6 +46,27 @@ struct globalVarInfo {
     GV = G;
   }
 };
+
+/**
+ * Class Function Ptr Map
+ **/
+class FunctionPtrMap {
+ public:
+  FunctionPtrMap(){};
+  FunctionPtrMap(std::string path){};
+  void addFunction(std::string path, llvm::Function *func);
+  std::vector<llvm::Function *> getFunctionCandidates(std::string path);
+  std::pair<std::string, std::string> decodeDirName(std::string path);
+
+ private:
+  // Map to next sub dirs
+  std::map<std::string, FunctionPtrMap> sub_dirs;
+
+  // Directory information
+  std::vector<llvm::Function *> funcs;
+  std::string path;
+};
+
 /**
  * Class [StructInformation]
  * keeps track of each structure information,
@@ -85,9 +106,10 @@ class StructInformation {
   void incrementStoreTotal(int ind);
   bool isNotStored(int ind);
   void incrementStoreGlobalVar(int ind);
-  void addFunctionPtr(int ind, llvm::Function *func);
-  std::vector<llvm::Function *> getFunctionPtr(int ind);
-  void addGVInfo(int ind, std::vector<std::string> dirs, llvm::GlobalVariable *gv);
+  void addFunctionPtr(int ind, llvm::Function *func, std::string path = "");
+  std::vector<llvm::Function *> getFunctionPtr(int ind, std::string path = "");
+  void addGVInfo(int ind, std::vector<std::string> dirs,
+                 llvm::GlobalVariable *gv);
   std::vector<globalVarInfo> getGVInfo(int ind);
   llvm::StructType *getStructType() { return strTy; }
   /*** Negative Count Related ***/
@@ -133,11 +155,13 @@ class StructInformation {
       globalVar = 0;
     }
   };
+
   llvm::StructType *strTy;
   std::vector<llvm::StructType *> referees;
   std::vector<int> memberStats;
   std::vector<int> freedCounts;
   std::vector<storeCount> stc;
+  std::vector<FunctionPtrMap> function_ptr_map;
   std::vector<std::vector<llvm::Function *>> funcPtr;
   std::vector<std::vector<globalVarInfo>> gvinfo;
   int candidateNum;
@@ -160,7 +184,6 @@ class StructInformation {
   void checkStageTwo(CandidateValue *cand, long ind);
   void checkStagePrimitive(CandidateValue *cand, long ind);
   void checkStageBidirectional(CandidateValue *cand, long ind);
-
 };
 
 /** Class
@@ -176,10 +199,12 @@ class StructManager {
   StructManager(std::vector<llvm::StructType *> st);
   StructInformation *get(llvm::StructType *strTy) { return StructInfo[strTy]; }
   TypeRelationManager *getTypeRelationManager() { return &tyRel; };
-  void addCandidateValue(llvm::Function *F, llvm::StructType *strTy, FreedStruct *fs);
+  void addCandidateValue(llvm::Function *F, llvm::StructType *strTy,
+                         FreedStruct *fs);
   void addAlloc(llvm::StructType *strTy);
   void addStore(llvm::StructType *strTy, int ind);
   void addGlobalVarStore(llvm::StructType *strTy, int ind);
+  bool exists(llvm::StructType *);
   void print();
   void PrintAsJson();
   void BuildCandidateCount();
@@ -194,7 +219,6 @@ class StructManager {
   void addReferee(llvm::StructType *referee, llvm::StructType *tgt);
   void createDependencies();
   void changeStats();
-  bool exists(llvm::StructType *);
   void checkNonAllocs();
 };
 }  // namespace ST_free

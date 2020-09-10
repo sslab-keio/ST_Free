@@ -22,6 +22,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
+#include "llvm/ADT/APFloat.h"
+
 // include STL
 #include <algorithm>
 #include <ctime>
@@ -33,6 +35,7 @@
 #include <stack>
 #include <string>
 #include <vector>
+// #include <filesystem>
 
 #define NO_ALLOC 0
 #define ALLOCATED 1

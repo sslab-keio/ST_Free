@@ -24,7 +24,7 @@ struct st_free : public llvm::ModulePass {
     /*** Collect Struct Information ***/
     StructManager *StManage = new StructManager(M.getIdentifiedStructTypes());
 
-    // StManage->addGlobalVariableInitInfo(M);
+    StManage->addGlobalVariableInitInfo(M);
 #if defined(STAGE_ONE) || defined(STAGE_PRIMITIVE)
     StageOneAnalyzer *analyze =
         new StageOneAnalyzer(StManage, &M.getDataLayout());

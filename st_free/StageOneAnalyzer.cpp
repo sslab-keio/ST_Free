@@ -71,9 +71,9 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
           if (ROOT_INDEX < info.indexes.back().second &&
               info.indexes.back().second < StTy->getNumElements()) {
             generateWarning(I, "[Before] Looking for alloc alias", true);
-            if (StTy->hasName())
-              generateWarning(I, StTy->getName(), true);
-            generateWarning(I, std::to_string(info.indexes.back().second), true);
+            if (StTy->hasName()) generateWarning(I, StTy->getName(), true);
+            generateWarning(I, std::to_string(info.indexes.back().second),
+                            true);
             if (const UniqueKey *src_uk =
                     this->getFunctionInformation()
                         ->getBasicBlockInformation(&B)
@@ -95,13 +95,14 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                 getFunctionInformation()->setUniqueKeyAlias(dest_uk, src_uk);
               }
             } else if (isDirectStoreFromAlloc(SI)) {
-              generateWarning(I, "[After] Found alloc alias as direct store", true);
+              generateWarning(I, "[After] Found alloc alias as direct store",
+                              true);
               const UniqueKey *dest_uk =
                   getFunctionInformation()->addAllocValue(
                       &B, NULL,
                       StTy->getElementType(info.indexes.back().second),
                       info.indexes.back().second);
-            } else{
+            } else {
               if (auto CastI = llvm::dyn_cast<llvm::CastInst>(addVal)) {
                 addVal = CastI->getOperand(0);
               }
@@ -185,23 +186,29 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
   if (CI->isIndirectCall()) {
     if (llvm::LoadInst *LI =
             llvm::dyn_cast<llvm::LoadInst>(CI->getCalledValue())) {
-      generateWarning(CI, "Found Indirect Called Function", true);
+      generateWarning(CI, "Found Indirect Called Function");
       std::vector<std::pair<llvm::Type *, int>> typeList;
 
       funcLists = getFunctionInformation()->getPointedFunctions(
           LI->getPointerOperand());
       if (const llvm::DebugLoc &Loc = CI->getDebugLoc()) {
-        std::vector<std::string> dirs =
-            this->decodeDirectoryName(std::string(Loc->getFilename()));
+        std::string path = Loc->getFilename();
         this->getStructParents(LI, typeList);
-        // if(typeList.size() > 0){
-        //     cast<StructType>(typeList[0].first);
-        //     vector<globalVarInfo> gvi =
-        //     getStructManager()->get(cast<StructType>(typeList[0].first))->getGVInfo(typeList[0].second);
-        //     for(globalVarInfo gv: gvi) {
-        //         // Do something
-        //     }
-        // }
+        if (typeList.size() > 0) {
+          generateWarning(CI, "Indirect call using struct member", true);
+          if (auto parent_type = llvm::dyn_cast<llvm::StructType>(
+                  get_type(typeList.back().first))) {
+            if (getStructManager()->exists(parent_type)) {
+              for (llvm::Function *called_function:
+                   getStructManager()
+                       ->get(parent_type)
+                       ->getFunctionPtr(typeList.back().second)) {
+                generateWarning(CI, "Found indirect call candidate", true);
+                funcLists.push_back(called_function);
+              }
+            }
+          }
+        }
       }
     }
   }

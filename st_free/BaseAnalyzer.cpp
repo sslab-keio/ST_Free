@@ -1557,7 +1557,7 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(
 void BaseAnalyzer::checkErrorInstruction(
     llvm::Value *V, std::vector<llvm::Instruction *> visited_inst) {
   if (auto CInt = llvm::dyn_cast<llvm::Constant>(V)) {
-    STFREE_LOG(RI, "Const Int");
+    // STFREE_LOG(CInt, "Const Int");
   }
   if (auto CI = llvm::dyn_cast<llvm::CallInst>(V)) {
     STFREE_LOG(CI, "[ERRORINST]: Call Inst");
