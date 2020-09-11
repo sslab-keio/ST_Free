@@ -59,7 +59,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
       llvm::Value *addVal = SI->getValueOperand();
       if (llvm::LoadInst *LI = llvm::dyn_cast<llvm::LoadInst>(addVal)) {
-        generateWarning(SI, "found load", true);
+        generateWarning(SI, "found load");
         if (llvm::isa<llvm::AllocaInst>(LI->getPointerOperand()))
           addVal = LI->getPointerOperand();
       }
@@ -70,17 +70,14 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                 get_type(info.indexes.back().first))) {
           if (ROOT_INDEX < info.indexes.back().second &&
               info.indexes.back().second < StTy->getNumElements()) {
-            generateWarning(I, "[Before] Looking for alloc alias", true);
-            if (StTy->hasName()) generateWarning(I, StTy->getName(), true);
-            generateWarning(I, std::to_string(info.indexes.back().second),
-                            true);
+            generateWarning(I, "[Before] Looking for alloc alias");
             if (const UniqueKey *src_uk =
                     this->getFunctionInformation()
                         ->getBasicBlockInformation(&B)
                         ->getWorkList(ALLOCATED)
                         .getFromType(
                             StTy->getElementType(info.indexes.back().second))) {
-              generateWarning(I, "[After] Found alloc alias", true);
+              generateWarning(I, "[After] Found alloc alias");
               const UniqueKey *dest_uk =
                   getFunctionInformation()->addAllocValue(
                       &B, NULL,
@@ -90,18 +87,15 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
               if (getFunctionInformation()->checkAndPopPendingAliasedAlloc(
                       src_uk)) {
                 generateWarning(
-                    I, "[After] Found alloc alias in pendling aliased alloc",
-                    true);
+                    I, "[After] Found alloc alias in pendling aliased alloc");
                 getFunctionInformation()->setUniqueKeyAlias(dest_uk, src_uk);
               }
             } else if (isDirectStoreFromAlloc(SI)) {
-              generateWarning(I, "[After] Found alloc alias as direct store",
-                              true);
-              const UniqueKey *dest_uk =
-                  getFunctionInformation()->addAllocValue(
-                      &B, NULL,
-                      StTy->getElementType(info.indexes.back().second),
-                      info.indexes.back().second);
+              generateWarning(I, "[After] Found alloc alias as direct store");
+              getFunctionInformation()->addAllocValue(
+                  &B, NULL,
+                  StTy->getElementType(info.indexes.back().second),
+                  info.indexes.back().second);
             } else {
               if (auto CastI = llvm::dyn_cast<llvm::CastInst>(addVal)) {
                 addVal = CastI->getOperand(0);
@@ -123,7 +117,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
     }
   } else if (this->isStoreToStruct(SI)) {
     if (llvm::StructType *StTy = this->getStoreeStruct(SI)) {
-      generateWarning(SI, "is Store To Struct", true);
+      generateWarning(SI, "is Store To Struct");
       if (llvm::StructType *SrcTy = this->getStorerStruct(SI)) {
         if (StTy != SrcTy && get_type(StTy->getElementType(0)) == SrcTy) {
           if (const UniqueKey *src_uk =
@@ -195,15 +189,14 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
         std::string path = Loc->getFilename();
         this->getStructParents(LI, typeList);
         if (typeList.size() > 0) {
-          generateWarning(CI, "Indirect call using struct member", true);
           if (auto parent_type = llvm::dyn_cast<llvm::StructType>(
                   get_type(typeList.back().first))) {
             if (getStructManager()->exists(parent_type)) {
-              for (llvm::Function *called_function:
+              for (llvm::Function *called_function :
                    getStructManager()
                        ->get(parent_type)
                        ->getFunctionPtr(typeList.back().second)) {
-                generateWarning(CI, "Found indirect call candidate", true);
+                generateWarning(CI, "Found indirect call candidate");
                 funcLists.push_back(called_function);
               }
             }
@@ -249,7 +242,7 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
       }
     } else {
       this->analyzeDifferentFunc((llvm::Function &)(*called_function));
-      generateWarning(CI, "Copy all the status", true);
+      generateWarning(CI, "Copy all the status");
       this->copyAllocatedStatus((llvm::Function &)(*called_function), CI, B);
       this->copyFreeStatus((llvm::Function &)(*called_function), CI, B);
       this->evaluatePendingStoredValue((llvm::Function &)(*called_function), CI,

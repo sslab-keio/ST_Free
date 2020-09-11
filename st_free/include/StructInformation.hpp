@@ -48,7 +48,9 @@ struct globalVarInfo {
 };
 
 /**
- * Class Function Ptr Map
+ * Class [FunctionPtrMap]
+ * Used to keep track of 'path' information
+ * of each field-stored function.
  **/
 class FunctionPtrMap {
  public:
@@ -59,7 +61,7 @@ class FunctionPtrMap {
   std::pair<std::string, std::string> decodeDirName(std::string path);
 
  private:
-  // Map to next sub dirs
+  // Map to sub dirs
   std::map<std::string, FunctionPtrMap> sub_dirs;
 
   // Directory information

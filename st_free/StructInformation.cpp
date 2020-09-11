@@ -428,20 +428,29 @@ void StructManager::addGlobalVariableInitInfo(llvm::Module &M) {
   for (llvm::GlobalVariable &GV : M.globals()) {
     if (GV.getValueType()->isStructTy() && GV.hasInitializer()) {
       llvm::Constant *cnst = GV.getInitializer();
+      llvm::StructType *global_val_type =
+          llvm::cast<llvm::StructType>(GV.getValueType());
+
       for (int i = 0; i < GV.getValueType()->getStructNumElements(); i++) {
         if (get_type(GV.getValueType()->getStructElementType(i))
                 ->isFunctionTy() &&
-            cnst->getAggregateElement(i)) {
+            cnst->getAggregateElement(i) &&
+            llvm::isa<llvm::Function>(cnst->getAggregateElement(i))) {
+          // Get debug info for the GlobalVariable
           llvm::SmallVector<llvm::DIGlobalVariableExpression *, 1> debug_info;
           GV.getDebugInfo(debug_info);
+
           for (auto dbg : debug_info) {
             std::string path_name =
                 std::string(dbg->getVariable()->getDirectory()) + "/" +
                 std::string(dbg->getVariable()->getFilename());
-            this->get(llvm::cast<llvm::StructType>(GV.getValueType()))
-                ->addFunctionPtr(
-                    i, llvm::cast<llvm::Function>(cnst->getAggregateElement(i)),
-                    path_name);
+            if (exists(global_val_type)) {
+              this->get(global_val_type)
+                  ->addFunctionPtr(
+                      i,
+                      llvm::cast<llvm::Function>(cnst->getAggregateElement(i)),
+                      path_name);
+            }
           }
         }
       }
