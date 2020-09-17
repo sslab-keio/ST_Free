@@ -110,6 +110,12 @@ class BasicBlockInformation {
   // BasicBlockList getShrinkedAllocList(BasicBlock *tgt);
   // BasicBlockList getShrinkedFreeList(BasicBlock *tgt);
 
+  /*** Loop Information ***/
+  void setLoopBlock(llvm::Loop *L);
+  void setLoopHeaderBlock() { loopHeaderBlock = true; }
+  bool isLoopBlock() { return loopBlock; }
+  const llvm::Loop* getLoop();
+
   /*** Reverse Propagation ***/
   bool isReversePropagated() { return reversepropagated; }
   void setReversePropagated() { reversepropagated = true; }
@@ -145,10 +151,13 @@ class BasicBlockInformation {
   /*** BasicBlock Status ***/
   bool correctlyBranched;
   bool predCorrectlyBranched;
-  bool loopBlock;
   bool errorHandlingBlock;
   bool unConditionalBranched;
   bool reversepropagated;
+
+  llvm::Loop *loop;
+  bool loopBlock;
+  bool loopHeaderBlock;
 
   /*** BasicBlockInformation Status ***/
   BasicBlockInformationStat information_status;
@@ -202,6 +211,8 @@ class BasicBlockManager {
   void addFreeInfoFromDMZToPreds(llvm::BasicBlock *src);
   bool isPredBlockCorrectlyBranched(llvm::BasicBlock *B);
   bool checkIfErrorBlock(llvm::BasicBlock *B);
+  std::vector<llvm::BasicBlock *> optimizeLoopPredecessors(
+      llvm::BasicBlock *tgt);
 
   /*** Optimizer ***/
   void shrinkFreedFromAlloc(llvm::BasicBlock *B);

@@ -10,6 +10,7 @@
 #include "determinator.hpp"
 #include "statList.hpp"
 #include "support_funcs.hpp"
+#include "LoopManager.hpp"
 
 #define WORKLIST_MAX_INTERATION 3
 
@@ -43,6 +44,9 @@ class BaseAnalyzer {
   void analyze(llvm::Function &F);
   void analyzeAdditionalUnknowns(llvm::Function &F);
   void analyzeDifferentFunc(llvm::Function &);
+
+  void setLoopManager(LoopManager *lm) {loop_manager = lm;}
+  LoopManager *getLoopManager() {return loop_manager;}
 
  protected:
   /*** Class-protected Struct Element ***/
@@ -200,6 +204,8 @@ class BaseAnalyzer {
   FunctionManager identifier;
   StructManager *stManage;
   const llvm::DataLayout *dat_layout;
+  LoopManager *loop_manager;
+
   /*** Current Function/ Stacked Functions ***/
   FunctionInformation *FEle;
   std::stack<llvm::Function *> functionStack;

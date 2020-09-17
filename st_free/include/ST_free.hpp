@@ -23,6 +23,7 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 #include "llvm/ADT/APFloat.h"
+#include "llvm/Analysis/LoopInfo.h"
 
 // include STL
 #include <algorithm>

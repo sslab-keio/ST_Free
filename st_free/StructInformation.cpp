@@ -18,8 +18,8 @@ StructInformation::StructInformation(llvm::StructType *st) {
   negativeCount = 0;
 
   for (llvm::Type *ty : st->elements()) {
-    if (!ty->isPointerTy() &&
-        (!ty->isArrayTy() || !ty->getArrayElementType()->isPointerTy()))
+    if (!(ty->isPointerTy() ||
+          (ty->isArrayTy() && ty->getArrayElementType()->isPointerTy())))
       memberStats[ind] = NOTPOINTERTY;
     else if (get_type(ty)->isFunctionTy())
       memberStats[ind] = ISNOTRESPONSIBLE;
@@ -345,11 +345,14 @@ void StructManager::changeStats() {
   for (auto Stmap : StructInfo) {
     for (unsigned ind = 0; ind < Stmap.first->getNumElements(); ind++) {
       llvm::Type *member = Stmap.first->getElementType(ind);
-      if (this->get(Stmap.first)->isUnknown(ind))
-        if (member->isArrayTy()) member = member->getArrayElementType();
-      if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member)))
-        if (StructInfo[stTy]->hasSingleReferee())
-          StructInfo[Stmap.first]->setMemberStatResponsible(ind);
+      if (this->get(Stmap.first)->isUnknown(ind)) {
+        if (member->isArrayTy() && member->getArrayElementType()->isPointerTy())
+          member = member->getArrayElementType();
+        if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member)))
+          if (StructInfo[stTy]->hasSingleReferee() &&
+              !StructInfo[stTy]->isSelfDereference(ind))
+            StructInfo[Stmap.first]->setMemberStatResponsible(ind);
+      }
     }
   }
 }
@@ -445,6 +448,9 @@ void StructManager::addGlobalVariableInitInfo(llvm::Module &M) {
                 std::string(dbg->getVariable()->getDirectory()) + "/" +
                 std::string(dbg->getVariable()->getFilename());
             if (exists(global_val_type)) {
+              llvm::outs() << "[INPUT] " << path_name << "\n";
+              if (global_val_type->hasName())
+                llvm::outs() << global_val_type->getName() << "\n";
               this->get(global_val_type)
                   ->addFunctionPtr(
                       i,
@@ -478,6 +484,7 @@ void StructManager::markNoAlloc() {
 
 std::pair<std::string, std::string> FunctionPtrMap::decodeDirName(
     std::string path) {
+  if (path[0] == '/') path = path.substr(1);
   size_t path_point = path.find("/");
 
   if (path_point == -1) {
@@ -491,6 +498,7 @@ void FunctionPtrMap::addFunction(std::string path, llvm::Function *func) {
   std::pair<std::string, std::string> paths = decodeDirName(path);
 
   if (paths.second != "") {
+    llvm::outs() << "[DECODED]" << paths.first << "\n";
     if (sub_dirs.find(paths.first) == sub_dirs.end())
       sub_dirs[paths.first] = FunctionPtrMap(paths.first);
     sub_dirs[paths.first].addFunction(paths.second, func);
@@ -502,8 +510,9 @@ std::vector<llvm::Function *> FunctionPtrMap::getFunctionCandidates(
     std::string candidate_path) {
   std::pair<std::string, std::string> paths = decodeDirName(candidate_path);
 
+  llvm::outs() << "[WALKTHROGH]" << paths.first << "\n";
   if (sub_dirs.find(paths.first) != sub_dirs.end() && paths.second != "")
-    return getFunctionCandidates(paths.second);
+    return sub_dirs[paths.first].getFunctionCandidates(paths.second);
 
   return funcs;
 }

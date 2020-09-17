@@ -19,22 +19,30 @@ void BaseAnalyzer::analyze(llvm::Function &F) {
 
   if (!getFunctionInformation()->isUnanalyzed()) return;
 
+  getFunctionInformation()->setLoopInformation(getLoopManager()->get(&F));
+
   int iterate_counter = 0;
   do {
     getFunctionInformation()->setInProgress();
     for (llvm::BasicBlock &B : F) {
       STFREE_LOG(B.getFirstNonPHI(), B.getName());
+
       getFunctionInformation()->BBCollectInfo(B, isEntryPoint(F, B));
+      if (getLoopManager()->IsInLoop(&F, &B)) 
+        getFunctionInformation()->setBasicBlockLoop(
+            B, getLoopManager()->getLoop(&F, &B));
+
       STFREE_LOG(B.getFirstNonPHI(),
-                      "Free: " + std::to_string(getFunctionInformation()
+                 "Free: " + std::to_string(getFunctionInformation()
                                                ->getBasicBlockManager()
                                                ->getBasicBlockFreeList(&B)
                                                .size()));
       STFREE_LOG(B.getFirstNonPHI(),
-                      "Alloc: " + std::to_string(getFunctionInformation()
+                 "Alloc: " + std::to_string(getFunctionInformation()
                                                 ->getBasicBlockManager()
                                                 ->getBasicBlockAllocList(&B)
                                                 .size()));
+
       this->analyzeInstructions(B);
       getFunctionInformation()->updateSuccessorBlock(B);
       getFunctionInformation()->getBasicBlockManager()->shrinkFreedFromAlloc(
@@ -377,8 +385,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
       //                                                     info.indexes);
       // }
     }
-    if (!isAlias &&
-        info.memType && get_type(info.memType)->isStructTy() &&
+    if (!isAlias && info.memType && get_type(info.memType)->isStructTy() &&
         this->isAuthorityChained(info.indexes)) {
       STFREE_LOG(CI, "Add Freed Struct");
       getFunctionInformation()->addFreedStruct(
@@ -483,13 +490,11 @@ void BaseAnalyzer::copyArgStatusRecursively(
   }
 }
 
-void BaseAnalyzer::copyAllocatedStatus(llvm::Function &Func,
-                                       llvm::CallInst *CI, 
+void BaseAnalyzer::copyAllocatedStatus(llvm::Function &Func, llvm::CallInst *CI,
                                        llvm::BasicBlock &B) {
   FunctionInformation *DF = identifier.getElement(&Func);
   STFREE_LOG(
-      CI,
-      "Copied alloc: " + std::to_string(DF->getAllocatedInReturn().size()));
+      CI, "Copied alloc: " + std::to_string(DF->getAllocatedInReturn().size()));
   for (auto ele : DF->getAllocatedInReturn()) {
     getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
   }
@@ -501,11 +506,9 @@ void BaseAnalyzer::copyFreeStatus(llvm::Function &Func, llvm::CallInst *CI,
   FunctionInformation *DF = identifier.getElement(&Func);
   STFREE_LOG(CI, "Copy Free Status");
   for (auto ele : DF->getFreedInSuccess()) {
-    STFREE_LOG(
-        CI,
-        "Copying Free Status " + std::to_string(DF->getFreedInSuccess().size()));
+    STFREE_LOG_ON(CI, "Copying Free Status " +
+                       std::to_string(DF->getFreedInSuccess().size()));
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
-      STFREE_LOG(CI, "Getting Value Info");
       if (vinfo->isArgValue()) {
         STFREE_LOG(CI, "Copying value");
         if (vinfo->getArgNumber() < CI->getNumArgOperands())
@@ -650,8 +653,7 @@ void BaseAnalyzer::changeAuthority(llvm::StoreInst *SI, llvm::CastInst *CI,
 
 bool BaseAnalyzer::isDirectStoreFromAlloc(llvm::StoreInst *SI) {
   if (auto CI = llvm::dyn_cast<llvm::CallInst>(SI->getValueOperand())) {
-    if (isAllocFunction(CI->getCalledFunction()))
-      return true;
+    if (isAllocFunction(CI->getCalledFunction())) return true;
   }
   return false;
 }
@@ -803,6 +805,10 @@ bool BaseAnalyzer::isStructEleFree(llvm::Instruction *val) {
       STFREE_LOG(val, "found BitCast");
       V = bit_cast_inst->getOperand(0);
     }
+    // if (auto itoptr_inst = llvm::dyn_cast<llvm::IntToPtrInst>(V)) {
+    //   STFREE_LOG(val, "found IntToPtrInst");
+    //   V = itoptr_inst->getOperand(0);
+    // }
     if (auto GEle = llvm::dyn_cast<llvm::GetElementPtrInst>(V)) {
       return true;
     }
@@ -1126,15 +1132,13 @@ void BaseAnalyzer::analyzeErrorCode(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
 
       BasicBlockWorkList allocated_on_err =
           this->getErrorValues(ICI, B, errcode);
-      STFREE_LOG(
-          BI,
-          "Allocated Err: " + std::to_string(allocated_on_err.getList().size()));
+      STFREE_LOG(BI, "Allocated Err: " +
+                         std::to_string(allocated_on_err.getList().size()));
 
       // 1. Get Allocated on Success
       BasicBlockWorkList allocated_on_success = this->getSuccessValues(ICI, B);
-      STFREE_LOG(BI,
-                      "Allocated Success: " +
-                          std::to_string(allocated_on_success.getList().size()));
+      STFREE_LOG(BI, "Allocated Success: " +
+                         std::to_string(allocated_on_success.getList().size()));
 
       // 2. Success diff allocated_on_err is pure non allocated in err
       BasicBlockList diff_list = BasicBlockListOperation::diffList(
@@ -1517,15 +1521,14 @@ void BaseAnalyzer::checkErrorCodeAndAddBlock(
         int64_t errcode = err_code_info.first;
 
         if (errcode < NO_ERROR) {
-          STFREE_LOG(
-              I, "[RETURN][CALLINST] ERR: " + std::to_string(errcode));
+          STFREE_LOG(I, "[RETURN][CALLINST] ERR: " + std::to_string(errcode));
           getFunctionInformation()->addErrorBlockFreeInformation(
               errcode, err_code_info.second.free_list);
           getFunctionInformation()->addErrorBlockAllocInformation(
               errcode, err_code_info.second.alloc_list);
         } else {
-          STFREE_LOG(
-              I, "[RETURN][CALLINST] SUCCESS: " + std::to_string(errcode));
+          STFREE_LOG(I,
+                     "[RETURN][CALLINST] SUCCESS: " + std::to_string(errcode));
           getFunctionInformation()->addErrorBlockFreeInformation(
               0, err_code_info.second.free_list);
           getFunctionInformation()->addErrorBlockAllocInformation(

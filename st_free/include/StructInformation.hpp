@@ -54,8 +54,8 @@ struct globalVarInfo {
  **/
 class FunctionPtrMap {
  public:
-  FunctionPtrMap(){};
-  FunctionPtrMap(std::string path){};
+  FunctionPtrMap(){this->path = "/";}
+  FunctionPtrMap(std::string path){this->path = path;}
   void addFunction(std::string path, llvm::Function *func);
   std::vector<llvm::Function *> getFunctionCandidates(std::string path);
   std::pair<std::string, std::string> decodeDirName(std::string path);

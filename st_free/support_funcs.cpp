@@ -126,33 +126,33 @@ std::string parseErrorMessage(llvm::StructType* parent, long index) {
 
   message += " index:";
   message += std::to_string(index);
-  // message += " Leaked Type: ";
-  // switch(get_type(parent->getElementType(index))->getTypeID()) {
-  //   case llvm::Type::TypeID::StructTyID:
-  //     if (auto memStTy = llvm::dyn_cast<llvm::StructType>(get_type(parent->getElementType(index)))) {
-  //       if (memStTy->hasName())
-  //         message += memStTy->getName();
-  //       else 
-  //         message += " Unknown Struct Type";
-  //     } else {
-  //       message += " Unknown Struct Type";
-  //     }
-  //     break;
-  //   case llvm::Type::TypeID::ArrayTyID:
-  //     message += " Array Type";
-  //     break;
-  //   case llvm::Type::TypeID::VoidTyID:
-  //       message += " Void Type";
-  //       break;
-  //   case llvm::Type::TypeID::IntegerTyID:
-  //       message += " Integer Type";
-  //     break;
-  //   case llvm::Type::TypeID::PointerTyID:
-  //       message += " Pointer Type";
-  //     break;
-  //   default:
-  //     message += " Other Types";
-  // }
+  message += " Leaked Type: ";
+  switch(get_type(parent->getElementType(index))->getTypeID()) {
+    case llvm::Type::TypeID::StructTyID:
+      if (auto memStTy = llvm::dyn_cast<llvm::StructType>(get_type(parent->getElementType(index)))) {
+        if (memStTy->hasName())
+          message += memStTy->getName();
+        else 
+          message += " Unknown Struct Type";
+      } else {
+        message += " Unknown Struct Type";
+      }
+      break;
+    case llvm::Type::TypeID::ArrayTyID:
+      message += " Array Type";
+      break;
+    case llvm::Type::TypeID::VoidTyID:
+        message += " Void Type";
+        break;
+    case llvm::Type::TypeID::IntegerTyID:
+        message += " Integer Type";
+      break;
+    case llvm::Type::TypeID::PointerTyID:
+        message += " Pointer Type";
+      break;
+    default:
+      message += " Other Types";
+  }
   return message;
 }
 }  // namespace ST_free

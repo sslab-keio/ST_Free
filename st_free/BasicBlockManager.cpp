@@ -44,7 +44,7 @@ BasicBlockList BasicBlockWorkList::getWithParentType(llvm::Type *T) {
     current_pos =
         find_if(current_pos, MarkedValues.end(),
                 [T](const UniqueKey *UK) { return UK->getType() == T; });
-    if (current_pos != MarkedValues.end()){
+    if (current_pos != MarkedValues.end()) {
       with_parent_type.insert(*current_pos);
       current_pos++;
     }
@@ -87,6 +87,7 @@ void BasicBlockWorkList::setList(BasicBlockList v) {
 BasicBlockInformation::BasicBlockInformation() {
   correctlyBranched = false;
   loopBlock = false;
+  loopHeaderBlock = false;
   errorHandlingBlock = false;
   unConditionalBranched = false;
   reversepropagated = false;
@@ -102,6 +103,7 @@ BasicBlockInformation::BasicBlockInformation(
   correctlyFreed = BasicBlockWorkList(BStat.getCorrectlyFreedValues());
   correctlyBranched = false;
   loopBlock = false;
+  loopHeaderBlock = false;
   errorHandlingBlock = false;
   unConditionalBranched = false;
   reversepropagated = false;
@@ -141,8 +143,9 @@ BasicBlockList BasicBlockInformation::getErrorRemovedAllocList(
     llvm::BasicBlock *tgt, BasicBlockWorkList free_pool) {
   BasicBlockWorkList struct_member_added = getRemoveAllocs(tgt);
   for (auto ele : getRemoveAllocs(tgt).getList()) {
-    if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(ele->getType()))) {
-      for (llvm::Type* mem_ty: stTy->elements()) {
+    if (auto stTy =
+            llvm::dyn_cast<llvm::StructType>(get_type(ele->getType()))) {
+      for (llvm::Type *mem_ty : stTy->elements()) {
         struct_member_added.add(free_pool.getWithParentType(mem_ty));
       }
     }
@@ -158,8 +161,9 @@ BasicBlockList BasicBlockInformation::getErrorAddedFreeList(
     llvm::BasicBlock *tgt, BasicBlockWorkList free_pool) {
   BasicBlockWorkList struct_member_added = getRemoveAllocs(tgt);
   for (auto ele : getRemoveAllocs(tgt).getList()) {
-    if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(ele->getType()))) {
-      for (llvm::Type* mem_ty: stTy->elements()) {
+    if (auto stTy =
+            llvm::dyn_cast<llvm::StructType>(get_type(ele->getType()))) {
+      for (llvm::Type *mem_ty : stTy->elements()) {
         struct_member_added.add(free_pool.getWithParentType(mem_ty));
       }
     }
@@ -302,7 +306,6 @@ void BasicBlockManager::CollectInInfo(
     llvm::BasicBlock *B, bool isEntryPoint,
     const std::map<const UniqueKey *, const UniqueKey *> *alias_map) {
   bool isFirst = true;
-
   if (isEntryPoint) this->set(B);
 
   BBMap[B].backupFreeAllocInformation();
@@ -311,19 +314,25 @@ void BasicBlockManager::CollectInInfo(
     generateWarning(B->getFirstNonPHI(), "Is error Block");
     BBMap[B].setErrorHandlingBlock();
   }
-
   this->addFreeInfoFromDMZToPreds(B);
+
+  // Call this function incase this is the exiting block of a loop. Check if
+  // there are any path bypassing the loop, and remove them from predecessors
+  // to pass on the correct information
+  std::vector<llvm::BasicBlock *> optimized_preds = optimizeLoopPredecessors(B);
 
   // A pool of freed fields from all the predecessors. This is used later on to
   // determine any members of the struct that are NULL checked, and add them
   // to the free list as well.
   BasicBlockWorkList free_pool;
-  for (llvm::BasicBlock *PredBB : llvm::predecessors(B)) {
+  for (llvm::BasicBlock *PredBB : optimized_preds) {
     free_pool.setList(BasicBlockListOperation::uniteList(
         free_pool.getList(), this->getBasicBlockFreeList(PredBB)));
   }
 
-  for (llvm::BasicBlock *PredBB : llvm::predecessors(B)) {
+  for (llvm::BasicBlock *PredBB : optimized_preds) {
+    if (exists(PredBB) && BBMap[PredBB].isLoopBlock())
+      generateWarning(B->getFirstNonPHI(), "Is loop block", true);
     if (isFirst) {
       this->copyAllList(PredBB, B, free_pool);
       isFirst = false;
@@ -643,6 +652,60 @@ bool BasicBlockInformation::isInformationIdenticalToBackup() {
   return BackupFreeList.getList() == freeList.getList() &&
          BackupAllocList.getList() == allocList.getList();
 }
+
+std::vector<llvm::BasicBlock *> BasicBlockManager::optimizeLoopPredecessors(
+    llvm::BasicBlock *tgt) {
+  std::vector<llvm::BasicBlock *> collected_info;
+  std::vector<llvm::BasicBlock *> loop_header_predecessors;
+  bool isLoopExitingBlock = false;
+
+  if (!BBMap[tgt].isLoopBlock()) {
+    for (llvm::BasicBlock *PredBB : llvm::predecessors(tgt)) {
+      if (exists(PredBB) && BBMap[PredBB].isLoopBlock()) {
+        generateWarning(tgt->getFirstNonPHI(), "[LOOP] Is Loop Exiting Block");
+        isLoopExitingBlock = true;
+
+        // 1. Look at the header block
+        llvm::BasicBlock *topBlock = BBMap[PredBB].getLoop()->getHeader();
+
+        // 2. If the loop contains a preheader block, goto the block before the
+        //   predecessor and check
+        if (llvm::BasicBlock *preheader =
+                BBMap[PredBB].getLoop()->getLoopPreheader()) {
+          topBlock = preheader;
+        }
+
+        for (llvm::BasicBlock *loop_header_preds : llvm::predecessors(topBlock))
+          loop_header_predecessors.push_back(loop_header_preds);
+      }
+    }
+  }
+
+  for (llvm::BasicBlock *PredBB : llvm::predecessors(tgt)) {
+    if (isLoopExitingBlock && exists(PredBB) && !BBMap[PredBB].isLoopBlock()) {
+      generateWarning(tgt->getFirstNonPHI(), "[LOOP] Has by passing path");
+      
+      // 2. If the predecessor of the header contains |PredBB|, then consider it
+      //   as before-loop
+      if (std::find(loop_header_predecessors.begin(),
+                    loop_header_predecessors.end(),
+                    PredBB) != loop_header_predecessors.end()) {
+        generateWarning(tgt->getFirstNonPHI(), "[LOOP] PredBlock by passes!",
+                        true);
+        continue;
+      }
+    }
+    collected_info.push_back(PredBB);
+  }
+  return collected_info;
+}
+
+void BasicBlockInformation::setLoopBlock(llvm::Loop *L) {
+  loopBlock = true;
+  loop = L;
+}
+
+const llvm::Loop *BasicBlockInformation::getLoop() { return loop; }
 
 BasicBlockList BasicBlockListOperation::intersectList(BasicBlockList src,
                                                       BasicBlockList tgt) {

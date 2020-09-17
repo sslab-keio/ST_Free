@@ -32,30 +32,30 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
       this->collectStructMemberFreeInfo(GEle, info, plist);
 
-      if (info.indexes.size() > 0 &&
-          llvm::isa<llvm::StructType>(GEle->getSourceElementType())) {
-        // getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()),
-        // getValueIndices(GEle).back());
-        // pointerEle.set(cast<StructType>(GEle->getSourceElementType()),
-        // getValueIndices(GEle).back());
+      // if (info.indexes.size() > 0 &&
+      //     llvm::isa<llvm::StructType>(GEle->getSourceElementType())) {
+      // getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()),
+      // getValueIndices(GEle).back());
+      // pointerEle.set(cast<StructType>(GEle->getSourceElementType()),
+      // getValueIndices(GEle).back());
 
-        // if(GlobalVariable *GV =
-        // dyn_cast<GlobalVariable>(SI->getValueOperand())) {
-        //     generateWarning(SI, "GlobalVariable Store");
-        //     getStructManager()->addGlobalVarStore(
-        //             cast<StructType>(GEle->getSourceElementType()),
-        //             getValueIndices(GEle).back());
-        //     // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
-        //     //     if(const DebugLoc &Loc = SI->getDebugLoc()){
-        //     //         vector<string> dirs =
-        //     this->decodeDirectoryName(string(Loc->getFilename()));
-        //     //
-        //     getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle),
-        //     dirs, GV);
-        //     //     }
-        //     // }
-        // }
-      }
+      // if(GlobalVariable *GV =
+      // dyn_cast<GlobalVariable>(SI->getValueOperand())) {
+      //     generateWarning(SI, "GlobalVariable Store");
+      //     getStructManager()->addGlobalVarStore(
+      //             cast<StructType>(GEle->getSourceElementType()),
+      //             getValueIndices(GEle).back());
+      //     // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
+      //     //     if(const DebugLoc &Loc = SI->getDebugLoc()){
+      //     //         vector<string> dirs =
+      //     this->decodeDirectoryName(string(Loc->getFilename()));
+      //     //
+      //     getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle),
+      //     dirs, GV);
+      //     //     }
+      //     // }
+      // }
+      // }
 
       llvm::Value *addVal = SI->getValueOperand();
       if (llvm::LoadInst *LI = llvm::dyn_cast<llvm::LoadInst>(addVal)) {
@@ -93,8 +93,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
             } else if (isDirectStoreFromAlloc(SI)) {
               generateWarning(I, "[After] Found alloc alias as direct store");
               getFunctionInformation()->addAllocValue(
-                  &B, NULL,
-                  StTy->getElementType(info.indexes.back().second),
+                  &B, NULL, StTy->getElementType(info.indexes.back().second),
                   info.indexes.back().second);
             } else {
               if (auto CastI = llvm::dyn_cast<llvm::CastInst>(addVal)) {
@@ -125,16 +124,8 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                       ->getBasicBlockInformation(&B)
                       ->getWorkList(ALLOCATED)
                       .getFromType(StTy->getElementType(0))) {
-            const UniqueKey *tgt_uk = getFunctionInformation()->addAllocValue(
-                &B, NULL, StTy->getElementType(0), 0);
-
-            // if
-            // (getFunctionInformation()->checkAndPopPendingAliasedAlloc(src_uk))
-            // {
-            //   generateWarning(I, "[After] Found alloc alias in pendling
-            //   aliased alloc", true);
-            //   getFunctionInformation()->setUniqueKeyAlias(src_uk, tgt_uk);
-            // }
+            getFunctionInformation()->addAllocValue(&B, NULL,
+                                                    StTy->getElementType(0), 0);
           }
         }
       }
@@ -180,23 +171,25 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
   if (CI->isIndirectCall()) {
     if (llvm::LoadInst *LI =
             llvm::dyn_cast<llvm::LoadInst>(CI->getCalledValue())) {
-      generateWarning(CI, "Found Indirect Called Function");
+      generateWarning(CI, "Found Indirect Called Function", true);
       std::vector<std::pair<llvm::Type *, int>> typeList;
-
-      funcLists = getFunctionInformation()->getPointedFunctions(
-          LI->getPointerOperand());
       if (const llvm::DebugLoc &Loc = CI->getDebugLoc()) {
-        std::string path = Loc->getFilename();
+        std::string path = std::string(Loc->getDirectory()) + '/' +
+                           std::string(Loc->getFilename());
         this->getStructParents(LI, typeList);
         if (typeList.size() > 0) {
+          generateWarning(CI, "Found Indirect stored struct member", true);
           if (auto parent_type = llvm::dyn_cast<llvm::StructType>(
                   get_type(typeList.back().first))) {
             if (getStructManager()->exists(parent_type)) {
+              generateWarning(CI, "Exists in struct manager", true);
+              if (parent_type->hasName())
+                generateWarning(CI, parent_type->getName(), true);
               for (llvm::Function *called_function :
                    getStructManager()
                        ->get(parent_type)
-                       ->getFunctionPtr(typeList.back().second)) {
-                generateWarning(CI, "Found indirect call candidate");
+                       ->getFunctionPtr(typeList.back().second, path)) {
+                generateWarning(CI, "[INDIRECT]Found indirect call candidate", true);
                 funcLists.push_back(called_function);
               }
             }
@@ -242,7 +235,6 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
       }
     } else {
       this->analyzeDifferentFunc((llvm::Function &)(*called_function));
-      generateWarning(CI, "Copy all the status");
       this->copyAllocatedStatus((llvm::Function &)(*called_function), CI, B);
       this->copyFreeStatus((llvm::Function &)(*called_function), CI, B);
       this->evaluatePendingStoredValue((llvm::Function &)(*called_function), CI,

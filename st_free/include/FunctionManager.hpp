@@ -44,8 +44,8 @@ struct FunctionInformation {
   void clearErrorCodeMap() {
     info_per_error_code = std::map<int64_t, InformationPerErrorCode>();
   }
-  std::map<int64_t, FunctionInformation::InformationPerErrorCode>&
-      getErrorCodeMap() {
+  std::map<int64_t, FunctionInformation::InformationPerErrorCode>
+      &getErrorCodeMap() {
     return info_per_error_code;
   }
 
@@ -53,24 +53,28 @@ struct FunctionInformation {
   ValueInformation *addFreeValueFromDifferentFunction(llvm::BasicBlock *B,
                                                       ValueInformation *VI,
                                                       UniqueKey *UK);
-  ValueInformation *addFreeValue(llvm::BasicBlock *B, llvm::Value *V, llvm::Type *memTy, long num,
-                                 ParentList plist);
+  ValueInformation *addFreeValue(llvm::BasicBlock *B, llvm::Value *V,
+                                 llvm::Type *memTy, long num, ParentList plist);
   void addFreeValue(llvm::BasicBlock *B, UniqueKey *UK);
-  void incrementFreedRefCount(llvm::BasicBlock *B, llvm::Value *V, llvm::Value *refVal);
+  void incrementFreedRefCount(llvm::BasicBlock *B, llvm::Value *V,
+                              llvm::Value *refVal);
   void addFreedStruct(llvm::Type *T, llvm::Value *V, llvm::Instruction *I);
-  void addFreedStruct(llvm::BasicBlock *B, llvm::Type *T, llvm::Value *V, llvm::Instruction *I);
-  void addFreedStruct(llvm::BasicBlock *B, llvm::Type *T, llvm::Value *V, llvm::Instruction *I,
-                      llvm::StructType *parent, ValueInformation *valInfo,
-                      bool isInStruct = false);
-  void addParentType(llvm::Type *T, llvm::Value *V, llvm::Instruction *I, llvm::StructType *parentTy,
-                     int ind);
+  void addFreedStruct(llvm::BasicBlock *B, llvm::Type *T, llvm::Value *V,
+                      llvm::Instruction *I);
+  void addFreedStruct(llvm::BasicBlock *B, llvm::Type *T, llvm::Value *V,
+                      llvm::Instruction *I, llvm::StructType *parent,
+                      ValueInformation *valInfo, bool isInStruct = false);
+  void addParentType(llvm::Type *T, llvm::Value *V, llvm::Instruction *I,
+                     llvm::StructType *parentTy, int ind);
   FreedStructList getFreedStruct() const;
   bool freedStructExists(FreedStruct *fst);
 
   /** AllocValue Related ***/
-  const UniqueKey *addAllocValue(llvm::BasicBlock *B, llvm::Value *V, llvm::Type *T, long mem);
+  const UniqueKey *addAllocValue(llvm::BasicBlock *B, llvm::Value *V,
+                                 llvm::Type *T, long mem);
   void addAllocValue(llvm::BasicBlock *B, UniqueKey *UK);
-  void addPendingArgAlloc(llvm::BasicBlock *B, llvm::Value *V, llvm::Type *T, long mem);
+  void addPendingArgAlloc(llvm::BasicBlock *B, llvm::Value *V, llvm::Type *T,
+                          long mem);
   void addPendingArgAlloc(llvm::BasicBlock *B, UniqueKey *UK);
 
   /*** Arg related ***/
@@ -89,15 +93,24 @@ struct FunctionInformation {
   BasicBlockManager *getBasicBlockManager();
   BasicBlockInformation *getBasicBlockInformation(llvm::BasicBlock *B);
   void BBCollectInfo(llvm::BasicBlock &B, bool isEntryPoint);
+  void setBasicBlockLoopHeader(llvm::BasicBlock &B, llvm::Loop *L);
+  void setBasicBlockLoop(llvm::BasicBlock &B, llvm::Loop *L);
+  bool isBasicBlockLoopHeader(llvm::BasicBlock &B);
+  bool isBasicBlockLoop(llvm::BasicBlock &B);
+  void setLoopInformation(llvm::LoopInfo *LI);
+  const llvm::LoopInfo *getLoopInformation();
   BasicBlockList getFreeList(llvm::BasicBlock *B);
   BasicBlockList getAllocList(llvm::BasicBlock *B);
   BasicBlockList getPendingStoreList(llvm::BasicBlock *B);
-  bool isFreedInBasicBlock(llvm::BasicBlock *B, llvm::Value *val, llvm::Type *ty, long mem);
+  bool isFreedInBasicBlock(llvm::BasicBlock *B, llvm::Value *val,
+                           llvm::Type *ty, long mem);
   bool isFreedInBasicBlock(llvm::BasicBlock *B, const UniqueKey *UK);
-  bool isAllocatedInBasicBlock(llvm::BasicBlock *B, llvm::Value *val, llvm::Type *ty, long mem);
+  bool isAllocatedInBasicBlock(llvm::BasicBlock *B, llvm::Value *val,
+                               llvm::Type *ty, long mem);
   bool isAllocatedInBasicBlock(llvm::BasicBlock *B, const UniqueKey *UK);
   void addCorrectlyFreedValue(llvm::BasicBlock *, const UniqueKey *UK);
-  bool isCorrectlyBranchedFreeValue(llvm::BasicBlock *, llvm::Value *, llvm::Type *, long mem);
+  bool isCorrectlyBranchedFreeValue(llvm::BasicBlock *, llvm::Value *,
+                                    llvm::Type *, long mem);
   bool isCorrectlyBranchedFreeValue(llvm::BasicBlock *, const UniqueKey *UK);
   void setCorrectlyBranched(llvm::BasicBlock *B);
   bool isCorrectlyBranched(llvm::BasicBlock *B);
@@ -132,9 +145,10 @@ struct FunctionInformation {
   ValueInformation *getValueInfo(llvm::Value *val, llvm::Type *ty, long num);
   ValueInformation *getValueInfo(const UniqueKey *UK);
   bool variableExists(llvm::Value *);
-  void addLocalVar(llvm::BasicBlock *, llvm::Type *, llvm::Value *, llvm::Instruction *);
-  void addLocalVar(llvm::BasicBlock *, llvm::Type *, llvm::Value *, llvm::Instruction *, ParentList P,
-                   ValueInformation *);
+  void addLocalVar(llvm::BasicBlock *, llvm::Type *, llvm::Value *,
+                   llvm::Instruction *);
+  void addLocalVar(llvm::BasicBlock *, llvm::Type *, llvm::Value *,
+                   llvm::Instruction *, ParentList P, ValueInformation *);
   LocalVarList getLocalVar() const;
   void addBasicBlockLiveVariable(llvm::BasicBlock *B, llvm::Value *);
   bool localVarExists(llvm::Type *);
@@ -175,18 +189,17 @@ struct FunctionInformation {
   BasicBlockList getPendingStoreInReturn();
 
   /*** Pending Aliased Alloc Operator ***/
-  void addPendingAliasedAlloc(const UniqueKey* UK);
-  bool checkAndPopPendingAliasedAlloc(const UniqueKey* UK);
+  void addPendingAliasedAlloc(const UniqueKey *UK);
+  bool checkAndPopPendingAliasedAlloc(const UniqueKey *UK);
 
   /*** UniqueKey alias ***/
   void setUniqueKeyAlias(const UniqueKey *src, const UniqueKey *dest);
   bool hasUniqueKeyAlias(const UniqueKey *src);
-  const UniqueKey* getUniqueKeyAlias(const UniqueKey *src);
+  const UniqueKey *getUniqueKeyAlias(const UniqueKey *src);
   const std::map<const UniqueKey *, const UniqueKey *> *getUniqueKeyAliasMap();
 
  private:
   enum AnalysisStat { UNANALYZED, IN_PROGRESS, DIRTY, ANALYZED };
-
 
   /*** Private Variables ***/
   static UniqueKeyManager UKManage;
@@ -204,6 +217,9 @@ struct FunctionInformation {
   std::map<llvm::Value *, llvm::Type *> aliasedType;
   Aliases aliasMap;
   bool dirty;
+
+  /*** Analysis results from loop analyzer ***/
+  const llvm::LoopInfo *loop_info;
 
   /*** Return Error Code Map ***/
   std::map<int64_t, InformationPerErrorCode> info_per_error_code;

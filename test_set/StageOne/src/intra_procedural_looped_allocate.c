@@ -28,6 +28,10 @@ int main()
         ta->tA[i]->tB = (struct testB *)malloc(sizeof(struct testB));
     }
 
+    do {
+      printf("Something");
+    } while(index-- > 0);
+
     for(int i = 0; i < index; i++){
         free(ta->tA[i]->tB);
         free(ta->tA[i]);

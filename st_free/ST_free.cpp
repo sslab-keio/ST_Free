@@ -2,6 +2,7 @@
 
 #include "include/BaseAnalyzer.hpp"
 #include "include/FunctionManager.hpp"
+#include "include/LoopManager.hpp"
 #include "include/StageOneAnalyzer.hpp"
 #include "include/StructInformation.hpp"
 #include "include/determinator.hpp"
@@ -17,24 +18,35 @@ struct st_free : public llvm::ModulePass {
   st_free() : ModulePass(ID) {}
 
   virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {
+    AU.setPreservesAll();
+    AU.addRequired<llvm::LoopInfoWrapperPass>();
   }
 
   /*** Main Modular ***/
   bool runOnModule(llvm::Module &M) override {
     /*** Collect Struct Information ***/
     StructManager *StManage = new StructManager(M.getIdentifiedStructTypes());
+    LoopManager *lmanage = new LoopManager();
 
     StManage->addGlobalVariableInitInfo(M);
 #if defined(STAGE_ONE) || defined(STAGE_PRIMITIVE)
     StageOneAnalyzer *analyze =
         new StageOneAnalyzer(StManage, &M.getDataLayout());
 #elif defined(STAGE_TWO)
-    // StageTwoAnalyzer* analyze = new StageTwoAnalyzer(StManage, 
+    // StageTwoAnalyzer* analyze = new StageTwoAnalyzer(StManage,
     // &M.getDataLayout());
 #else
-    BaseAnalyzer *analyze =
-        new BaseAnalyzer(StManage, &M.getDataLayout());
+    BaseAnalyzer *analyze = new BaseAnalyzer(StManage, &M.getDataLayout());
 #endif
+
+    /*** Generate LoopInformation ***/
+    for (llvm::Function &F : M) {
+      if (!(F.isDeclaration()))
+        lmanage->add(
+            &F,
+            std::move(getAnalysis<llvm::LoopInfoWrapperPass>(F).getLoopInfo()));
+    }
+    analyze->setLoopManager(lmanage);
 
     /*** Additional analysis for Checking force casts ***/
     for (llvm::Function &F : M) {
@@ -48,7 +60,7 @@ struct st_free : public llvm::ModulePass {
 
     /*** Main Warning Generator ***/
     StManage->BuildCandidateCount();
-    // StManage->print();
+    StManage->print();
     StManage->checkCorrectness();
     return false;
   }
@@ -58,8 +70,8 @@ struct st_free : public llvm::ModulePass {
 char st_free::ID = 0;
 
 static llvm::RegisterPass<st_free> X("st_free", "struct free checker",
-                               false /* Only looks at CFG */,
-                               false /* Analysis Pass */);
+                                     false /* Only looks at CFG */,
+                                     false /* Analysis Pass */);
 
 static void registerSTFreePass(const llvm::PassManagerBuilder &,
                                llvm::legacy::PassManagerBase &PM) {

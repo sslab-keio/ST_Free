@@ -23,7 +23,9 @@ FunctionInformation::FunctionInformation(llvm::Function *Func) {
 
 FunctionInformation::FunctionInformation() { stat = UNANALYZED; }
 
-llvm::Function &FunctionInformation::getFunction() { return (llvm::Function &)(*this->F); }
+llvm::Function &FunctionInformation::getFunction() {
+  return (llvm::Function &)(*this->F);
+}
 
 FunctionInformation::AnalysisStat FunctionInformation::getStat() {
   return this->stat;
@@ -31,7 +33,8 @@ FunctionInformation::AnalysisStat FunctionInformation::getStat() {
 
 void FunctionInformation::setStat(AnalysisStat stat) { this->stat = stat; }
 
-void FunctionInformation::addEndPoint(llvm::BasicBlock *B, llvm::ReturnInst *RI) {
+void FunctionInformation::addEndPoint(llvm::BasicBlock *B,
+                                      llvm::ReturnInst *RI) {
   endPoint = B;
   retInst = RI;
 }
@@ -81,7 +84,8 @@ void FunctionInformation::addErrorBlockFreeInformation(int64_t errcode,
   }
 }
 
-ValueInformation *FunctionInformation::addFreeValue(llvm::BasicBlock *B, llvm::Value *V,
+ValueInformation *FunctionInformation::addFreeValue(llvm::BasicBlock *B,
+                                                    llvm::Value *V,
                                                     llvm::Type *memTy, long num,
                                                     ParentList plist) {
   const UniqueKey *UK =
@@ -101,17 +105,19 @@ ValueInformation *FunctionInformation::addFreeValue(llvm::BasicBlock *B, llvm::V
   }
 
   // If aliased value exists, free the value as well
-  if (const UniqueKey* aliased_uk = getUniqueKeyAlias(UK)) {
-    addFreeValue(B, const_cast<UniqueKey*>(aliased_uk));
+  if (const UniqueKey *aliased_uk = getUniqueKeyAlias(UK)) {
+    addFreeValue(B, const_cast<UniqueKey *>(aliased_uk));
 
     // For all predecessors that branch from unconditional branches, reverse-
     // propagate that information back to each predecessor for aliased free
-    for (auto pred_block: llvm::predecessors(B)) {
-      BasicBlockInformation *PredBInfo = this->getBasicBlockInformation(pred_block);
+    for (auto pred_block : llvm::predecessors(B)) {
+      BasicBlockInformation *PredBInfo =
+          this->getBasicBlockInformation(pred_block);
       if (PredBInfo && PredBInfo->isUnconditionalBranched()) {
-        generateWarning(B->getFirstNonPHI(), "Pred block is unconditional", true);
+        generateWarning(B->getFirstNonPHI(), "Pred block is unconditional",
+                        true);
         generateWarning(B->getFirstNonPHI(), pred_block->getName(), true);
-        addFreeValue(pred_block, const_cast<UniqueKey*>(UK));
+        addFreeValue(pred_block, const_cast<UniqueKey *>(UK));
       }
     }
   }
@@ -131,7 +137,8 @@ void FunctionInformation::addFreeValue(llvm::BasicBlock *B, UniqueKey *UK) {
   if (BInfo) BInfo->addFree(UK);
 }
 
-const UniqueKey *FunctionInformation::addAllocValue(llvm::BasicBlock *B, llvm::Value *V,
+const UniqueKey *FunctionInformation::addAllocValue(llvm::BasicBlock *B,
+                                                    llvm::Value *V,
                                                     llvm::Type *T, long mem) {
   const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
   if (UK == NULL) UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
@@ -146,7 +153,8 @@ void FunctionInformation::addAllocValue(llvm::BasicBlock *B, UniqueKey *UK) {
   if (BInfo) BInfo->addAlloc(UK);
 }
 
-void FunctionInformation::addPendingArgAlloc(llvm::BasicBlock *B, llvm::Value *V, llvm::Type *T,
+void FunctionInformation::addPendingArgAlloc(llvm::BasicBlock *B,
+                                             llvm::Value *V, llvm::Type *T,
                                              long mem) {
   const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
   if (UK == NULL) UK = this->getUniqueKeyManager()->addUniqueKey(V, T, mem);
@@ -155,7 +163,8 @@ void FunctionInformation::addPendingArgAlloc(llvm::BasicBlock *B, llvm::Value *V
   if (BInfo) BInfo->addPendingArgAlloc(UK);
 }
 
-void FunctionInformation::addPendingArgAlloc(llvm::BasicBlock *B, UniqueKey *UK) {
+void FunctionInformation::addPendingArgAlloc(llvm::BasicBlock *B,
+                                             UniqueKey *UK) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) BInfo->addPendingArgAlloc(UK);
 }
@@ -186,24 +195,55 @@ void FunctionInformation::setInProgress() {
 
 void FunctionInformation::setDirty() { setStat(AnalysisStat::DIRTY); }
 
-void FunctionInformation::BBCollectInfo(llvm::BasicBlock &B, bool isEntryPoint) {
+void FunctionInformation::setLoopInformation(llvm::LoopInfo *LI) {
+  loop_info = LI;
+}
+
+const llvm::LoopInfo *FunctionInformation::getLoopInformation() {
+  return loop_info;
+}
+
+bool FunctionInformation::isBasicBlockLoopHeader(llvm::BasicBlock &B) {
+  return loop_info->isLoopHeader(&B);
+}
+
+bool FunctionInformation::isBasicBlockLoop(llvm::BasicBlock &B) {
+  if (loop_info->getLoopFor(&B)) return true;
+  return false;
+}
+
+void FunctionInformation::BBCollectInfo(llvm::BasicBlock &B,
+                                        bool isEntryPoint) {
   BBManage.CollectInInfo(&B, isEntryPoint, this->getUniqueKeyAliasMap());
 }
 
-void FunctionInformation::addFreedStruct(llvm::Type *T, llvm::Value *V, llvm::Instruction *I) {
+void FunctionInformation::setBasicBlockLoopHeader(llvm::BasicBlock &B,
+                                                  llvm::Loop *L) {
+  getBasicBlockInformation(&B)->setLoopHeaderBlock();
+}
+
+void FunctionInformation::setBasicBlockLoop(llvm::BasicBlock &B,
+                                            llvm::Loop *L) {
+  generateWarning(B.getFirstNonPHI(), "[LOOP] determined as loop", true);
+  getBasicBlockInformation(&B)->setLoopBlock(L);
+}
+
+void FunctionInformation::addFreedStruct(llvm::Type *T, llvm::Value *V,
+                                         llvm::Instruction *I) {
   freedStruct.push_back(new FreedStruct(T, V, I));
 }
 
-void FunctionInformation::addFreedStruct(llvm::BasicBlock *B, llvm::Type *T, llvm::Value *V,
-                                         llvm::Instruction *I) {
+void FunctionInformation::addFreedStruct(llvm::BasicBlock *B, llvm::Type *T,
+                                         llvm::Value *V, llvm::Instruction *I) {
   FreedStruct *fst = new FreedStruct(T, V, I, B, NULL);
   if (!this->freedStructExists(fst)) {
     freedStruct.push_back(fst);
   }
 }
 
-void FunctionInformation::addFreedStruct(llvm::BasicBlock *B, llvm::Type *T, llvm::Value *V,
-                                         llvm::Instruction *I, llvm::StructType *parent,
+void FunctionInformation::addFreedStruct(llvm::BasicBlock *B, llvm::Type *T,
+                                         llvm::Value *V, llvm::Instruction *I,
+                                         llvm::StructType *parent,
                                          ValueInformation *valInfo,
                                          bool isInStruct) {
   FreedStruct *fst = new FreedStruct(T, V, I, B, valInfo, isInStruct);
@@ -224,7 +264,8 @@ bool FunctionInformation::freedStructExists(FreedStruct *fst) {
   return false;
 }
 
-void FunctionInformation::addParentType(llvm::Type *T, llvm::Value *V, llvm::Instruction *I,
+void FunctionInformation::addParentType(llvm::Type *T, llvm::Value *V,
+                                        llvm::Instruction *I,
                                         llvm::StructType *parentTy, int ind) {
   FreedStruct fst(T, V, I);
   auto fVal = find(freedStruct.begin(), freedStruct.end(), &fst);
@@ -252,7 +293,9 @@ BasicBlockList FunctionInformation::getPendingStoreList(llvm::BasicBlock *B) {
   return BBManage.getBasicBlockPendingAllocList(B);
 }
 
-bool FunctionInformation::isArgValue(llvm::Value *v) { return args.isInList(v); }
+bool FunctionInformation::isArgValue(llvm::Value *v) {
+  return args.isInList(v);
+}
 
 long FunctionInformation::getArgIndex(llvm::Value *v) {
   return args.getOperandNum(v);
@@ -281,7 +324,8 @@ void FunctionInformation::setStructMemberArgFreed(llvm::Value *V,
   args.setFreed(V, ind);
 }
 
-void FunctionInformation::setStructMemberArgAllocated(llvm::Value *V, int64_t num) {
+void FunctionInformation::setStructMemberArgAllocated(llvm::Value *V,
+                                                      int64_t num) {
   // args.setStructMemberAllocated(V, num);
 }
 
@@ -308,8 +352,8 @@ ValueInformation *FunctionInformation::addVariable(const UniqueKey *UK,
   return VManage.getValueInfo(UK);
 }
 
-ValueInformation *FunctionInformation::getValueInfo(llvm::Value *val, llvm::Type *ty,
-                                                    long mem) {
+ValueInformation *FunctionInformation::getValueInfo(llvm::Value *val,
+                                                    llvm::Type *ty, long mem) {
   const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, ty, mem);
   if (UK != NULL) return this->getValueInfo(UK);
   return NULL;
@@ -319,14 +363,14 @@ ValueInformation *FunctionInformation::getValueInfo(const UniqueKey *UK) {
   return VManage.getValueInfo(UK);
 }
 
-void FunctionInformation::addLocalVar(llvm::BasicBlock *B, llvm::Type *T, llvm::Value *V,
-                                      llvm::Instruction *I) {
+void FunctionInformation::addLocalVar(llvm::BasicBlock *B, llvm::Type *T,
+                                      llvm::Value *V, llvm::Instruction *I) {
   localVariables.push_back(new FreedStruct(T, V, I));
 }
 
-void FunctionInformation::addLocalVar(llvm::BasicBlock *B, llvm::Type *T, llvm::Value *V,
-                                      llvm::Instruction *I, ParentList P,
-                                      ValueInformation *vinfo) {
+void FunctionInformation::addLocalVar(llvm::BasicBlock *B, llvm::Type *T,
+                                      llvm::Value *V, llvm::Instruction *I,
+                                      ParentList P, ValueInformation *vinfo) {
   localVariables.push_back(new FreedStruct(T, V, I, P, B, vinfo));
 }
 
@@ -384,7 +428,8 @@ std::vector<bool> FunctionInformation::getStructMemberFreed(llvm::Type *T) {
   return std::vector<bool>();
 }
 
-void FunctionInformation::copyStructMemberFreed(llvm::Type *T, std::vector<bool> members) {
+void FunctionInformation::copyStructMemberFreed(llvm::Type *T,
+                                                std::vector<bool> members) {
   auto fs = find_if(freedStruct.begin(), freedStruct.end(),
                     [T](FreedStruct *f) { return *f == T; });
   if (fs != freedStruct.end()) {
@@ -396,12 +441,14 @@ void FunctionInformation::copyStructMemberFreed(llvm::Type *T, std::vector<bool>
   }
 }
 
-void FunctionInformation::addBasicBlockLiveVariable(llvm::BasicBlock *B, llvm::Value *V) {
+void FunctionInformation::addBasicBlockLiveVariable(llvm::BasicBlock *B,
+                                                    llvm::Value *V) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) BInfo->addLiveVariable(V);
 }
-bool FunctionInformation::isFreedInBasicBlock(llvm::BasicBlock *B, llvm::Value *val,
-                                              llvm::Type *ty, long mem) {
+bool FunctionInformation::isFreedInBasicBlock(llvm::BasicBlock *B,
+                                              llvm::Value *val, llvm::Type *ty,
+                                              long mem) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, ty, mem);
   if (BInfo && UK) return BInfo->FreeExists(UK);
@@ -415,7 +462,8 @@ bool FunctionInformation::isFreedInBasicBlock(llvm::BasicBlock *B,
   return false;
 }
 
-bool FunctionInformation::isAllocatedInBasicBlock(llvm::BasicBlock *B, llvm::Value *val,
+bool FunctionInformation::isAllocatedInBasicBlock(llvm::BasicBlock *B,
+                                                  llvm::Value *val,
                                                   llvm::Type *ty, long mem) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(val, ty, mem);
@@ -439,7 +487,8 @@ bool FunctionInformation::isAllocatedInBasicBlock(llvm::BasicBlock *B,
   return false;
 }
 
-bool FunctionInformation::isLiveInBasicBlock(llvm::BasicBlock *B, llvm::Value *val) {
+bool FunctionInformation::isLiveInBasicBlock(llvm::BasicBlock *B,
+                                             llvm::Value *val) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) return BInfo->LiveVariableExists(val);
   return false;
@@ -468,8 +517,10 @@ void FunctionInformation::addCorrectlyFreedValue(llvm::BasicBlock *B,
   }
 }
 
-bool FunctionInformation::isCorrectlyBranchedFreeValue(llvm::BasicBlock *B, llvm::Value *V,
-                                                       llvm::Type *T, long mem) {
+bool FunctionInformation::isCorrectlyBranchedFreeValue(llvm::BasicBlock *B,
+                                                       llvm::Value *V,
+                                                       llvm::Type *T,
+                                                       long mem) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   const UniqueKey *UK = this->getUniqueKeyManager()->getUniqueKey(V, T, mem);
   if (BInfo && UK) return BInfo->CorrectlyFreedValueExists(UK);
@@ -514,11 +565,13 @@ BasicBlockInformation *FunctionInformation::getBasicBlockInformation(
   return BBManage.get(B);
 }
 
-void FunctionInformation::addFunctionPointerInfo(llvm::Value *val, llvm::Function *func) {
+void FunctionInformation::addFunctionPointerInfo(llvm::Value *val,
+                                                 llvm::Function *func) {
   funcPtr[val].push_back(func);
 }
 
-std::vector<llvm::Function *> FunctionInformation::getPointedFunctions(llvm::Value *val) {
+std::vector<llvm::Function *> FunctionInformation::getPointedFunctions(
+    llvm::Value *val) {
   return funcPtr[val];
 }
 
@@ -564,10 +617,11 @@ bool FunctionInformation::errorCodeExists(int errcode) {
 }
 
 bool FunctionInformation::errorCodeLessThanExists(int errcode) {
-  if (find_if(info_per_error_code.begin(), info_per_error_code.end(),
-              [errcode](const std::pair<int64_t, InformationPerErrorCode> info) {
-                return info.first < errcode;
-              }) != info_per_error_code.end())
+  if (find_if(
+          info_per_error_code.begin(), info_per_error_code.end(),
+          [errcode](const std::pair<int64_t, InformationPerErrorCode> info) {
+            return info.first < errcode;
+          }) != info_per_error_code.end())
     return true;
   return false;
 }
@@ -620,7 +674,7 @@ bool FunctionInformation::hasUniqueKeyAlias(const UniqueKey *src) {
   return false;
 }
 
-const UniqueKey* FunctionInformation::getUniqueKeyAlias(const UniqueKey *src) {
+const UniqueKey *FunctionInformation::getUniqueKeyAlias(const UniqueKey *src) {
   auto found_alias = allocated_alias.find(src);
   if (found_alias != allocated_alias.end()) {
     return found_alias->second;
@@ -628,12 +682,13 @@ const UniqueKey* FunctionInformation::getUniqueKeyAlias(const UniqueKey *src) {
   return NULL;
 }
 
-void FunctionInformation::addPendingAliasedAlloc(const UniqueKey* UK) {
+void FunctionInformation::addPendingAliasedAlloc(const UniqueKey *UK) {
   pending_alloc_store.push_back(UK);
 }
 
-bool FunctionInformation::checkAndPopPendingAliasedAlloc(const UniqueKey* UK) {
-  auto found_uk = find(pending_alloc_store.begin(), pending_alloc_store.end(), UK);
+bool FunctionInformation::checkAndPopPendingAliasedAlloc(const UniqueKey *UK) {
+  auto found_uk =
+      find(pending_alloc_store.begin(), pending_alloc_store.end(), UK);
   if (found_uk != pending_alloc_store.end()) {
     pending_alloc_store.erase(found_uk);
     return true;
