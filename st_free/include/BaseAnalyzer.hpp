@@ -25,6 +25,7 @@ class BaseAnalyzer {
     InstAnalysisMap[llvm::Instruction::Call] = &BaseAnalyzer::analyzeCallInst;
     InstAnalysisMap[llvm::Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
     InstAnalysisMap[llvm::Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
+    InstAnalysisMap[llvm::Instruction::Switch] = &BaseAnalyzer::analyzeSwitchInst;
     InstAnalysisMap[llvm::Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
     InstAnalysisMap[llvm::Instruction::BitCast] = &BaseAnalyzer::analyzeBitCastInst;
     InstAnalysisMap[llvm::Instruction::GetElementPtr] =
@@ -36,6 +37,7 @@ class BaseAnalyzer {
     InstAnalysisMap[llvm::Instruction::Call] = &BaseAnalyzer::analyzeCallInst;
     InstAnalysisMap[llvm::Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
     InstAnalysisMap[llvm::Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
+    InstAnalysisMap[llvm::Instruction::Switch] = &BaseAnalyzer::analyzeSwitchInst;
     InstAnalysisMap[llvm::Instruction::Ret] = &BaseAnalyzer::analyzeReturnInst;
     InstAnalysisMap[llvm::Instruction::BitCast] = &BaseAnalyzer::analyzeBitCastInst;
     InstAnalysisMap[llvm::Instruction::GetElementPtr] =
@@ -89,6 +91,7 @@ class BaseAnalyzer {
   virtual void analyzeStoreInst(llvm::Instruction *SI, llvm::BasicBlock &B);
   virtual void analyzeCallInst(llvm::Instruction *CI, llvm::BasicBlock &B);
   virtual void analyzeBranchInst(llvm::Instruction *BI, llvm::BasicBlock &B);
+  virtual void analyzeSwitchInst(llvm::Instruction *SwI, llvm::BasicBlock &B);
   virtual void analyzeBitCastInst(llvm::Instruction *BCI, llvm::BasicBlock &B);
   virtual void analyzeICmpInst(llvm::Instruction *ICI, llvm::BasicBlock &B);
   virtual void analyzeReturnInst(llvm::Instruction *RI, llvm::BasicBlock &B);
@@ -123,9 +126,11 @@ class BaseAnalyzer {
   void copyAllocatedStatus(llvm::Function &Func, llvm::CallInst *CI, llvm::BasicBlock &B);
   void copyFreeStatus(llvm::Function &Func, llvm::CallInst *CI, llvm::BasicBlock &B);
   void evaluatePendingStoredValue(llvm::Function &Func, llvm::CallInst *CI, llvm::BasicBlock &B);
+
   /*** Branch Instruction(Error Code Analysis) ***/
   bool isCorrectlyBranched(llvm::BranchInst *BI);
   void analyzeErrorCode(llvm::BranchInst *BI, llvm::ICmpInst *ICI, llvm::BasicBlock &B);
+  void analyzeErrorCode(llvm::SwitchInst *SwI, llvm::ICmpInst *ICI, llvm::BasicBlock *tgtBlock, llvm::BasicBlock &B);
   void analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI, llvm::BasicBlock &B);
   void analyzeErrorCheckFunction(llvm::BranchInst *BI, llvm::CallInst *CI, llvm::BasicBlock &B);
   BasicBlockWorkList getErrorValues(llvm::Instruction *I, llvm::BasicBlock &B, int errcode);
@@ -138,6 +143,8 @@ class BaseAnalyzer {
   int getErrorOperand(llvm::ICmpInst *ICI);
   BasicBlockList getErrorAllocInCalledFunction(llvm::CallInst *CI, int errcode);
   BasicBlockList getSuccessAllocInCalledFunction(llvm::CallInst *CI);
+  BasicBlockList getErrorFreeInCalledFunction(llvm::CallInst *CI, int errcode);
+  BasicBlockList getSuccessFreeInCalledFunction(llvm::CallInst *CI);
   void buildReturnValueInformation();
   void checkErrorInstruction(llvm::Value *v, std::vector<llvm::Instruction*> visited_inst = std::vector<llvm::Instruction*>());
   void checkErrorCodeAndAddBlock(llvm::Instruction *I, llvm::BasicBlock *B, llvm::Value *inval, std::vector<llvm::Instruction*> visited_inst);
@@ -165,6 +172,7 @@ class BaseAnalyzer {
   bool isStructEleFree(llvm::Instruction *);
   bool isStructFree(llvm::Instruction *);
   bool isOptimizedStructFree(llvm::Instruction *I);
+  bool isOptimizedStructEleFree(llvm::Instruction *);
   llvm::Type *getOptimizedStructFree(llvm::Instruction *I);
   llvm::Value *getStructFreedValue(llvm::Instruction *val, bool isUserDefCalled = false);
   llvm::Value *getCalledStructFreedValue(llvm::Instruction *val);
@@ -180,6 +188,8 @@ class BaseAnalyzer {
   llvm::Value *getAllocatedValue(llvm::Instruction *I);
   bool isCallInstReturnValue(llvm::Value *V);
   bool isAllocStoredInSameBasicBlock(llvm::Value *V, llvm::BasicBlock *B);
+
+  llvm::Function* getCalledFunction(llvm::CallInst *CI);
 
   /*** Support Methods ***/
   std::vector<long> getValueIndices(llvm::GetElementPtrInst *inst);

@@ -18,6 +18,7 @@ class StageOneAnalyzer : public BaseAnalyzer {
   void analyzeStoreInst(llvm::Instruction *SI, llvm::BasicBlock &B);
   void analyzeCallInst(llvm::Instruction *CI, llvm::BasicBlock &B);
   void analyzeBranchInst(llvm::Instruction *BI, llvm::BasicBlock &B);
+  void analyzeSwitchInst(llvm::Instruction *SwI, llvm::BasicBlock &B);
   void analyzeGetElementPtrInst(llvm::Instruction *GEleI, llvm::BasicBlock &B);
 };
 }  // namespace ST_free

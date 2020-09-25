@@ -32,31 +32,6 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
       this->collectStructMemberFreeInfo(GEle, info, plist);
 
-      // if (info.indexes.size() > 0 &&
-      //     llvm::isa<llvm::StructType>(GEle->getSourceElementType())) {
-      // getStructManager()->addStore(cast<StructType>(GEle->getSourceElementType()),
-      // getValueIndices(GEle).back());
-      // pointerEle.set(cast<StructType>(GEle->getSourceElementType()),
-      // getValueIndices(GEle).back());
-
-      // if(GlobalVariable *GV =
-      // dyn_cast<GlobalVariable>(SI->getValueOperand())) {
-      //     generateWarning(SI, "GlobalVariable Store");
-      //     getStructManager()->addGlobalVarStore(
-      //             cast<StructType>(GEle->getSourceElementType()),
-      //             getValueIndices(GEle).back());
-      //     // if(GV->getValueType()->isStructTy() && GV->hasInitializer()) {
-      //     //     if(const DebugLoc &Loc = SI->getDebugLoc()){
-      //     //         vector<string> dirs =
-      //     this->decodeDirectoryName(string(Loc->getFilename()));
-      //     //
-      //     getStructManager()->get(cast<StructType>(GEle->getSourceElementType()))->addGVInfo(getValueIndices(GEle),
-      //     dirs, GV);
-      //     //     }
-      //     // }
-      // }
-      // }
-
       llvm::Value *addVal = SI->getValueOperand();
       if (llvm::LoadInst *LI = llvm::dyn_cast<llvm::LoadInst>(addVal)) {
         generateWarning(SI, "found load");
@@ -110,6 +85,10 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                     info.indexes.back().second);
               }
             }
+            // Look at the parent and see if that is allocated or not.
+            // if the parent is neither allocated or is arg value, then consider
+            // that value as local variable and add it to the local variable
+            // list
           }
         }
       }
@@ -174,8 +153,7 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
       generateWarning(CI, "Found Indirect Called Function", true);
       std::vector<std::pair<llvm::Type *, int>> typeList;
       if (const llvm::DebugLoc &Loc = CI->getDebugLoc()) {
-        std::string path = std::string(Loc->getDirectory()) + '/' +
-                           std::string(Loc->getFilename());
+        std::string path = std::string(Loc->getFilename());
         this->getStructParents(LI, typeList);
         if (typeList.size() > 0) {
           generateWarning(CI, "Found Indirect stored struct member", true);
@@ -189,7 +167,8 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
                    getStructManager()
                        ->get(parent_type)
                        ->getFunctionPtr(typeList.back().second, path)) {
-                generateWarning(CI, "[INDIRECT]Found indirect call candidate", true);
+                generateWarning(CI, "[INDIRECT]Found indirect call candidate",
+                                true);
                 funcLists.push_back(called_function);
               }
             }
@@ -200,7 +179,7 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
   }
 
   // Normal calls
-  if (llvm::Function *called_function = CI->getCalledFunction()) {
+  if (llvm::Function *called_function = getCalledFunction(CI)) {
     funcLists.push_back(called_function);
   }
 
@@ -258,7 +237,7 @@ void StageOneAnalyzer::analyzeBranchInst(llvm::Instruction *I,
       }
     } else if (llvm::CallInst *CI =
                    llvm::dyn_cast<llvm::CallInst>(BI->getCondition())) {
-      if (CI->getCalledFunction() && isIsErrFunction(CI->getCalledFunction())) {
+      if (getCalledFunction(CI) && isIsErrFunction(getCalledFunction(CI))) {
         this->analyzeErrorCheckFunction(BI, CI, B);
       }
     }
@@ -272,6 +251,76 @@ void StageOneAnalyzer::analyzeBranchInst(llvm::Instruction *I,
   if (this->isCorrectlyBranched(BI)) {
     generateWarning(BI, "Correctly Branched");
     getFunctionInformation()->setCorrectlyBranched(&B);
+  }
+}
+
+//TODO: Refactor this nasty function
+void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
+    llvm::BasicBlock &B) {
+  llvm::SwitchInst *SwI = llvm::cast<llvm::SwitchInst>(I);
+  STFREE_LOG_ON(SwI, "[SWITCH] inst found");
+  int found_error_case = 0;
+  
+  if (auto ICI = llvm::dyn_cast<llvm::ICmpInst>(SwI->getCondition())) {
+    if (this->isCallInstReturnValue(ICI->getOperand(0))) {
+      for (auto case_element : SwI->cases()) {
+        STFREE_LOG_ON(ICI, "Switch inst looking at condition");
+        if (case_element.getCaseValue()->getSExtValue() < 0) {
+          found_error_case++;
+          this->analyzeErrorCode(SwI, ICI, case_element.getCaseSuccessor(), B);
+        }
+      }
+
+      if (!found_error_case)
+          this->analyzeErrorCode(SwI, ICI, SwI->getDefaultDest(), B);
+    }
+  } else if (llvm::CallInst *CI =
+                 llvm::dyn_cast<llvm::CallInst>(SwI->getCondition())) {
+    if (getCalledFunction(CI)) {
+      STFREE_LOG_ON(I, "[SWITCH] inst looking at is error call inst");
+
+      BasicBlockWorkList allocated_on_err;
+      for (auto ele : this->getErrorAllocInCalledFunction(CI, 0)) {
+        allocated_on_err.add(ele);
+      }
+      STFREE_LOG_ON(CI, "Allocated Err: " +
+                            std::to_string(allocated_on_err.getList().size()));
+
+      BasicBlockWorkList allocated_on_success;
+      for (auto ele : this->getSuccessAllocInCalledFunction(CI)) {
+        allocated_on_success.add(ele);
+      }
+      STFREE_LOG_ON(CI,
+                    "Allocated Success: " +
+                        std::to_string(allocated_on_success.getList().size()));
+
+      // 2. Success diff allocated_on_err is pure non allocated in err
+      BasicBlockList diff_list = BasicBlockListOperation::diffList(
+          allocated_on_success.getList(), allocated_on_err.getList());
+
+      STFREE_LOG_ON(CI,
+                    "[IS_ERROR] Diff list: " + std::to_string(diff_list.size()));
+
+      for (auto case_element : SwI->cases()) {
+        STFREE_LOG_ON(SwI, "Switch inst looking at condition");
+        if (case_element.getCaseValue()->getSExtValue() < 0) {
+          found_error_case++;
+          for (auto ele : diff_list) {
+            STFREE_LOG(SwI, "Adding Null value");
+            this->getFunctionInformation()
+                ->getBasicBlockInformation(&B)
+                ->addRemoveAlloc(case_element.getCaseSuccessor(), const_cast<UniqueKey *>(ele));
+          }
+        }
+      }
+      if (!found_error_case)
+        for (auto ele : diff_list) {
+          STFREE_LOG(SwI, "Adding Null value");
+          this->getFunctionInformation()
+              ->getBasicBlockInformation(&B)
+              ->addRemoveAlloc(SwI->getDefaultDest(), const_cast<UniqueKey *>(ele));
+        }
+      }
   }
 }
 

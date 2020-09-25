@@ -445,7 +445,6 @@ void StructManager::addGlobalVariableInitInfo(llvm::Module &M) {
 
           for (auto dbg : debug_info) {
             std::string path_name =
-                std::string(dbg->getVariable()->getDirectory()) + "/" +
                 std::string(dbg->getVariable()->getFilename());
             if (exists(global_val_type)) {
               llvm::outs() << "[INPUT] " << path_name << "\n";
