@@ -37,9 +37,23 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
         generateWarning(SI, "found load");
         if (llvm::isa<llvm::AllocaInst>(LI->getPointerOperand()))
           addVal = LI->getPointerOperand();
+      } else if (auto *val_gele =
+                     llvm::dyn_cast<llvm::GetElementPtrInst>(addVal)) {
+        struct collectedInfo gele_info;
+        this->collectStructMemberFreeInfo(val_gele, gele_info, plist);
+        if (gele_info.freeValue) {
+          addVal = gele_info.freeValue;
+          if (auto BCI =
+                  llvm::dyn_cast<llvm::BitCastInst>(gele_info.freeValue)) {
+            addVal = BCI->getOperand(0);
+          }
+        }
       }
 
       if (addVal && info.indexes.size() > 0) {
+        generateWarning(SI, "Setting Alias", true);
+        llvm::outs() << *addVal << "\n";
+        llvm::outs() << *GEle << "\n";
         getFunctionInformation()->setAlias(GEle, addVal);
         if (auto StTy = llvm::dyn_cast<llvm::StructType>(
                 get_type(info.indexes.back().first))) {
@@ -52,7 +66,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                         ->getWorkList(ALLOCATED)
                         .getFromType(
                             StTy->getElementType(info.indexes.back().second))) {
-              generateWarning(I, "[After] Found alloc alias");
+              generateWarning(I, "[After] Found alloc alias", true);
               const UniqueKey *dest_uk =
                   getFunctionInformation()->addAllocValue(
                       &B, NULL,
@@ -113,11 +127,11 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
   /*** Check the Value of the StoreInst ***/
   if (this->isStoreFromStructMember(SI)) {
-    generateWarning(SI, "is Store from struct member");
-    llvm::GetElementPtrInst *GEle = getStoredStructEle(SI);
-    if (GEle != NULL && llvm::isa<llvm::AllocaInst>(SI->getPointerOperand())) {
-      getFunctionInformation()->setAlias(GEle, SI->getPointerOperand());
-    }
+    generateWarning(SI, "is Store from struct member", true);
+    // if (info.freeValue) {
+    //   llvm::outs() << *info.freeValue << "\n";
+    //   // getFunctionInformation()->setAlias(GEle, SI->getPointerOperand());
+    // }
   } else if (this->isStoreFromStruct(SI)) {
     generateWarning(SI, "is Store from struct", true);
     valueEle.set(llvm::cast<llvm::StructType>(
@@ -254,13 +268,13 @@ void StageOneAnalyzer::analyzeBranchInst(llvm::Instruction *I,
   }
 }
 
-//TODO: Refactor this nasty function
+// TODO: Refactor this nasty function
 void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
-    llvm::BasicBlock &B) {
+                                         llvm::BasicBlock &B) {
   llvm::SwitchInst *SwI = llvm::cast<llvm::SwitchInst>(I);
   STFREE_LOG_ON(SwI, "[SWITCH] inst found");
   int found_error_case = 0;
-  
+
   if (auto ICI = llvm::dyn_cast<llvm::ICmpInst>(SwI->getCondition())) {
     if (this->isCallInstReturnValue(ICI->getOperand(0))) {
       for (auto case_element : SwI->cases()) {
@@ -272,7 +286,7 @@ void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
       }
 
       if (!found_error_case)
-          this->analyzeErrorCode(SwI, ICI, SwI->getDefaultDest(), B);
+        this->analyzeErrorCode(SwI, ICI, SwI->getDefaultDest(), B);
     }
   } else if (llvm::CallInst *CI =
                  llvm::dyn_cast<llvm::CallInst>(SwI->getCondition())) {
@@ -298,8 +312,8 @@ void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
       BasicBlockList diff_list = BasicBlockListOperation::diffList(
           allocated_on_success.getList(), allocated_on_err.getList());
 
-      STFREE_LOG_ON(CI,
-                    "[IS_ERROR] Diff list: " + std::to_string(diff_list.size()));
+      STFREE_LOG_ON(
+          CI, "[IS_ERROR] Diff list: " + std::to_string(diff_list.size()));
 
       for (auto case_element : SwI->cases()) {
         STFREE_LOG_ON(SwI, "Switch inst looking at condition");
@@ -309,7 +323,8 @@ void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
             STFREE_LOG(SwI, "Adding Null value");
             this->getFunctionInformation()
                 ->getBasicBlockInformation(&B)
-                ->addRemoveAlloc(case_element.getCaseSuccessor(), const_cast<UniqueKey *>(ele));
+                ->addRemoveAlloc(case_element.getCaseSuccessor(),
+                                 const_cast<UniqueKey *>(ele));
           }
         }
       }
@@ -318,9 +333,10 @@ void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
           STFREE_LOG(SwI, "Adding Null value");
           this->getFunctionInformation()
               ->getBasicBlockInformation(&B)
-              ->addRemoveAlloc(SwI->getDefaultDest(), const_cast<UniqueKey *>(ele));
+              ->addRemoveAlloc(SwI->getDefaultDest(),
+                               const_cast<UniqueKey *>(ele));
         }
-      }
+    }
   }
 }
 

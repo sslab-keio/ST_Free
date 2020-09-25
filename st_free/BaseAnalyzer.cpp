@@ -379,7 +379,8 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 
   if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
                             B, info.freeValue, info.memType, info.index)) {
-    STFREE_LOG(CI, "Adding Free Value");
+    STFREE_LOG_ON(CI, "Adding Free Value");
+    STFREE_LOG_ON(CI, std::to_string(info.index));
     ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
         B, NULL, info.memType, info.index, info.indexes);
 
@@ -409,7 +410,9 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 #endif
     }
 
+    llvm::outs() << *info.freeValue << "\n";
     if (!isAlias && getFunctionInformation()->aliasExists(info.freeValue)) {
+      STFREE_LOG_ON(CI, "Jumping to Alias");
       llvm::Value *aliasVal =
           getFunctionInformation()->getAlias(info.freeValue);
       if (V != aliasVal) this->addFree(aliasVal, CI, B, true);
@@ -428,7 +431,7 @@ void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
       if (!Ty->isStructTy()) {
         if (auto BCI =
                 llvm::dyn_cast<llvm::BitCastInst>(SI->getPointerOperand())) {
-          STFREE_LOG(CI, "bit cast found");
+          STFREE_LOG_ON(CI, "bit cast found");
           Ty = get_type(BCI->getSrcTy());
         }
       }
@@ -436,7 +439,7 @@ void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
   }
 
   if (get_type(Ty)->isStructTy()) {
-    STFREE_LOG(CI, "Stored in Struct");
+    STFREE_LOG_ON(CI, "Stored in Struct");
     getFunctionInformation()->addAliasedType(CI, Ty);
     getStructManager()->addAlloc(llvm::cast<llvm::StructType>(get_type(Ty)));
   }
@@ -929,10 +932,12 @@ llvm::Value *BaseAnalyzer::getFreedValue(llvm::Instruction *val) {
 }
 
 llvm::GetElementPtrInst *BaseAnalyzer::getStoredStructEle(llvm::StoreInst *SI) {
-  if (auto LInst = llvm::dyn_cast<llvm::LoadInst>(SI->getValueOperand()))
-    if (auto GEle =
-            llvm::dyn_cast<llvm::GetElementPtrInst>(LInst->getPointerOperand()))
-      return GEle;
+  llvm::Value *val = SI->getValueOperand();
+  if (auto LInst = llvm::dyn_cast<llvm::LoadInst>(val))
+    val = LInst->getPointerOperand();
+  if (auto GEle =
+          llvm::dyn_cast<llvm::GetElementPtrInst>(val))
+    return GEle;
   return NULL;
 }
 
