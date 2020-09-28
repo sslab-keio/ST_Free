@@ -311,7 +311,7 @@ void BasicBlockManager::CollectInInfo(
   BBMap[B].backupFreeAllocInformation();
 
   if (this->checkIfErrorBlock(B)) {
-    generateWarning(B->getFirstNonPHI(), "Is error Block");
+    generateWarning(B->getFirstNonPHI(), "Is error Block", true);
     BBMap[B].setErrorHandlingBlock();
   }
   this->addFreeInfoFromDMZToPreds(B);

@@ -336,10 +336,10 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
     }
 
     if (isStructFree(val)) {
-      STFREE_LOG(CI, "Struct Free");
+      STFREE_LOG_ON(CI, "Struct Free");
       this->collectStructFreeInfo(val, info);
     } else if (isOptimizedStructFree(val)) {
-      STFREE_LOG(CI, "Optimized Struct Free");
+      STFREE_LOG_ON(CI, "Optimized Struct Free");
       this->collectOptimizedStructFreeInfo(val, info);
     }
 
@@ -349,7 +349,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
     // it is something else (not really sure). We need to decode this by
     // ourselves This is a temporary implementation.
     // TODO: fix this to more stable implementation.
-    STFREE_LOG(CI, "Non Instruction free value found");
+    STFREE_LOG_ON(CI, "Non Instruction free value found");
 
     // Get Top-level Value/Type
     llvm::Type *Ty = V->getType();
@@ -410,7 +410,6 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 #endif
     }
 
-    llvm::outs() << *info.freeValue << "\n";
     if (!isAlias && getFunctionInformation()->aliasExists(info.freeValue)) {
       STFREE_LOG_ON(CI, "Jumping to Alias");
       llvm::Value *aliasVal =
@@ -901,6 +900,9 @@ llvm::Value *BaseAnalyzer::getStructFreedValue(llvm::Instruction *val,
   llvm::LoadInst *load_inst = find_load(val);
   if (load_inst && load_inst->getOperandList() != NULL) {
     llvm::Type *tgt_type = get_type(load_inst->getPointerOperandType());
+    if(auto BCI = llvm::dyn_cast<llvm::BitCastInst>(load_inst->getPointerOperand())) {
+      tgt_type = BCI->getSrcTy();
+    }
     if (tgt_type)
       if (llvm::isa<llvm::StructType>(get_type(tgt_type))) {
         return getLoadeeValue(load_inst);
@@ -916,6 +918,10 @@ llvm::Value *BaseAnalyzer::getStructFreedValue(llvm::Instruction *val,
         return V;
   } else if (auto *BCI = llvm::dyn_cast<llvm::BitCastInst>(val)) {
     if (get_type(BCI->getSrcTy())->isStructTy()) return BCI->getOperand(0);
+  } else if (auto ICI = llvm::dyn_cast<llvm::IntToPtrInst>(val)) {
+    STFREE_LOG_ON(val, "IntToPtrInst");
+    if (auto def_inst = llvm::dyn_cast<llvm::Instruction>(ICI->getOperand(0)))
+      return getStructFreedValue(def_inst);
   }
   return NULL;
 }
@@ -1711,6 +1717,8 @@ void BaseAnalyzer::checkErrorInstruction(
         this->checkErrorCodeAndAddBlock(PHI, PHI->getIncomingBlock(i),
                                         PHI->getIncomingValue(i), visited_inst);
     }
+  } else if (auto IcmpI = llvm::dyn_cast<llvm::ICmpInst>(V)) {
+    // Might be switch null check. Check.
   }
   return;
 }

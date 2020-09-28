@@ -105,22 +105,10 @@ ValueInformation *FunctionInformation::addFreeValue(llvm::BasicBlock *B,
   }
 
   // If aliased value exists, free the value as well
-  if (const UniqueKey *aliased_uk = getUniqueKeyAlias(UK)) {
+  if (const UniqueKey *aliased_uk = getUniqueKeyAlias(UK))
     addFreeValue(B, const_cast<UniqueKey *>(aliased_uk));
 
-    // For all predecessors that branch from unconditional branches, reverse-
-    // propagate that information back to each predecessor for aliased free
-    for (auto pred_block : llvm::predecessors(B)) {
-      BasicBlockInformation *PredBInfo =
-          this->getBasicBlockInformation(pred_block);
-      if (PredBInfo && PredBInfo->isUnconditionalBranched()) {
-        generateWarning(B->getFirstNonPHI(), "Pred block is unconditional",
-                        true);
-        generateWarning(B->getFirstNonPHI(), pred_block->getName(), true);
-        addFreeValue(pred_block, const_cast<UniqueKey *>(UK));
-      }
-    }
-  }
+  addFreeValueToPredecessors(B, const_cast<UniqueKey *>(UK));
   return varinfo;
 }
 
@@ -135,6 +123,24 @@ ValueInformation *FunctionInformation::addFreeValueFromDifferentFunction(
 void FunctionInformation::addFreeValue(llvm::BasicBlock *B, UniqueKey *UK) {
   BasicBlockInformation *BInfo = this->getBasicBlockInformation(B);
   if (BInfo) BInfo->addFree(UK);
+  addFreeValueToPredecessors(B, UK);
+}
+
+void FunctionInformation::addFreeValueToPredecessors(llvm::BasicBlock *B,
+    UniqueKey *UK) {
+  // For all predecessors that branch from unconditional branches, reverse-
+  // propagate that information back to each predecessor for aliased free
+  // This is to support cases where error handlers have goto statements and
+  // there are fall throughs
+  for (auto pred_block : llvm::predecessors(B)) {
+    BasicBlockInformation *PredBInfo =
+        this->getBasicBlockInformation(pred_block);
+    if (PredBInfo && PredBInfo->isUnconditionalBranched()) {
+      generateWarning(B->getFirstNonPHI(), "Pred block is unconditional");
+      generateWarning(B->getFirstNonPHI(), pred_block->getName());
+      addFreeValue(pred_block, const_cast<UniqueKey *>(UK));
+    }
+  }
 }
 
 const UniqueKey *FunctionInformation::addAllocValue(llvm::BasicBlock *B,

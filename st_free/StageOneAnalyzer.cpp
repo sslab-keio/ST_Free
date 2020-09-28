@@ -52,8 +52,6 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
       if (addVal && info.indexes.size() > 0) {
         generateWarning(SI, "Setting Alias", true);
-        llvm::outs() << *addVal << "\n";
-        llvm::outs() << *GEle << "\n";
         getFunctionInformation()->setAlias(GEle, addVal);
         if (auto StTy = llvm::dyn_cast<llvm::StructType>(
                 get_type(info.indexes.back().first))) {

@@ -56,6 +56,7 @@ struct FunctionInformation {
   ValueInformation *addFreeValue(llvm::BasicBlock *B, llvm::Value *V,
                                  llvm::Type *memTy, long num, ParentList plist);
   void addFreeValue(llvm::BasicBlock *B, UniqueKey *UK);
+  void addFreeValueToPredecessors(llvm::BasicBlock *B, UniqueKey *UK);
   void incrementFreedRefCount(llvm::BasicBlock *B, llvm::Value *V,
                               llvm::Value *refVal);
   void addFreedStruct(llvm::Type *T, llvm::Value *V, llvm::Instruction *I);
