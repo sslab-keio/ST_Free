@@ -371,13 +371,15 @@ ValueInformation *FunctionInformation::getValueInfo(const UniqueKey *UK) {
 
 void FunctionInformation::addLocalVar(llvm::BasicBlock *B, llvm::Type *T,
                                       llvm::Value *V, llvm::Instruction *I) {
-  localVariables.push_back(new FreedStruct(T, V, I));
+  FreedStruct* local_var = new FreedStruct(T, V, I, B);
+  local_var->setLocalVar();
+  freedStruct.push_back(local_var);
 }
 
 void FunctionInformation::addLocalVar(llvm::BasicBlock *B, llvm::Type *T,
                                       llvm::Value *V, llvm::Instruction *I,
                                       ParentList P, ValueInformation *vinfo) {
-  localVariables.push_back(new FreedStruct(T, V, I, P, B, vinfo));
+  freedStruct.push_back(new FreedStruct(T, V, I, P, B, vinfo));
 }
 
 //     void FunctionInformation::incrementRefCount(Value *V, Type *T, long mem,
@@ -401,7 +403,7 @@ void FunctionInformation::addLocalVar(llvm::BasicBlock *B, llvm::Type *T,
 //         vinfo->incrementRefCount(ref);
 // }
 
-LocalVarList FunctionInformation::getLocalVar() const { return localVariables; }
+FreedStructList FunctionInformation::getLocalVar() const { return localVariables; }
 
 bool FunctionInformation::localVarExists(llvm::Type *T) {
   if (find_if(localVariables.begin(), localVariables.end(),
@@ -409,6 +411,18 @@ bool FunctionInformation::localVarExists(llvm::Type *T) {
       localVariables.end())
     return false;
   return true;
+}
+
+void FunctionInformation::appendLocalVariable(llvm::AllocaInst* AI) {
+  pending_local_vars.push_back(AI);
+}
+
+void FunctionInformation::freeLocalVarOnReturnBlock(llvm::BasicBlock* RB) {
+  for (auto AI : pending_local_vars) {
+    if (auto NAI = llvm::dyn_cast<llvm::Instruction>(AI->user_back())) {
+      addLocalVar(RB, AI->getAllocatedType(), AI, NAI);
+    }
+  }
 }
 
 void FunctionInformation::setStructMemberFreed(FreedStruct *fstruct,

@@ -11,12 +11,23 @@ struct FreedStruct {
     V = val;
     I = Inst;
     FreedMembers = std::vector<bool>(Ty->getStructNumElements(), false);
+    AllocatedMembers = std::vector<bool>(Ty->getStructNumElements(), false);
+  };
+  FreedStruct(llvm::Type *Ty, llvm::Value *val, llvm::Instruction *Inst, llvm::BasicBlock* B) {
+    T = Ty;
+    V = val;
+    I = Inst;
+    freedBlock = B;
+    ParentType = ParentList();
+    FreedMembers = std::vector<bool>(Ty->getStructNumElements(), false);
+    AllocatedMembers = std::vector<bool>(Ty->getStructNumElements(), false);
   };
   FreedStruct(llvm::Type *Ty, llvm::Value *val, llvm::Instruction *Inst, ParentList P) {
     T = Ty;
     V = val;
     I = Inst;
     FreedMembers = std::vector<bool>(Ty->getStructNumElements(), false);
+    AllocatedMembers = std::vector<bool>(Ty->getStructNumElements(), false);
     ParentType = ParentList(P);
     valInfo = NULL;
   };
@@ -76,6 +87,8 @@ struct FreedStruct {
   llvm::Type *getType() const { return T; }
   llvm::Value *getValue() const { return V; }
   llvm::Instruction *getInst() const { return I; }
+  bool isLocalVar() { return localVar; }
+  void setLocalVar() { localVar = true; }
   ValueInformation *getValueInformation() { return valInfo; }
   void setFreedMember(int64_t num) { FreedMembers[num] = true; };
   void setAllocatedMember(int64_t num) { AllocatedMembers[num] = true; };
@@ -90,7 +103,9 @@ struct FreedStruct {
     return ParentType.empty() ? NULL : ParentType[0].first;
   }
   ParentList getParentTypes() {
-    return this->getValueInformation()->getParents();
+    if (this->getValueInformation())
+        return this->getValueInformation()->getParents();
+    return ParentList();
   }
   bool isInStruct() { return inStruct; }
 
@@ -101,8 +116,9 @@ struct FreedStruct {
   llvm::Instruction *I;
   std::vector<bool> FreedMembers;
   std::vector<bool> AllocatedMembers;
-  ValueInformation *valInfo;
-  llvm::BasicBlock *freedBlock;
-  bool inStruct;
+  ValueInformation *valInfo = NULL;
+  llvm::BasicBlock *freedBlock = NULL;
+  bool inStruct = false;
+  bool localVar = false;
 };
 }  // namespace ST_free

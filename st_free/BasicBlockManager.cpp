@@ -329,11 +329,11 @@ void BasicBlockManager::CollectInInfo(
     free_pool.setList(BasicBlockListOperation::uniteList(
         free_pool.getList(), this->getBasicBlockFreeList(PredBB)));
   }
-  // if (B->hasName())
-  //   STFREE_LOG_ON(B->getFirstNonPHI(), B->getName());
+  if (B->hasName())
+    STFREE_LOG_ON(B->getFirstNonPHI(), B->getName());
   for (llvm::BasicBlock *PredBB : optimized_preds) {
-    // if (PredBB->hasName())
-    //   generateWarning(PredBB->getFirstNonPHI(), PredBB->getName(), true);
+    if (PredBB->hasName())
+      generateWarning(PredBB->getFirstNonPHI(), PredBB->getName(), true);
     if (isFirst) {
       this->copyAllList(PredBB, B, free_pool);
       isFirst = false;
@@ -673,7 +673,8 @@ std::vector<llvm::BasicBlock *> BasicBlockManager::optimizeLoopPredecessors(
         //   predecessor and check
         if (llvm::BasicBlock *preheader =
                 BBMap[PredBB].getLoop()->getLoopPreheader()) {
-          generateWarning(PredBB->getFirstNonPHI(), "[LOOP] Is preheader block", true);
+          generateWarning(PredBB->getFirstNonPHI(), "[LOOP] Is preheader block",
+                          true);
           topBlock = preheader;
         }
 
@@ -686,7 +687,7 @@ std::vector<llvm::BasicBlock *> BasicBlockManager::optimizeLoopPredecessors(
   for (llvm::BasicBlock *PredBB : llvm::predecessors(tgt)) {
     if (isLoopExitingBlock && exists(PredBB) && !BBMap[PredBB].isLoopBlock()) {
       generateWarning(tgt->getFirstNonPHI(), "[LOOP] Has by passing path");
-      
+
       // 2. If the predecessor of the header contains |PredBB|, then consider it
       //   as before-loop
       if (std::find(loop_header_predecessors.begin(),

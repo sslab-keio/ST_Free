@@ -72,6 +72,9 @@ void StructInformation::checkStageOne(CandidateValue *cand, long ind) {
       std::string message = warningStr;
       message += parseErrorMessage(this->getStructType(), ind);
       message += ")";
+      if (cand->getFreedStruct() && cand->getFreedStruct()->isLocalVar()) {
+        message = "[LOCAL VAR]" + message;
+      }
       generateError(cand->getInstruction(), message);
     }
   }

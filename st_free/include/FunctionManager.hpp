@@ -7,7 +7,6 @@
 
 namespace ST_free {
 using FreedStructList = std::vector<FreedStruct *>;
-using LocalVarList = std::vector<FreedStruct *>;
 using Aliases = std::map<llvm::Value *, llvm::Value *>;
 
 struct FunctionInformation {
@@ -150,7 +149,9 @@ struct FunctionInformation {
                    llvm::Instruction *);
   void addLocalVar(llvm::BasicBlock *, llvm::Type *, llvm::Value *,
                    llvm::Instruction *, ParentList P, ValueInformation *);
-  LocalVarList getLocalVar() const;
+  void appendLocalVariable(llvm::AllocaInst* AI);
+  void freeLocalVarOnReturnBlock(llvm::BasicBlock* RB);
+  FreedStructList getLocalVar() const;
   void addBasicBlockLiveVariable(llvm::BasicBlock *B, llvm::Value *);
   bool localVarExists(llvm::Type *);
   // void incrementRefCount(Value *V, Type *T, long mem, Value *ref);
@@ -210,7 +211,6 @@ struct FunctionInformation {
   llvm::BasicBlock *endPoint;
   llvm::ReturnInst *retInst;
 
-  LocalVarList localVariables;
   FreedStructList freedStruct;
   BasicBlockManager BBManage;
   ValueManager VManage;
@@ -218,6 +218,14 @@ struct FunctionInformation {
   std::map<llvm::Value *, llvm::Type *> aliasedType;
   Aliases aliasMap;
   bool dirty;
+
+  /*** Local variable related ***/
+  FreedStructList localVariables;
+  // Use this vector to buffer the pending local vars to flush at the end of
+  // function. This is required since AllocaInst is usually located at the 
+  // begining of the function, but the free should be placed at the end of the
+  // function (i.e. return block)
+  std::vector<llvm::AllocaInst*> pending_local_vars;
 
   /*** Analysis results from loop analyzer ***/
   const llvm::LoopInfo *loop_info;

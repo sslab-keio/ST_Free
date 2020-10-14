@@ -18,10 +18,7 @@ llvm::LoopInfo *LoopManager::get(llvm::Function *F) {
 }
 
 bool LoopManager::IsInLoop(llvm::Function *F, llvm::BasicBlock *B) {
-  if (this->exists(F)) {
-    if(loopinfo[F].getLoopFor(B) != NULL) {
-      return true;
-    }
+  if (this->exists(F)) { if(loopinfo[F].getLoopFor(B) != NULL) { return true; }
   }
   return false;
 }

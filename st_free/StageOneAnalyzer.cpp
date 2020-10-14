@@ -9,8 +9,13 @@ void StageOneAnalyzer::analyzeInstructions(llvm::BasicBlock &B) {
   }
 }
 
-void StageOneAnalyzer::analyzeAllocaInst(llvm::Instruction *AI,
-                                         llvm::BasicBlock &B) {}
+void StageOneAnalyzer::analyzeAllocaInst(llvm::Instruction *I,
+                                         llvm::BasicBlock &B) {
+  llvm::AllocaInst *AI = llvm::cast<llvm::AllocaInst>(I);
+  if (AI->getAllocatedType()->isStructTy()) {
+    getFunctionInformation()->appendLocalVariable(AI);
+  }
+}
 
 void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                                         llvm::BasicBlock &B) {
@@ -24,9 +29,9 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
   /*** Check the Pointer of StoreInst ***/
   if (this->isStoreToStructMember(SI)) {
-    generateWarning(SI, "is Store to struct member", true);
+    STFREE_LOG(SI, "is Store to struct member");
     if (llvm::GetElementPtrInst *GEle = getStoredStruct(SI)) {
-      generateWarning(SI, "found GetElementPtrInst", true);
+      STFREE_LOG(SI, "found GetElementPtrInst");
       struct collectedInfo info;
       ParentList plist;
 
@@ -34,7 +39,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
       llvm::Value *addVal = SI->getValueOperand();
       if (llvm::LoadInst *LI = llvm::dyn_cast<llvm::LoadInst>(addVal)) {
-        generateWarning(SI, "found load");
+        STFREE_LOG(SI, "found load");
         if (llvm::isa<llvm::AllocaInst>(LI->getPointerOperand()))
           addVal = LI->getPointerOperand();
       } else if (auto *val_gele =
@@ -51,20 +56,20 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
       }
 
       if (addVal && info.indexes.size() > 0) {
-        generateWarning(SI, "Setting Alias", true);
+        STFREE_LOG(SI, "Setting Alias");
         getFunctionInformation()->setAlias(GEle, addVal);
         if (auto StTy = llvm::dyn_cast<llvm::StructType>(
                 get_type(info.indexes.back().first))) {
           if (ROOT_INDEX < info.indexes.back().second &&
               info.indexes.back().second < StTy->getNumElements()) {
-            generateWarning(I, "[Before] Looking for alloc alias");
+            STFREE_LOG(I, "[Before] Looking for alloc alias");
             if (const UniqueKey *src_uk =
                     this->getFunctionInformation()
                         ->getBasicBlockInformation(&B)
                         ->getWorkList(ALLOCATED)
                         .getFromType(
                             StTy->getElementType(info.indexes.back().second))) {
-              generateWarning(I, "[After] Found alloc alias", true);
+              STFREE_LOG(I, "[After] Found alloc alias");
               const UniqueKey *dest_uk =
                   getFunctionInformation()->addAllocValue(
                       &B, NULL,
@@ -73,16 +78,18 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
               if (getFunctionInformation()->checkAndPopPendingAliasedAlloc(
                       src_uk)) {
-                generateWarning(
+                STFREE_LOG(
                     I, "[After] Found alloc alias in pendling aliased alloc");
                 getFunctionInformation()->setUniqueKeyAlias(dest_uk, src_uk);
               }
             } else if (isDirectStoreFromAlloc(SI)) {
-              generateWarning(I, "[After] Found alloc alias as direct store");
+              STFREE_LOG(I, "[After] Found alloc alias as direct store");
               getFunctionInformation()->addAllocValue(
                   &B, NULL, StTy->getElementType(info.indexes.back().second),
                   info.indexes.back().second);
             } else {
+              // At least, so far, we do not know if the storer is allocated or
+              // not.
               if (auto CastI = llvm::dyn_cast<llvm::CastInst>(addVal)) {
                 addVal = CastI->getOperand(0);
               }
@@ -97,17 +104,28 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                     info.indexes.back().second);
               }
             }
+
             // Look at the parent and see if that is allocated or not.
-            // if the parent is neither allocated or is arg value, then consider
-            // that value as local variable and add it to the local variable
-            // list
+            // llvm::GetElementPtrInst *root_gele = this->getRootGEle(GEle);
+            // if (info.indexes.size() > 0 &&
+            //     !this->getFunctionInformation()
+            //          ->getBasicBlockInformation(&B)
+            //          ->getWorkList(ALLOCATED)
+            //          .typeExists(root_gele->getPointerOperandType()) &&
+            //     get_type(root_gele->getPointerOperandType())->isStructTy() &&
+            //     !getFunctionInformation()->isArgValue(addVal)) {
+            //   STFREE_LOG_ON(SI, "Not allocated nor is an argument val");
+            //   getFunctionInformation()->addLocalVar(
+            //       &B, get_type(root_gele->getPointerOperandType()), addVal,
+            //       SI);
+            // }
           }
         }
       }
     }
   } else if (this->isStoreToStruct(SI)) {
     if (llvm::StructType *StTy = this->getStoreeStruct(SI)) {
-      generateWarning(SI, "is Store To Struct");
+      STFREE_LOG(SI, "is Store To Struct");
       if (llvm::StructType *SrcTy = this->getStorerStruct(SI)) {
         if (StTy != SrcTy && get_type(StTy->getElementType(0)) == SrcTy) {
           if (const UniqueKey *src_uk =
@@ -125,28 +143,28 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
   /*** Check the Value of the StoreInst ***/
   if (this->isStoreFromStructMember(SI)) {
-    generateWarning(SI, "is Store from struct member", true);
+    STFREE_LOG(SI, "is Store from struct member");
     // if (info.freeValue) {
     //   llvm::outs() << *info.freeValue << "\n";
     //   // getFunctionInformation()->setAlias(GEle, SI->getPointerOperand());
     // }
   } else if (this->isStoreFromStruct(SI)) {
-    generateWarning(SI, "is Store from struct", true);
+    STFREE_LOG(SI, "is Store from struct");
     valueEle.set(llvm::cast<llvm::StructType>(
                      get_type(SI->getValueOperand()->getType())),
                  ROOT_INDEX);
     if (llvm::StructType *SrcTy = this->getStorerStruct(SI)) {
-      generateWarning(SI, "Found Storer Struct", true);
+      STFREE_LOG(SI, "Found Storer Struct");
     }
   }
 
   if (valueEle.stTy != NULL && pointerEle.stTy != NULL) {
-    generateWarning(SI, "Add to Relationship Manager");
+    STFREE_LOG(SI, "Add to Relationship Manager");
     getTypeRelationManager()->add(valueEle, pointerEle);
   }
 
   // if(get_type(SI->getValueOperand()->getType())->isFunctionTy()) {
-  //     generateWarning(SI, "is Function Type");
+  //     STFREE_LOG(SI, "is Function Type");
   //     getFunctionInformation()->addFunctionPointerInfo(SI->getPointerOperand(),
   //     cast<Function>(SI->getValueOperand()));
   // }
@@ -162,25 +180,24 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
   if (CI->isIndirectCall()) {
     if (llvm::LoadInst *LI =
             llvm::dyn_cast<llvm::LoadInst>(CI->getCalledValue())) {
-      generateWarning(CI, "Found Indirect Called Function", true);
+      STFREE_LOG(CI, "Found Indirect Called Function");
       std::vector<std::pair<llvm::Type *, int>> typeList;
       if (const llvm::DebugLoc &Loc = CI->getDebugLoc()) {
         std::string path = std::string(Loc->getFilename());
         this->getStructParents(LI, typeList);
         if (typeList.size() > 0) {
-          generateWarning(CI, "Found Indirect stored struct member", true);
+          STFREE_LOG(CI, "Found Indirect stored struct member");
           if (auto parent_type = llvm::dyn_cast<llvm::StructType>(
                   get_type(typeList.back().first))) {
             if (getStructManager()->exists(parent_type)) {
-              generateWarning(CI, "Exists in struct manager", true);
+              STFREE_LOG(CI, "Exists in struct manager");
               if (parent_type->hasName())
-                generateWarning(CI, parent_type->getName(), true);
+                STFREE_LOG(CI, parent_type->getName());
               for (llvm::Function *called_function :
                    getStructManager()
                        ->get(parent_type)
                        ->getFunctionPtr(typeList.back().second, path)) {
-                generateWarning(CI, "[INDIRECT]Found indirect call candidate",
-                                true);
+                STFREE_LOG(CI, "[INDIRECT]Found indirect call candidate");
                 funcLists.push_back(called_function);
               }
             }
@@ -210,7 +227,7 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
 
   for (llvm::Function *called_function : funcLists) {
     if (called_function && called_function->hasName())
-      generateWarning(CI, called_function->getName(), true);
+      STFREE_LOG(CI, called_function->getName());
 
     if (isAllocFunction(called_function)) {
       this->addAlloc(CI, &B);
@@ -238,7 +255,7 @@ void StageOneAnalyzer::analyzeBranchInst(llvm::Instruction *I,
                                          llvm::BasicBlock &B) {
   llvm::BranchInst *BI = llvm::cast<llvm::BranchInst>(I);
   if (BI->isConditional()) {
-    generateWarning(I, "Calling is conditional");
+    STFREE_LOG_ON(I, "Calling is conditional");
     if (auto ICI = llvm::dyn_cast<llvm::ICmpInst>(BI->getCondition())) {
       if (this->isCallInstReturnValue(ICI->getOperand(0))) {
         this->analyzeErrorCode(BI, ICI, B);
@@ -254,14 +271,14 @@ void StageOneAnalyzer::analyzeBranchInst(llvm::Instruction *I,
       }
     }
   } else {
-    generateWarning(BI, "Is unconditional branch");
+    STFREE_LOG(BI, "Is unconditional branch");
     this->getFunctionInformation()
         ->getBasicBlockInformation(&B)
         ->setUnconditionalBranched();
   }
 
   if (this->isCorrectlyBranched(BI)) {
-    generateWarning(BI, "Correctly Branched");
+    STFREE_LOG(BI, "Correctly Branched");
     getFunctionInformation()->setCorrectlyBranched(&B);
   }
 }
@@ -270,7 +287,7 @@ void StageOneAnalyzer::analyzeBranchInst(llvm::Instruction *I,
 void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
                                          llvm::BasicBlock &B) {
   llvm::SwitchInst *SwI = llvm::cast<llvm::SwitchInst>(I);
-  STFREE_LOG_ON(SwI, "[SWITCH] inst found");
+  STFREE_LOG(SwI, "[SWITCH] inst found");
   int found_error_case = 0;
 
   if (auto ICI = llvm::dyn_cast<llvm::ICmpInst>(SwI->getCondition())) {
@@ -289,29 +306,28 @@ void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
   } else if (llvm::CallInst *CI =
                  llvm::dyn_cast<llvm::CallInst>(SwI->getCondition())) {
     if (getCalledFunction(CI)) {
-      STFREE_LOG_ON(I, "[SWITCH] inst looking at is error call inst");
+      STFREE_LOG(I, "[SWITCH] inst looking at is error call inst");
 
       BasicBlockWorkList allocated_on_err;
       for (auto ele : this->getErrorAllocInCalledFunction(CI, 0)) {
         allocated_on_err.add(ele);
       }
-      STFREE_LOG_ON(CI, "Allocated Err: " +
-                            std::to_string(allocated_on_err.getList().size()));
+      STFREE_LOG(CI, "Allocated Err: " +
+                         std::to_string(allocated_on_err.getList().size()));
 
       BasicBlockWorkList allocated_on_success;
       for (auto ele : this->getSuccessAllocInCalledFunction(CI)) {
         allocated_on_success.add(ele);
       }
-      STFREE_LOG_ON(CI,
-                    "Allocated Success: " +
-                        std::to_string(allocated_on_success.getList().size()));
+      STFREE_LOG(CI, "Allocated Success: " +
+                         std::to_string(allocated_on_success.getList().size()));
 
       // 2. Success diff allocated_on_err is pure non allocated in err
       BasicBlockList diff_list = BasicBlockListOperation::diffList(
           allocated_on_success.getList(), allocated_on_err.getList());
 
-      STFREE_LOG_ON(
-          CI, "[IS_ERROR] Diff list: " + std::to_string(diff_list.size()));
+      STFREE_LOG(CI,
+                 "[IS_ERROR] Diff list: " + std::to_string(diff_list.size()));
 
       for (auto case_element : SwI->cases()) {
         STFREE_LOG_ON(SwI, "Switch inst looking at condition");
@@ -341,21 +357,27 @@ void StageOneAnalyzer::analyzeSwitchInst(llvm::Instruction *I,
 void StageOneAnalyzer::analyzeGetElementPtrInst(llvm::Instruction *I,
                                                 llvm::BasicBlock &B) {
   llvm::GetElementPtrInst *GEleI = llvm::cast<llvm::GetElementPtrInst>(I);
-  struct collectedInfo info;
-  ParentList plist;
+  // struct collectedInfo info;
+  // ParentList plist;
 
-  // generateWarning(GEleI, "found GetElementPtrInst", true);
-  this->collectStructMemberFreeInfo(GEleI, info, plist);
+  // Check and see if the parent is local variable or not
+  // STFREE_LOG(GEleI, "found GetElementPtrInst");
+  // this->collectStructMemberFreeInfo(GEleI, info, plist);
 
-  if (info.indexes.size() > 0) {
-    if (auto StTy = llvm::dyn_cast<llvm::StructType>(
-            get_type(info.indexes.back().first))) {
-      if (ROOT_INDEX < info.indexes.back().second &&
-          info.indexes.back().second < StTy->getNumElements()) {
-        generateWarning(I, "[Before] Found alloc alias");
-      }
-    }
-  }
+  // Look at the parent and see if that is allocated or not.
+  // llvm::GetElementPtrInst *root_gele = this->getRootGEle(GEleI);
+  // if (info.indexes.size() > 0 &&
+  //     !this->getFunctionInformation()
+  //          ->getBasicBlockInformation(&B)
+  //          ->getWorkList(ALLOCATED)
+  //          .typeExists(root_gele->getPointerOperandType()) &&
+  //     get_type(root_gele->getPointerOperandType())->isStructTy() &&
+  //     !getFunctionInformation()->isArgValue(info.freeValue)) {
+  //   STFREE_LOG(GEleI, "Not allocated nor is an argument val");
+  //   getFunctionInformation()->addLocalVar(
+  //       &B, get_type(root_gele->getPointerOperandType()), info.freeValue,
+  //       GEleI);
+  // }
   return;
 }
 
@@ -374,9 +396,9 @@ void StageOneAnalyzer::checkAvailability() {
       // Add to Allocated
       if (getFunctionInformation()->isAllocatedInBasicBlock(
               freedStruct->getFreedBlock(), NULL, t, ind)) {
-        generateWarning(freedStruct->getInst(),
-                        "[INDEXED VERSION] Allocated(second) + ind :" +
-                            std::to_string(ind));
+        STFREE_LOG(freedStruct->getInst(),
+                   "[INDEXED VERSION] Allocated(second) + ind :" +
+                       std::to_string(ind));
         getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
       }
 
@@ -388,12 +410,8 @@ void StageOneAnalyzer::checkAvailability() {
       }
     }
 
-    // if (freedStruct->isInStruct() ||
-    //     !getFunctionInformation()->isArgValue(freedStruct->getValue())) {
     getStructManager()->addCandidateValue(
         &(getFunctionInformation()->getFunction()), strTy, freedStruct);
-    // }
   }
-  return;
 }
 }  // namespace ST_free

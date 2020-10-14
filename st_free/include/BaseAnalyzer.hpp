@@ -22,6 +22,7 @@ class BaseAnalyzer {
     FEle = identifier.getElement(func);
     stManage = stm;
     dat_layout = dl;
+    InstAnalysisMap[llvm::Instruction::Alloca] = &BaseAnalyzer::analyzeAllocaInst;
     InstAnalysisMap[llvm::Instruction::Call] = &BaseAnalyzer::analyzeCallInst;
     InstAnalysisMap[llvm::Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
     InstAnalysisMap[llvm::Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
@@ -34,6 +35,7 @@ class BaseAnalyzer {
   BaseAnalyzer(StructManager *stm, const llvm::DataLayout *dl) {
     stManage = stm;
     dat_layout = dl;
+    InstAnalysisMap[llvm::Instruction::Alloca] = &BaseAnalyzer::analyzeAllocaInst;
     InstAnalysisMap[llvm::Instruction::Call] = &BaseAnalyzer::analyzeCallInst;
     InstAnalysisMap[llvm::Instruction::Store] = &BaseAnalyzer::analyzeStoreInst;
     InstAnalysisMap[llvm::Instruction::Br] = &BaseAnalyzer::analyzeBranchInst;
