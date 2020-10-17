@@ -12,6 +12,7 @@
 #define UNALLOCATED 5
 #define PRIMITIVE 6
 #define SELF_DEREFERENCE 7
+#define IS_DATA_STRUCT_NODE 8
 
 #define THREASHOLD 0.0
 
@@ -96,6 +97,7 @@ class StructInformation {
   void setMemberStatResponsible(int num);
   void setMemberStatNotResponsible(int num);
   void setMemberStatNotAllocated(int num);
+  void setMemberStatIsDataStructNode(int num);
   void addCandidateValue(llvm::Function *F, FreedStruct *fs);
   void print();
   void PrintJson();
@@ -148,6 +150,10 @@ class StructInformation {
     return false;
   };
 
+  bool isDataStructNode() {
+	return dataStructNode;
+  };
+
  private:
   struct storeCount {
     int total;
@@ -170,6 +176,8 @@ class StructInformation {
   int negativeCount;
   unsigned int allocNum;
   std::vector<CandidateValue *> candidates;
+  bool dataStructNode;
+
   bool judgeResponsibility(int ind);
   bool isBidirectionalReferencing(CandidateValue *cand, int ind);
   unsigned int getAllocNum() { return allocNum; };

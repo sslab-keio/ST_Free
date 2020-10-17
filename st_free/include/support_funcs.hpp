@@ -14,6 +14,7 @@ llvm::LoadInst *find_load(llvm::Instruction *);
 llvm::Value *getLoadeeValue(llvm::Value *);
 llvm::Type *get_type(llvm::Value *);
 llvm::Type *get_type(llvm::Type *);
+llvm::Type *decode_array_type(llvm::Type *);
 void generateWarning(llvm::Instruction *, std::string, bool print = false);
 void generateWarning(std::string warn);
 void generateWarning(llvm::Instruction *Inst, llvm::Value *val);

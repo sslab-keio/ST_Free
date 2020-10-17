@@ -17,6 +17,8 @@ const std::vector<std::string> err_funcs = {"IS_ERR"};
 
 const std::vector<std::string> specialized_free_funcs = {"put_device", "kobject_put"};
 
+const std::vector<std::string> data_struct_node = {"struct.list_head", "struct.rb_node"};
+
 namespace ST_free {
 bool isAllocFunction(llvm::Function *F) {
   if (F && F->hasName()) {
@@ -43,6 +45,24 @@ bool isIsErrFunction(llvm::Function *F) {
 bool isSpecializedFreeFunction(llvm::Function* F) {
   if (F && F->hasName()) {
     return findFunctionName(F->getName(), specialized_free_funcs);
+  }
+  return false;
+}
+
+bool isStructDataStructNode(llvm::StructType *StTy) {
+  if (StTy && StTy->hasName()) {
+		std::string name = StTy->getName();
+		auto itr = find_if(
+				data_struct_node.begin(),
+				data_struct_node.end(),
+				[name](std::string str) {
+			// size_t ind = name.find_last_of(".");
+			// std::string tgt = ind != std::string::npos ? name.substr(0, ind) : name;
+			// llvm::outs() << tgt << "\n";
+			return str.compare(name) == 0;
+		});
+
+		if (itr != data_struct_node.end()) return true;
   }
   return false;
 }

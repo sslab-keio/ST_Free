@@ -67,6 +67,14 @@ llvm::Type* get_type(llvm::Type* t) {
   return val_type;
 }
 
+llvm::Type *decode_array_type(llvm::Type *arr_ty) {
+	llvm::Type *ty = arr_ty;
+	while(ty->isArrayTy()) {
+		ty = ty->getArrayElementType();
+	}
+	return ty;
+}
+
 void generateWarning(llvm::Instruction* Inst, std::string warn, bool print) {
   if (const llvm::DebugLoc& Loc = Inst->getDebugLoc()) {
     unsigned line = Loc.getLine();

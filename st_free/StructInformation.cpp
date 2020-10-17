@@ -4,6 +4,7 @@ namespace ST_free {
 StructInformation::StructInformation(llvm::StructType *st) {
   int ind = 0;
   strTy = st;
+	dataStructNode = false;
 
   memberStats = std::vector<int>(st->getNumElements(), ISUNKNOWN);
   freedCounts = std::vector<int>(st->getNumElements(), 0);
@@ -19,7 +20,7 @@ StructInformation::StructInformation(llvm::StructType *st) {
 
   for (llvm::Type *ty : st->elements()) {
     if (!(ty->isPointerTy() ||
-          (ty->isArrayTy() && ty->getArrayElementType()->isPointerTy())))
+          (ty->isArrayTy() && decode_array_type(ty)->isPointerTy())))
       memberStats[ind] = NOTPOINTERTY;
     else if (get_type(ty)->isFunctionTy())
       memberStats[ind] = ISNOTRESPONSIBLE;
@@ -28,6 +29,14 @@ StructInformation::StructInformation(llvm::StructType *st) {
       memberStats[ind] = PRIMITIVE;
     else if (st == get_type(ty))
       memberStats[ind] = SELF_DEREFERENCE;
+		
+		if (auto StTy = llvm::dyn_cast<llvm::StructType>(ty)) {
+			if (isStructDataStructNode(StTy)) {
+				if (StTy->hasName())
+					llvm::outs() << "[STAT] struct data struct node: " << StTy->getName() << "\n";
+				dataStructNode = true;
+			}
+		}
     ind++;
   }
 }
@@ -150,6 +159,10 @@ void StructInformation::setMemberStatNotAllocated(int num) {
 
 void StructInformation::setMemberStatUnknown(int num) {
   if (num < memberStats.size()) memberStats[num] = ISUNKNOWN;
+}
+
+void StructInformation::setMemberStatIsDataStructNode(int num) {
+  if (num < memberStats.size()) memberStats[num] = IS_DATA_STRUCT_NODE;
 }
 
 void StructInformation::addCandidateValue(llvm::Function *F, FreedStruct *fs) {
@@ -331,7 +344,7 @@ void StructManager::createDependencies() {
   while (!struct_queue.empty()) {
     for (unsigned i = 0; i < struct_queue.front()->getNumElements(); i++) {
       llvm::Type *member = struct_queue.front()->getElementType(i);
-      if (member->isArrayTy()) member = member->getArrayElementType();
+      if (member->isArrayTy()) member = decode_array_type(member);
       if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
         if (!this->exists(stTy)) {
           StructInfo[stTy] = new StructInformation(stTy);
@@ -349,15 +362,21 @@ void StructManager::changeStats() {
     for (unsigned ind = 0; ind < Stmap.first->getNumElements(); ind++) {
       llvm::Type *member = Stmap.first->getElementType(ind);
       if (this->get(Stmap.first)->isUnknown(ind)) {
-        if (member->isArrayTy() && member->getArrayElementType()->isPointerTy())
+        if (member->isArrayTy() && decode_array_type(member)->isPointerTy())
           member = member->getArrayElementType();
-        if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member)))
+				if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
           if (StructInfo[stTy]->hasSingleReferee() &&
               !StructInfo[stTy]->isSelfDereference(ind))
             StructInfo[Stmap.first]->setMemberStatResponsible(ind);
+
+					if (this->get(stTy)->isDataStructNode()) {
+            StructInfo[Stmap.first]->setMemberStatIsDataStructNode(ind);
+					}
+				}
       }
-    }
-  }
+
+		}
+	}
 }
 
 void StructManager::addCandidateValue(llvm::Function *F,

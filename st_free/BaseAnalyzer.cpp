@@ -630,7 +630,6 @@ void BaseAnalyzer::checkAndChangeActualAuthority(llvm::StoreInst *SI) {
     llvm::GetElementPtrInst *GEle = getStoredStruct(SI);
     // ParentList indexes;
     // this->getStructParents(GEle, indexes);
-
     if (GEle && llvm::isa<llvm::StructType>(GEle->getSourceElementType())) {
       STFREE_LOG(SI, "Found StoreInst to struct member");
 
