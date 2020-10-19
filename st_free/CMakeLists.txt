@@ -4,6 +4,7 @@ option(BUILD_OPTION_BIDIRECTIONAL "build with bidirectional" off)
 option(BUILD_STAGE_TWO "build with stage two" off)
 
 option(BUILD_OPTION_NESTED "build with nested option" off)
+option(BUILD_OPTION_LOCAL_VARIABLE "build with nested option" off)
 
 if (BUILD_STAGE_ONE)
     add_definitions(-DSTAGE_ONE)
@@ -21,8 +22,12 @@ if (BUILD_STAGE_PRIMITIVE)
     add_definitions(-DSTAGE_PRIMITIVE)
 endif()
 
-if (BUILD_OPTIONAL_NESTED)
+if (BUILD_OPTION_NESTED)
     add_definitions(-DOPTION_NESTED)
+endif()
+
+if (BUILD_OPTION_LOCAL_VARIABLE)
+	add_definitions(-DLOCAL_VARIABLE_ANALYSIS)
 endif()
 
 add_library(StructFreeMod MODULE

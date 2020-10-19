@@ -136,6 +136,7 @@ class BaseAnalyzer {
   void analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI, llvm::BasicBlock &B);
   void analyzeErrorCheckFunction(llvm::BranchInst *BI, llvm::CallInst *CI, llvm::BasicBlock &B);
   BasicBlockWorkList getErrorValues(llvm::Instruction *I, llvm::BasicBlock &B, int errcode);
+  BasicBlockWorkList getErrorFreedValues(llvm::Instruction *I, llvm::BasicBlock &B, int errcode);
   BasicBlockWorkList getSuccessValues(llvm::Instruction *I, llvm::BasicBlock &B);
   bool errorCodeExists(llvm::Instruction *I, llvm::BasicBlock &B, int errcode);
   llvm::Value *getComparedValue(llvm::ICmpInst *ICI);
@@ -198,6 +199,10 @@ class BaseAnalyzer {
   llvm::GetElementPtrInst *getRootGEle(llvm::GetElementPtrInst *GEle);
   llvm::Type *extractResultElementType(llvm::GetElementPtrInst *GEle);
   void reversePropagateErrorBlockFreeInfo();
+  std::pair<llvm::BasicBlock *, int> getLastUseBlock(
+		  llvm::Instruction*,
+		  std::vector<llvm::Instruction*> = std::vector<llvm::Instruction*>(),
+		  int max_itr = 3);
 
   /*** connector with struct manager***/
   bool isAuthorityChained(ParentList);

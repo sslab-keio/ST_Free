@@ -32,8 +32,6 @@ StructInformation::StructInformation(llvm::StructType *st) {
 		
 		if (auto StTy = llvm::dyn_cast<llvm::StructType>(ty)) {
 			if (isStructDataStructNode(StTy)) {
-				if (StTy->hasName())
-					llvm::outs() << "[STAT] struct data struct node: " << StTy->getName() << "\n";
 				dataStructNode = true;
 			}
 		}

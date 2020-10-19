@@ -12,9 +12,16 @@ void StageOneAnalyzer::analyzeInstructions(llvm::BasicBlock &B) {
 void StageOneAnalyzer::analyzeAllocaInst(llvm::Instruction *I,
                                          llvm::BasicBlock &B) {
   llvm::AllocaInst *AI = llvm::cast<llvm::AllocaInst>(I);
+#ifdef LOCAL_VARIABLE_ANALYSIS
   if (AI->getAllocatedType()->isStructTy()) {
     getFunctionInformation()->appendLocalVariable(AI);
+    llvm::BasicBlock *tgt = getLastUseBlock(AI).first;
+    if (auto NAI = llvm::dyn_cast<llvm::Instruction>(AI->user_back())) {
+      getFunctionInformation()->addLocalVar(tgt, AI->getAllocatedType(), AI,
+                                            NAI);
+    }
   }
+#endif
 }
 
 void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
