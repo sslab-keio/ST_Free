@@ -199,18 +199,19 @@ void StageOneAnalyzer::analyzeCallInst(llvm::Instruction *I,
             if (getStructManager()->exists(parent_type)) {
               STFREE_LOG(CI, "Exists in struct manager");
               if (parent_type->hasName())
-                STFREE_LOG(CI, parent_type->getName());
+                STFREE_LOG_ON(CI, parent_type->getName());
               for (llvm::Function *called_function :
-                   getStructManager()
-                       ->get(parent_type)
-                       ->getFunctionPtr(typeList.back().second, path)) {
-                STFREE_LOG(CI, "[INDIRECT]Found indirect call candidate");
+                   getStructManager()->getFunctionPtrWithStructName(
+                       parent_type, typeList.back().second, path)) {
+                STFREE_LOG_ON(CI, "[INDIRECT]Found indirect call candidate");
                 funcLists.push_back(called_function);
               }
             }
           }
         }
       }
+      STFREE_LOG_ON(CI, "Found Indirect Called Function: " +
+                            std::to_string(funcLists.size()));
     }
   }
 
@@ -270,6 +271,8 @@ void StageOneAnalyzer::analyzeBranchInst(llvm::Instruction *I,
 
       if (llvm::isa<llvm::ConstantPointerNull>(ICI->getOperand(1))) {
         this->analyzeNullCheck(BI, ICI, B);
+      } else if (llvm::isa<llvm::ConstantInt>(ICI->getOperand(1))) {
+        // this->analyzeOptimizedNullCheck(BI, ICI, B);
       }
     } else if (llvm::CallInst *CI =
                    llvm::dyn_cast<llvm::CallInst>(BI->getCondition())) {

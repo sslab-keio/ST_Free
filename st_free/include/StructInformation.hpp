@@ -55,8 +55,8 @@ struct globalVarInfo {
  **/
 class FunctionPtrMap {
  public:
-  FunctionPtrMap(){this->path = "/";}
-  FunctionPtrMap(std::string path){this->path = path;}
+  FunctionPtrMap() { this->path = "/"; }
+  FunctionPtrMap(std::string path) { this->path = path; }
   void addFunction(std::string path, llvm::Function *func);
   std::vector<llvm::Function *> getFunctionCandidates(std::string path);
   std::pair<std::string, std::string> decodeDirName(std::string path);
@@ -150,9 +150,7 @@ class StructInformation {
     return false;
   };
 
-  bool isDataStructNode() {
-	return dataStructNode;
-  };
+  bool isDataStructNode() { return dataStructNode; };
 
  private:
   struct storeCount {
@@ -222,9 +220,13 @@ class StructManager {
   void addGlobalVariableInitInfo(llvm::Module &M);
   bool structHoldsAuthority(llvm::StructType *StTy, long ind);
   void markNoAlloc();
+  std::string decodeStructName(llvm::StructType *StTy);
+  std::vector<llvm::Function *> getFunctionPtrWithStructName(
+      llvm::StructType *StTy, int ind, std::string path = "");
 
  private:
   std::map<llvm::StructType *, StructInformation *> StructInfo;
+  std::map<std::string, std::vector<llvm::StructType *>> NameManager;
   TypeRelationManager tyRel;
   void addReferee(llvm::StructType *referee, llvm::StructType *tgt);
   void createDependencies();

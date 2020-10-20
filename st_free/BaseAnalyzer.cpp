@@ -336,6 +336,7 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
       this->collectStructMemberFreeInfo(val, info, additionalParents);
     } else if (isOptimizedStructEleFree(val)) {
       STFREE_LOG_ON(CI, "Optimized Struct Element Free");
+      this->collectOptimizedStructMemberFreeInfo(val, info, additionalParents);
     }
 
     if (isStructFree(val)) {
@@ -382,12 +383,12 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 
   if (info.freeValue && !getFunctionInformation()->isFreedInBasicBlock(
                             B, info.freeValue, info.memType, info.index)) {
-    STFREE_LOG(CI, "Adding Free Value");
+    STFREE_LOG_ON(CI, "Adding Free Value");
     ValueInformation *valInfo = getFunctionInformation()->addFreeValue(
         B, NULL, info.memType, info.index, info.indexes);
 
     if (getFunctionInformation()->isArgValue(info.freeValue)) {
-      STFREE_LOG(CI, "Add Free Arg");
+      STFREE_LOG_ON(CI, "Add Free Arg");
       valInfo->setArgNumber(
           getFunctionInformation()->getArgIndex(info.freeValue));
       // if (!info.parentType)
@@ -825,7 +826,7 @@ bool BaseAnalyzer::isStructEleFree(llvm::Instruction *val) {
   if (l_inst && l_inst->getOperandList()) {
     llvm::Value *V = l_inst->getPointerOperand();
     if (auto bit_cast_inst = llvm::dyn_cast<llvm::BitCastInst>(V)) {
-      STFREE_LOG(val, "found BitCast");
+      STFREE_LOG_ON(val, "found BitCast");
       V = bit_cast_inst->getOperand(0);
     }
     // if (auto itoptr_inst = llvm::dyn_cast<llvm::IntToPtrInst>(V)) {
@@ -873,13 +874,41 @@ bool BaseAnalyzer::isOptimizedStructFree(llvm::Instruction *I) {
 }
 
 bool BaseAnalyzer::isOptimizedStructEleFree(llvm::Instruction *I) {
-  if (auto cast_inst = llvm::dyn_cast<llvm::CastInst>(I)) {
-    generateWarning(I, "Found cast inst here", true);
+  llvm::Instruction *tgt_inst = I;
+  llvm::LoadInst *l_inst = find_load(I);
+  if (l_inst && l_inst->getOperandList()) {
+    if (auto bit_cast_inst =
+            llvm::dyn_cast<llvm::BitCastInst>(l_inst->getPointerOperand())) {
+      STFREE_LOG_ON(tgt_inst, "found BitCast");
+      tgt_inst = bit_cast_inst;
+    }
+  }
+
+  if (auto cast_inst = llvm::dyn_cast<llvm::CastInst>(tgt_inst)) {
+    STFREE_LOG_ON(tgt_inst, "Found cast inst here");
     if (auto StTy =
             llvm::dyn_cast<llvm::StructType>(get_type(cast_inst->getSrcTy()))) {
-      generateWarning(I, "src is struct", true);
-      if (StTy->getNumElements() > 0)
-        return StTy->getElementType(0) == get_type(cast_inst->getDestTy());
+      STFREE_LOG_ON(tgt_inst, "src is struct");
+      if (StTy->getNumElements() > 0) {
+        if (!get_type(cast_inst->getDestTy())->isIntegerTy()) {
+          return StTy->getElementType(0) == get_type(cast_inst->getDestTy());
+        } else if (l_inst) {
+          // Value optimized to a non detectable type. If it is integer and
+          // uses itoptr later on to decode ptr, consider it as struct member
+          // This is specific to some of the struct frees that involve rcu locks
+          // and is optimized with compiler optimization
+          llvm::Type *potential_type = cast_inst->getDestTy();
+          for (auto user : l_inst->users()) {
+            if (auto CI = llvm::dyn_cast<llvm::CastInst>(user)) {
+              if (CI->getDestTy() != cast_inst->getDestTy()) {
+                potential_type = CI->getDestTy();
+              }
+            }
+          }
+          STFREE_LOG(tgt_inst, "optimized out to integer");
+          return StTy->getElementType(0) == potential_type;
+        }
+      }
     }
   }
   return false;
@@ -1080,6 +1109,33 @@ void BaseAnalyzer::collectStructMemberFreeInfo(
   return;
 }
 
+void BaseAnalyzer::collectOptimizedStructMemberFreeInfo(
+    llvm::Instruction *I, struct BaseAnalyzer::collectedInfo &info,
+    ParentList &additionalParents) {
+  llvm::Instruction *tgt_inst = I;
+  llvm::LoadInst *l_inst = find_load(I);
+  if (l_inst && l_inst->getOperandList()) {
+    if (auto bit_cast_inst =
+            llvm::dyn_cast<llvm::BitCastInst>(l_inst->getPointerOperand())) {
+      STFREE_LOG_ON(tgt_inst, "found BitCast");
+      tgt_inst = bit_cast_inst;
+    }
+  }
+
+  if (auto cast_inst = llvm::dyn_cast<llvm::CastInst>(tgt_inst)) {
+    STFREE_LOG_ON(tgt_inst, "Found cast inst here");
+    llvm::Type *potential_type = cast_inst->getDestTy();
+    if (auto StTy =
+            llvm::dyn_cast<llvm::StructType>(get_type(cast_inst->getSrcTy()))) {
+      STFREE_LOG_ON(tgt_inst, "src is struct");
+      additionalParents.push_back(std::pair<llvm::Type *, int>(StTy, 0));
+    }
+  }
+
+  collectStructMemberFreeInfo(tgt_inst, info, additionalParents);
+  return;
+}
+
 void BaseAnalyzer::collectSimpleFreeInfo(
     llvm::Instruction *I, struct BaseAnalyzer::collectedInfo &info) {
   UpdateIfNull(info.freeValue, getFreedValue(I));
@@ -1249,7 +1305,7 @@ void BaseAnalyzer::analyzeErrorCode(llvm::SwitchInst *SwI, llvm::ICmpInst *ICI,
 
 void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
                                     llvm::BasicBlock &B) {
-  STFREE_LOG(BI, "Analyze NULL Check");
+  STFREE_LOG_ON(BI, "Analyze NULL Check");
   BasicBlockWorkList BList;
 
   // Get which basicblock to pass the data to
@@ -1283,6 +1339,33 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
         ->getBasicBlockInformation(&B)
         ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
   }
+}
+
+void BaseAnalyzer::analyzeOptimizedNullCheck(llvm::BranchInst *BI,
+                                             llvm::ICmpInst *ICI,
+																						 llvm::BasicBlock &B) {
+  STFREE_LOG_ON(BI, "Analyze NULL Check");
+  int op = this->getErrorOperand(ICI);
+	if (op < 0)
+		return;
+  llvm::BasicBlock *errBlock = BI->getSuccessor(op);
+
+	llvm::IntToPtrInst* ITPI = NULL;
+	if (auto LI = llvm::dyn_cast<llvm::LoadInst>(ICI->getOperand(0))) {
+		for (auto user : LI->users()) {
+			if (auto itoptr = llvm::dyn_cast<llvm::IntToPtrInst>(user)) {
+				if (!get_type(itoptr->getDestTy())->isIntegerTy()) {
+					ITPI = itoptr;
+				}
+			}
+		}
+	}
+
+	if (ITPI == NULL)
+		return;
+
+  // llvm::Value *comVal = this->getComparedValue(ICI);
+  // llvm::Type *Ty = this->getComparedType(comVal, B);
 }
 
 void BaseAnalyzer::analyzeErrorCheckFunction(llvm::BranchInst *BI,

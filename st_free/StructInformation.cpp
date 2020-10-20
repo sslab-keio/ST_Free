@@ -4,7 +4,7 @@ namespace ST_free {
 StructInformation::StructInformation(llvm::StructType *st) {
   int ind = 0;
   strTy = st;
-	dataStructNode = false;
+  dataStructNode = false;
 
   memberStats = std::vector<int>(st->getNumElements(), ISUNKNOWN);
   freedCounts = std::vector<int>(st->getNumElements(), 0);
@@ -29,12 +29,12 @@ StructInformation::StructInformation(llvm::StructType *st) {
       memberStats[ind] = PRIMITIVE;
     else if (st == get_type(ty))
       memberStats[ind] = SELF_DEREFERENCE;
-		
-		if (auto StTy = llvm::dyn_cast<llvm::StructType>(ty)) {
-			if (isStructDataStructNode(StTy)) {
-				dataStructNode = true;
-			}
-		}
+
+    if (auto StTy = llvm::dyn_cast<llvm::StructType>(ty)) {
+      if (isStructDataStructNode(StTy)) {
+        dataStructNode = true;
+      }
+    }
     ind++;
   }
 }
@@ -317,8 +317,10 @@ void StructInformation::changeToNonRefered(llvm::StructType *StTy) {
 
 /*** [Struct Manager] ***/
 StructManager::StructManager(std::vector<llvm::StructType *> st) {
-  for (llvm::StructType *StrTy : st)
+  for (llvm::StructType *StrTy : st) {
     StructInfo[StrTy] = new StructInformation(StrTy);
+    if (StrTy->hasName()) NameManager[decodeStructName(StrTy)].push_back(StrTy);
+  }
   this->createDependencies();
   this->changeStats();
 }
@@ -362,19 +364,18 @@ void StructManager::changeStats() {
       if (this->get(Stmap.first)->isUnknown(ind)) {
         if (member->isArrayTy() && decode_array_type(member)->isPointerTy())
           member = member->getArrayElementType();
-				if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
+        if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
           if (StructInfo[stTy]->hasSingleReferee() &&
               !StructInfo[stTy]->isSelfDereference(ind))
             StructInfo[Stmap.first]->setMemberStatResponsible(ind);
 
-					if (this->get(stTy)->isDataStructNode()) {
+          if (this->get(stTy)->isDataStructNode()) {
             StructInfo[Stmap.first]->setMemberStatIsDataStructNode(ind);
-					}
-				}
+          }
+        }
       }
-
-		}
-	}
+    }
+  }
 }
 
 void StructManager::addCandidateValue(llvm::Function *F,
@@ -501,6 +502,45 @@ void StructManager::markNoAlloc() {
   }
 }
 
+std::string StructManager::decodeStructName(llvm::StructType *StTy) {
+  // Remove the linkage number from struct name
+  std::string decoded_name;
+
+  if (StTy->hasName()) {
+    int pos = 0;
+    int cnt = 0;
+    decoded_name = StTy->getName();
+    while ((pos = StTy->getName().find(".", pos)) != std::string::npos) {
+      if (++cnt == 2) decoded_name = decoded_name.substr(0, pos);
+      pos++;
+    }
+  }
+
+  return decoded_name;
+}
+
+std::vector<llvm::Function *> StructManager::getFunctionPtrWithStructName(
+    llvm::StructType *StTy, int ind, std::string path) {
+  std::vector<llvm::StructType *> candidate_structs;
+  std::vector<llvm::Function *> candidate_func_ptrs;
+
+  if (StTy->hasName())
+    candidate_structs = NameManager[decodeStructName(StTy)];
+  else
+    candidate_structs.push_back(StTy);
+
+  for (auto candidate : candidate_structs) {
+    if (exists(candidate) && StTy->isLayoutIdentical(candidate)) {
+      std::vector<llvm::Function *> func_ptr =
+          StructInfo[candidate]->getFunctionPtr(ind, path);
+      candidate_func_ptrs.insert(candidate_func_ptrs.end(), func_ptr.begin(),
+                                 func_ptr.end());
+    }
+  }
+
+  return candidate_func_ptrs;
+}
+
 std::pair<std::string, std::string> FunctionPtrMap::decodeDirName(
     std::string path) {
   if (path[0] == '/') path = path.substr(1);
@@ -517,7 +557,6 @@ void FunctionPtrMap::addFunction(std::string path, llvm::Function *func) {
   std::pair<std::string, std::string> paths = decodeDirName(path);
 
   if (paths.second != "") {
-    llvm::outs() << "[DECODED]" << paths.first << "\n";
     if (sub_dirs.find(paths.first) == sub_dirs.end())
       sub_dirs[paths.first] = FunctionPtrMap(paths.first);
     sub_dirs[paths.first].addFunction(paths.second, func);
@@ -529,7 +568,6 @@ std::vector<llvm::Function *> FunctionPtrMap::getFunctionCandidates(
     std::string candidate_path) {
   std::pair<std::string, std::string> paths = decodeDirName(candidate_path);
 
-  llvm::outs() << "[WALKTHROGH]" << paths.first << "\n";
   if (sub_dirs.find(paths.first) != sub_dirs.end() && paths.second != "")
     return sub_dirs[paths.first].getFunctionCandidates(paths.second);
 
