@@ -13,6 +13,7 @@
 #define PRIMITIVE 6
 #define SELF_DEREFERENCE 7
 #define IS_DATA_STRUCT_NODE 8
+#define IS_REFEREE_BIDIRECTIONAL 9
 
 #define THREASHOLD 0.0
 
@@ -98,6 +99,7 @@ class StructInformation {
   void setMemberStatNotResponsible(int num);
   void setMemberStatNotAllocated(int num);
   void setMemberStatIsDataStructNode(int num);
+  void setMemberStatIsRefereeBidirectional(int num);
   void addCandidateValue(llvm::Function *F, FreedStruct *fs);
   void print();
   void PrintJson();
@@ -149,7 +151,12 @@ class StructInformation {
       return memberStats[ind] == NOTPOINTERTY;
     return false;
   };
-
+  bool isRefereeBidirectionalReferencing(int ind) {
+    if (0 <= ind && ind < memberStats.size())
+      return memberStats[ind] == IS_REFEREE_BIDIRECTIONAL;
+    return false;
+  };
+  bool isRefereeBasedBidirectionalReferencing(int ind);
   bool isDataStructNode() { return dataStructNode; };
 
  private:

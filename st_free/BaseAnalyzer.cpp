@@ -399,9 +399,10 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
       //                                                     info.indexes);
       // }
     }
-    if (!isAlias && info.memType && get_type(info.memType)->isStructTy() &&
-        this->isAuthorityChained(info.indexes)) {
-      STFREE_LOG(CI, "Add Freed Struct");
+    if (!isAlias && info.memType && get_type(info.memType)->isStructTy() 
+				&& this->isAuthorityChained(info.indexes)
+				) {
+      STFREE_LOG_ON(CI, "Add Freed Struct");
       getFunctionInformation()->addFreedStruct(
           B, get_type(info.memType), info.freeValue, CI, info.parentType,
           valInfo, info.index != ROOT_INDEX);
@@ -445,6 +446,11 @@ void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
     getFunctionInformation()->addAliasedType(CI, Ty);
     getStructManager()->addAlloc(llvm::cast<llvm::StructType>(get_type(Ty)));
   }
+
+	if (getFunctionInformation()->getBasicBlockInformation(B)->isLoopBlock()) {
+    STFREE_LOG_ON(CI, "is allocated in loop");
+		return;
+	}
 
   const UniqueKey *UK =
       getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
@@ -730,10 +736,10 @@ std::vector<long> BaseAnalyzer::getValueIndices(llvm::GetElementPtrInst *inst) {
 
   llvm::Type *Ty = inst->getSourceElementType();
   auto idx_itr = inst->idx_begin();
-  if (!Ty->isIntegerTy()) idx_itr++;
+	if (llvm::isa<llvm::ConstantInt>(idx_itr->get())) {
+		if (!Ty->isIntegerTy()) idx_itr++;
+	}
 
-  // for(auto idx_itr = inst->idx_begin() + 1; idx_itr != inst->idx_end();
-  // idx_itr++) {
   for (; idx_itr != inst->idx_end(); idx_itr++) {
     if (llvm::ConstantInt *cint =
             llvm::dyn_cast<llvm::ConstantInt>(idx_itr->get()))
@@ -1020,7 +1026,9 @@ std::vector<std::pair<llvm::Type *, long>> BaseAnalyzer::decodeGEPInst(
       decoded.push_back(std::pair<llvm::Type *, long>(Ty, index));
       if (auto StTy = llvm::dyn_cast<llvm::StructType>(Ty))
         Ty = StTy->getElementType(index);
-    }
+		} else {
+			// decoded.push_back(std::pair<llvm::Type *, long>(NULL, ROOT_INDEX));
+		}
   }
 
   return decoded;

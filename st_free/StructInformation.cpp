@@ -128,6 +128,16 @@ bool StructInformation::isBidirectionalReferencing(CandidateValue *cand,
   return false;
 }
 
+bool StructInformation::isRefereeBasedBidirectionalReferencing(int ind) {
+  if (0 <= ind && ind < memberStats.size()) {
+    if (find(referees.begin(), referees.end(),
+             get_type(strTy->getElementType(ind))) != referees.end()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool StructInformation::judgeResponsibility(int ind) {
   int threashold = candidateNum * THREASHOLD;
   // outs() << ind << " " << threashold << " " << freedCounts[ind] << "\n";
@@ -163,6 +173,10 @@ void StructInformation::setMemberStatIsDataStructNode(int num) {
   if (num < memberStats.size()) memberStats[num] = IS_DATA_STRUCT_NODE;
 }
 
+void StructInformation::setMemberStatIsRefereeBidirectional(int num) {
+  if (num < memberStats.size()) memberStats[num] = IS_REFEREE_BIDIRECTIONAL;
+}
+
 void StructInformation::addCandidateValue(llvm::Function *F, FreedStruct *fs) {
   candidates.push_back(new CandidateValue(F, fs));
   candidateNum++;
@@ -187,9 +201,9 @@ void StructInformation::print() {
     llvm::outs() << "[Struct]: " << strTy->getName() << "\n";
   llvm::outs() << "[AllocNum]: " << allocNum << "\n";
   llvm::outs() << "[Referees] (TTL: " << referees.size() << ") \n";
-  // for (StructType* ty : referees){
-  //     outs() << "\t" << *ty << "\n";
-  // }
+  for (llvm::StructType *ty : referees) {
+    if (ty->hasName()) llvm::outs() << "\t" << ty->getName() << "\n";
+  }
   llvm::outs() << "[Elements]\n";
   for (int ind = 0; ind < strTy->getNumElements(); ind++) {
     llvm::outs() << "\t[" << ind << "]: " << *strTy->getElementType(ind) << " ";
@@ -218,6 +232,9 @@ void StructInformation::print() {
         break;
       case SELF_DEREFERENCE:
         llvm::outs() << "SELF_DEREFERENCE";
+        break;
+      case IS_REFEREE_BIDIRECTIONAL:
+        llvm::outs() << "IS_REFEREE_BIDIRECTIONAL";
         break;
       default:
         llvm::outs() << "DEFAULT";
@@ -364,10 +381,18 @@ void StructManager::changeStats() {
       if (this->get(Stmap.first)->isUnknown(ind)) {
         if (member->isArrayTy() && decode_array_type(member)->isPointerTy())
           member = member->getArrayElementType();
+
         if (auto stTy = llvm::dyn_cast<llvm::StructType>(get_type(member))) {
           if (StructInfo[stTy]->hasSingleReferee() &&
-              !StructInfo[stTy]->isSelfDereference(ind))
+              !StructInfo[Stmap.first]->isSelfDereference(ind) &&
+              !StructInfo[Stmap.first]->isRefereeBasedBidirectionalReferencing(
+                  ind))
             StructInfo[Stmap.first]->setMemberStatResponsible(ind);
+
+          if (StructInfo[Stmap.first]->isRefereeBasedBidirectionalReferencing(
+                  ind)) {
+            StructInfo[Stmap.first]->setMemberStatIsRefereeBidirectional(ind);
+          }
 
           if (this->get(stTy)->isDataStructNode()) {
             StructInfo[Stmap.first]->setMemberStatIsDataStructNode(ind);
@@ -524,10 +549,11 @@ std::vector<llvm::Function *> StructManager::getFunctionPtrWithStructName(
   std::vector<llvm::StructType *> candidate_structs;
   std::vector<llvm::Function *> candidate_func_ptrs;
 
-  if (StTy->hasName())
+  if (StTy->hasName()) {
     candidate_structs = NameManager[decodeStructName(StTy)];
-  else
+  } else {
     candidate_structs.push_back(StTy);
+  }
 
   for (auto candidate : candidate_structs) {
     if (exists(candidate) && StTy->isLayoutIdentical(candidate)) {
