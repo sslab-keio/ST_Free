@@ -190,9 +190,9 @@ void BaseAnalyzer::analyzeReturnInst(llvm::Instruction *I,
     STFREE_LOG(RI, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlockInformation(&B);
   }
-  // #ifdef LOCAL_VARIABLE_ANALYSIS
-  //   getFunctionInformation()->freeLocalVarOnReturnBlock(&B);
-  // #endif
+#ifdef LOCAL_VARIABLE_ANALYSIS
+  getFunctionInformation()->freeLocalVarOnReturnBlock(&B);
+#endif
   return;
 }
 
@@ -203,15 +203,6 @@ void BaseAnalyzer::analyzeGetElementPtrInst(llvm::Instruction *I,
 
 void BaseAnalyzer::checkAvailability() {
   FreedStructList fsl = getFunctionInformation()->getFreedStruct();
-
-  // for(FreedStruct * localVar: getFunctionInformation()->getLocalVar()) {
-  //     if(!getFunctionInformation()->isArgValue(localVar->getValue())){
-  //         UniqueKey uk(localVar->getValue(), localVar->getType(), -1);
-  //         if(find_if(fsl.begin(), fsl.end(),
-  //                     [uk](FreedStruct *f){return *f == uk;}) == fsl.end())
-  //             fsl.push_back(localVar);
-  //     }
-  // }
 
   for (FreedStruct *freedStruct : fsl) {
     llvm::StructType *strTy =
@@ -399,9 +390,8 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
       //                                                     info.indexes);
       // }
     }
-    if (!isAlias && info.memType && get_type(info.memType)->isStructTy() 
-				&& this->isAuthorityChained(info.indexes)
-				) {
+    if (!isAlias && info.memType && get_type(info.memType)->isStructTy() &&
+        this->isAuthorityChained(info.indexes)) {
       STFREE_LOG_ON(CI, "Add Freed Struct");
       getFunctionInformation()->addFreedStruct(
           B, get_type(info.memType), info.freeValue, CI, info.parentType,
@@ -414,8 +404,19 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
 #endif
     }
 
+    // Deal with cases where free is optimized
+    if (info.indexes.size() == 1 && info.indexes.front().second == 0) {
+      if (auto I = llvm::dyn_cast<llvm::Instruction>(V)) {
+        llvm::GetElementPtrInst *GEle = getFreeStructEleInfo(I);
+        if (GEle != NULL) {
+          getFunctionInformation()->addFreeValue(
+              B, NULL, GEle->getPointerOperandType(), ROOT_INDEX, ParentList());
+        }
+      }
+    }
+
     if (!isAlias && getFunctionInformation()->aliasExists(info.freeValue)) {
-      STFREE_LOG(CI, "Jumping to Alias");
+      STFREE_LOG_ON(CI, "Jumping to Alias");
       llvm::Value *aliasVal =
           getFunctionInformation()->getAlias(info.freeValue);
       if (V != aliasVal) this->addFree(aliasVal, CI, B, true);
@@ -447,16 +448,16 @@ void BaseAnalyzer::addAlloc(llvm::CallInst *CI, llvm::BasicBlock *B) {
     getStructManager()->addAlloc(llvm::cast<llvm::StructType>(get_type(Ty)));
   }
 
-	if (getFunctionInformation()->getBasicBlockInformation(B)->isLoopBlock()) {
+  if (getFunctionInformation()->getBasicBlockInformation(B)->isLoopBlock()) {
     STFREE_LOG_ON(CI, "is allocated in loop");
-		return;
-	}
+    return;
+  }
 
   const UniqueKey *UK =
       getFunctionInformation()->addAllocValue(B, NULL, Ty, ROOT_INDEX);
 
   if (!isAllocStoredInSameBasicBlock(CI, B)) {
-    STFREE_LOG(CI, "Not Stored in the same block");
+    STFREE_LOG_ON(CI, "Not Stored in the same block");
     getFunctionInformation()->addPendingAliasedAlloc(UK);
   }
 
@@ -538,7 +539,6 @@ void BaseAnalyzer::copyFreeStatus(llvm::Function &Func, llvm::CallInst *CI,
                   vinfo->getParents());
         }
       } else {
-        STFREE_LOG(CI, "Falling into this pit");
         getFunctionInformation()->addFreeValue(&B,
                                                const_cast<UniqueKey *>(ele));
       }
@@ -553,11 +553,18 @@ void BaseAnalyzer::evaluatePendingStoredValue(llvm::Function &Func,
   FunctionInformation *DF = identifier.getElement(&Func);
   for (auto ele : DF->getPendingStoreInReturn()) {
     const UniqueKey *UK = const_cast<UniqueKey *>(ele);
-    if (this->getFunctionInformation()
-            ->getBasicBlockInformation(&B)
-            ->getWorkList(ALLOCATED)
-            .typeExists(UK->getType())) {
+    if (const UniqueKey *src_uk = this->getFunctionInformation()
+                                      ->getBasicBlockInformation(&B)
+                                      ->getWorkList(ALLOCATED)
+                                      .getFromType(UK->getType())) {
       getFunctionInformation()->addAllocValue(&B, const_cast<UniqueKey *>(ele));
+      if (getFunctionInformation()->checkAndPopPendingAliasedAlloc(src_uk)) {
+        STFREE_LOG_ON(CI,
+                      "[After] Found alloc alias in pendling aliased alloc "
+                      "when evaluating pending store");
+        getFunctionInformation()->setUniqueKeyAlias(UK, src_uk);
+        getFunctionInformation()->setUniqueKeyAlias(src_uk, UK);
+      }
     } else {
       // Determine whether it needs further lazy evaluation, or the lifetime
       // can end here
@@ -736,9 +743,9 @@ std::vector<long> BaseAnalyzer::getValueIndices(llvm::GetElementPtrInst *inst) {
 
   llvm::Type *Ty = inst->getSourceElementType();
   auto idx_itr = inst->idx_begin();
-	if (llvm::isa<llvm::ConstantInt>(idx_itr->get())) {
-		if (!Ty->isIntegerTy()) idx_itr++;
-	}
+  if (llvm::isa<llvm::ConstantInt>(idx_itr->get())) {
+    if (!Ty->isIntegerTy()) idx_itr++;
+  }
 
   for (; idx_itr != inst->idx_end(); idx_itr++) {
     if (llvm::ConstantInt *cint =
@@ -1026,9 +1033,9 @@ std::vector<std::pair<llvm::Type *, long>> BaseAnalyzer::decodeGEPInst(
       decoded.push_back(std::pair<llvm::Type *, long>(Ty, index));
       if (auto StTy = llvm::dyn_cast<llvm::StructType>(Ty))
         Ty = StTy->getElementType(index);
-		} else {
-			// decoded.push_back(std::pair<llvm::Type *, long>(NULL, ROOT_INDEX));
-		}
+    } else {
+      // decoded.push_back(std::pair<llvm::Type *, long>(NULL, ROOT_INDEX));
+    }
   }
 
   return decoded;
@@ -1351,29 +1358,62 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
 
 void BaseAnalyzer::analyzeOptimizedNullCheck(llvm::BranchInst *BI,
                                              llvm::ICmpInst *ICI,
-																						 llvm::BasicBlock &B) {
-  STFREE_LOG_ON(BI, "Analyze NULL Check");
-  int op = this->getErrorOperand(ICI);
-	if (op < 0)
-		return;
-  llvm::BasicBlock *errBlock = BI->getSuccessor(op);
+                                             llvm::BasicBlock &B) {
+  STFREE_LOG_ON(BI, "Analyze Optimized NULL Check");
+  llvm::BasicBlock *errBlock = BI->getSuccessor(0);
+  BasicBlockWorkList BList;
 
-	llvm::IntToPtrInst* ITPI = NULL;
-	if (auto LI = llvm::dyn_cast<llvm::LoadInst>(ICI->getOperand(0))) {
-		for (auto user : LI->users()) {
-			if (auto itoptr = llvm::dyn_cast<llvm::IntToPtrInst>(user)) {
-				if (!get_type(itoptr->getDestTy())->isIntegerTy()) {
-					ITPI = itoptr;
-				}
-			}
-		}
-	}
+  llvm::Type *comparedType = NULL;
+  if (auto LI = llvm::dyn_cast<llvm::LoadInst>(ICI->getOperand(0))) {
+    comparedType = LI->getPointerOperandType();
 
-	if (ITPI == NULL)
-		return;
+    if (get_type(comparedType)->isIntegerTy()) {
+      if (auto CI = llvm::dyn_cast<llvm::CastInst>(LI->getPointerOperand())) {
+        comparedType = CI->getSrcTy();
+      }
+    }
 
-  // llvm::Value *comVal = this->getComparedValue(ICI);
-  // llvm::Type *Ty = this->getComparedType(comVal, B);
+    if (auto StTy = llvm::dyn_cast<llvm::StructType>(get_type(comparedType))) {
+      // There is a chance that the first member of the struct member is
+      // optimized. Check this by looking for cast insts
+      llvm::Type *memberType = NULL;
+      for (auto user : LI->users()) {
+        if (auto itoptr = llvm::dyn_cast<llvm::CastInst>(user)) {
+          if (!get_type(itoptr->getDestTy())->isIntegerTy()) {
+            memberType = itoptr->getDestTy();
+          }
+        }
+      }
+
+      if (StTy->getElementType(0) == memberType) {
+        const UniqueKey *UK = this->getFunctionInformation()
+                                  ->getUniqueKeyManager()
+                                  ->getUniqueKey(NULL, memberType, 0);
+        if (!UK)
+          UK = this->getFunctionInformation()
+                                  ->getUniqueKeyManager()
+                                  ->addUniqueKey(NULL, memberType, 0);
+        BList.add(UK);
+      }
+    }
+  }
+
+  if (comparedType) {
+    const UniqueKey *UK = this->getFunctionInformation()
+                              ->getUniqueKeyManager()
+                              ->getUniqueKey(NULL, comparedType, ROOT_INDEX);
+    if (!UK)
+      UK = this->getFunctionInformation()
+                              ->getUniqueKeyManager()
+                              ->addUniqueKey(NULL, comparedType, ROOT_INDEX);
+    BList.add(UK);
+  }
+
+  for (auto ele : BList.getList()) {
+    this->getFunctionInformation()
+        ->getBasicBlockInformation(&B)
+        ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
+  }
 }
 
 void BaseAnalyzer::analyzeErrorCheckFunction(llvm::BranchInst *BI,

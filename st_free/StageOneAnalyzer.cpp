@@ -15,11 +15,12 @@ void StageOneAnalyzer::analyzeAllocaInst(llvm::Instruction *I,
 #ifdef LOCAL_VARIABLE_ANALYSIS
   if (AI->getAllocatedType()->isStructTy()) {
     getFunctionInformation()->appendLocalVariable(AI);
-    llvm::BasicBlock *tgt = getLastUseBlock(AI).first;
-    if (auto NAI = llvm::dyn_cast<llvm::Instruction>(AI->user_back())) {
-      getFunctionInformation()->addLocalVar(tgt, AI->getAllocatedType(), AI,
-                                            NAI);
-    }
+    // llvm::BasicBlock *tgt = getLastUseBlock(AI).first;
+    // STFREE_LOG_ON(tgt->getFirstNonPHI(), tgt->getName());
+    // if (auto NAI = llvm::dyn_cast<llvm::Instruction>(AI->user_back())) {
+    //   getFunctionInformation()->addLocalVar(tgt, AI->getAllocatedType(), AI,
+    //                                         NAI);
+    // }
   }
 #endif
 }
@@ -36,7 +37,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
   /*** Check the Pointer of StoreInst ***/
   if (this->isStoreToStructMember(SI)) {
-    STFREE_LOG(SI, "is Store to struct member");
+    STFREE_LOG_ON(SI, "is Store to struct member");
     if (llvm::GetElementPtrInst *GEle = getStoredStruct(SI)) {
       STFREE_LOG(SI, "found GetElementPtrInst");
       struct collectedInfo info;
@@ -69,13 +70,17 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 						return;
 					}
         }
-        STFREE_LOG(SI, "Setting Alias");
+        if (llvm::isa<llvm::ConstantPointerNull>(SI->getValueOperand())) {
+          STFREE_LOG_ON(SI, "Storing const pointer null");
+          return;
+        }
+        STFREE_LOG_ON(SI, "Setting Alias");
         getFunctionInformation()->setAlias(GEle, addVal);
         if (auto StTy = llvm::dyn_cast<llvm::StructType>(
                 get_type(info.indexes.back().first))) {
           if (ROOT_INDEX < info.indexes.back().second &&
               info.indexes.back().second < StTy->getNumElements()) {
-            STFREE_LOG(I, "[Before] Looking for alloc alias");
+            STFREE_LOG_ON(I, "[Before] Looking for alloc alias");
             if (const UniqueKey *src_uk =
                     this->getFunctionInformation()
                         ->getBasicBlockInformation(&B)
@@ -103,6 +108,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
             } else {
               // At least, so far, we do not know if the storer is allocated or
               // not.
+              STFREE_LOG_ON(I, "Here in the pit fall");
               if (auto CastI = llvm::dyn_cast<llvm::CastInst>(addVal)) {
                 addVal = CastI->getOperand(0);
               }
@@ -112,6 +118,7 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
                 addVal = GEleI->getOperand(0);
               }
               if (getFunctionInformation()->isArgValue(addVal)) {
+                STFREE_LOG_ON(I, "Reached arg value");
                 getFunctionInformation()->addPendingArgAlloc(
                     &B, NULL, StTy->getElementType(info.indexes.back().second),
                     info.indexes.back().second);
@@ -278,7 +285,8 @@ void StageOneAnalyzer::analyzeBranchInst(llvm::Instruction *I,
       if (llvm::isa<llvm::ConstantPointerNull>(ICI->getOperand(1))) {
         this->analyzeNullCheck(BI, ICI, B);
       } else if (llvm::isa<llvm::ConstantInt>(ICI->getOperand(1))) {
-        // this->analyzeOptimizedNullCheck(BI, ICI, B);
+        STFREE_LOG_ON(I, "is a constant int");
+        this->analyzeOptimizedNullCheck(BI, ICI, B);
       }
     } else if (llvm::CallInst *CI =
                    llvm::dyn_cast<llvm::CallInst>(BI->getCondition())) {

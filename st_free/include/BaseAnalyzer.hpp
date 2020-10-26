@@ -238,7 +238,7 @@ class BaseAnalyzer {
   std::pair<llvm::BasicBlock *, int> getLastUseBlock(
       llvm::Instruction *,
       std::vector<llvm::Instruction *> = std::vector<llvm::Instruction *>(),
-      int max_itr = 3);
+      int max_itr = 10);
 
   /*** connector with struct manager***/
   bool isAuthorityChained(ParentList);

@@ -103,10 +103,10 @@ ValueInformation *FunctionInformation::addFreeValue(llvm::BasicBlock *B,
       this->addCorrectlyFreedValue(B, UK);
     }
   }
-
   // If aliased value exists, free the value as well
-  if (const UniqueKey *aliased_uk = getUniqueKeyAlias(UK))
+  if (const UniqueKey *aliased_uk = getUniqueKeyAlias(UK)) {
     addFreeValue(B, const_cast<UniqueKey *>(aliased_uk));
+  }
 
   addFreeValueToPredecessors(B, const_cast<UniqueKey *>(UK));
   return varinfo;

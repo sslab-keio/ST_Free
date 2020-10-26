@@ -115,6 +115,8 @@ void generateError(llvm::Instruction* Inst, std::string warn) {
 llvm::Value* getArgAlloca(llvm::Value* arg) {
   for (auto usr = arg->user_begin(); usr != arg->user_end(); usr++) {
     if (llvm::StoreInst* str_inst = llvm::dyn_cast<llvm::StoreInst>(*usr)) {
+      // if (auto AI = llvm::dyn_cast<llvm::AllocaInst>(str_inst->getOperand(1)))
+      //   return AI;
       return str_inst->getOperand(1);
     }
   }
