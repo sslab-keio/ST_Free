@@ -20,7 +20,8 @@ class BaseAnalyzer {
   BaseAnalyzer() {}
   BaseAnalyzer(llvm::Function *func, StructManager *stm,
                const llvm::DataLayout *dl) {
-    FEle = identifier.getElement(func);
+    // FEle = identifier.getElement(func);
+    multithread_infos = std::map<std::thread::id, struct MultiThreadInfos>();
     stManage = stm;
     dat_layout = dl;
     InstAnalysisMap[llvm::Instruction::Alloca] =
@@ -56,6 +57,7 @@ class BaseAnalyzer {
   void analyzeAdditionalUnknowns(llvm::Function &F);
   void analyzeDifferentFunc(llvm::Function &);
 
+  void setFunctionManager(llvm::Module &M);
   void setLoopManager(LoopManager *lm) { loop_manager = lm; }
   LoopManager *getLoopManager() { return loop_manager; }
 
@@ -78,8 +80,13 @@ class BaseAnalyzer {
   };
   /*** getter/setter ***/
   FunctionManager *getFunctionManager() { return &identifier; };
-  FunctionInformation *getFunctionInformation() { return FEle; };
-  void setFunctionInformation(FunctionInformation *FInfo) { FEle = FInfo; };
+  FunctionInformation *getFunctionInformation() {
+    return multithread_infos[std::this_thread::get_id()].FEle;
+  };
+  void setFunctionInformation(FunctionInformation *FInfo) {
+    // FEle = FInfo;
+    multithread_infos[std::this_thread::get_id()].FEle = FInfo;
+  };
   StructManager *getStructManager() { return stManage; };
   void setStructManager(StructManager *stManager) { stManage = stManager; };
   TypeRelationManager *getTypeRelationManager() {
@@ -262,6 +269,13 @@ class BaseAnalyzer {
 
   /*** Current Function/ Stacked Functions ***/
   FunctionInformation *FEle;
-  std::stack<llvm::Function *> functionStack;
+
+  struct MultiThreadInfos {
+    FunctionInformation *FEle;
+    std::stack<llvm::Function *> functionStack;
+  };
+  /*** Current Function/ Stacked Functions ***/
+  std::map<std::thread::id, struct MultiThreadInfos> multithread_infos;
 };
+
 }  // namespace ST_free

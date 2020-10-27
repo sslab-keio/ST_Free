@@ -12,6 +12,11 @@ FunctionInformation *FunctionManager::getElement(llvm::Function *F) {
   return func_map[F];
 }
 
+void FunctionManager::addElement(llvm::Function *F) {
+  if (!this->exists(F))
+    func_map[F] = new FunctionInformation(F);
+}
+
 FunctionInformation::FunctionInformation(llvm::Function *Func) {
   if (Func != NULL) {
     F = Func;
@@ -31,7 +36,10 @@ FunctionInformation::AnalysisStat FunctionInformation::getStat() {
   return this->stat;
 }
 
-void FunctionInformation::setStat(AnalysisStat stat) { this->stat = stat; }
+void FunctionInformation::setStat(AnalysisStat stat) {
+  std::lock_guard<std::mutex> lock(function_info_mutex);
+  this->stat = stat;
+}
 
 void FunctionInformation::addEndPoint(llvm::BasicBlock *B,
                                       llvm::ReturnInst *RI) {

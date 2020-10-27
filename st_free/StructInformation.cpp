@@ -336,7 +336,10 @@ void StructInformation::changeToNonRefered(llvm::StructType *StTy) {
 StructManager::StructManager(std::vector<llvm::StructType *> st) {
   for (llvm::StructType *StrTy : st) {
     StructInfo[StrTy] = new StructInformation(StrTy);
-    if (StrTy->hasName()) NameManager[decodeStructName(StrTy)].push_back(StrTy);
+    if (StrTy->hasName()) {
+      llvm::outs() << "[DECODED] " << decodeStructName(StrTy) << "\n";
+      NameManager[decodeStructName(StrTy)].push_back(StrTy);
+    }
   }
   this->createDependencies();
   this->changeStats();
@@ -479,7 +482,6 @@ void StructManager::addGlobalVariableInitInfo(llvm::Module &M) {
       llvm::Constant *cnst = GV.getInitializer();
       llvm::StructType *global_val_type =
           llvm::cast<llvm::StructType>(GV.getValueType());
-
       for (int i = 0; i < GV.getValueType()->getStructNumElements(); i++) {
         if (get_type(GV.getValueType()->getStructElementType(i))
                 ->isFunctionTy() &&
@@ -551,14 +553,21 @@ std::vector<llvm::Function *> StructManager::getFunctionPtrWithStructName(
 
   if (StTy->hasName()) {
     candidate_structs = NameManager[decodeStructName(StTy)];
+    llvm::outs() << "[TRYING TO DECODE]" << decodeStructName(StTy) << " "
+                 << candidate_structs.size() << "\n";
   } else {
     candidate_structs.push_back(StTy);
   }
 
   for (auto candidate : candidate_structs) {
-    if (exists(candidate) && StTy->isLayoutIdentical(candidate)) {
+    if (exists(candidate) &&
+        StTy->getStructNumElements() == candidate->getStructNumElements() &&
+        StTy->isLayoutIdentical(candidate)) {
       std::vector<llvm::Function *> func_ptr =
           StructInfo[candidate]->getFunctionPtr(ind, path);
+      if (StTy->hasName())
+        llvm::outs() << "[TRYING TO DECODE] FuncPTR" << decodeStructName(StTy)
+                     << " " << func_ptr.size() << "\n";
       candidate_func_ptrs.insert(candidate_func_ptrs.end(), func_ptr.begin(),
                                  func_ptr.end());
     }

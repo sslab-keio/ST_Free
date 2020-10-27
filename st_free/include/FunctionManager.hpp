@@ -200,8 +200,14 @@ struct FunctionInformation {
   const UniqueKey *getUniqueKeyAlias(const UniqueKey *src);
   const std::map<const UniqueKey *, const UniqueKey *> *getUniqueKeyAliasMap();
 
+  bool acquireLock() {return function_info_mutex.try_lock();}
+  void releaseLock() {function_info_mutex.unlock();}
+
  private:
   enum AnalysisStat { UNANALYZED, IN_PROGRESS, DIRTY, ANALYZED };
+
+  /*** Mutex for function information ***/
+  std::mutex function_info_mutex;
 
   /*** Private Variables ***/
   static UniqueKeyManager UKManage;
@@ -246,6 +252,7 @@ class FunctionManager {
  public:
   bool exists(llvm::Function *);
   FunctionInformation *getElement(llvm::Function *F);
+  void addElement(llvm::Function *F);
 
  private:
   std::map<llvm::Function *, FunctionInformation *> func_map;
