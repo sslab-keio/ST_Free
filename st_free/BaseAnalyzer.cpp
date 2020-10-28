@@ -305,20 +305,15 @@ void BaseAnalyzer::addPointerLocalVariable(llvm::BasicBlock *B, llvm::Type *T,
 
 void BaseAnalyzer::analyzeDifferentFunc(llvm::Function &F) {
   /*** Push current FunctionInformation ***/
-  // functionStack.push(&getFunctionInformation()->getFunction());
-  multithread_infos[std::this_thread::get_id()].functionStack.push(
-      &getFunctionInformation()->getFunction());
+  functionStack.push(&getFunctionInformation()->getFunction());
 
   /*** Analyze new Function ***/
   this->analyze(F);
 
   /*** Recover FunctionInformation ***/
-  // llvm::Function *tempFunc = functionStack.top();
-  llvm::Function *tempFunc =
-      multithread_infos[std::this_thread::get_id()].functionStack.top();
+  llvm::Function *tempFunc = functionStack.top();
   setFunctionInformation(identifier.getElement(tempFunc));
-  // functionStack.pop();
-  multithread_infos[std::this_thread::get_id()].functionStack.pop();
+  functionStack.pop();
   return;
 }
 
@@ -414,7 +409,6 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
       if (auto I = llvm::dyn_cast<llvm::Instruction>(V)) {
         llvm::GetElementPtrInst *GEle = getFreeStructEleInfo(I);
         if (GEle != NULL) {
-          STFREE_LOG_ON(CI, "Add Optimized Freed Struct");
           getFunctionInformation()->addFreeValue(
               B, NULL, GEle->getPointerOperandType(), ROOT_INDEX, ParentList());
         }
@@ -1336,8 +1330,6 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
   // decode compared type
   llvm::Value *comVal = this->getComparedValue(ICI);
   llvm::Type *Ty = this->getComparedType(comVal, B);
-  // if (Ty)
-  //   llvm::outs() << *Ty << "\n";
 
   // check if the value is struct or not
   ParentList plist = this->decodeErrorTypes(ICI->getOperand(0));
@@ -1356,14 +1348,8 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
   BList.add(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
       NULL, Ty, ROOT_INDEX));
 
-  // if (get_type(Ty)->isPointerTy()) {
-  //   BList.add(this->getFunctionInformation()
-  //                 ->getUniqueKeyManager()
-  //                 ->checkAndAddUniqueKey(NULL, get_type(Ty), ROOT_INDEX));
-  // }
-
   for (auto ele : BList.getList()) {
-    if (ele) ele->print();
+    STFREE_LOG(BI, "Adding Null value");
     this->getFunctionInformation()
         ->getBasicBlockInformation(&B)
         ->addRemoveAlloc(errBlock, const_cast<UniqueKey *>(ele));
@@ -1400,25 +1386,26 @@ void BaseAnalyzer::analyzeOptimizedNullCheck(llvm::BranchInst *BI,
       }
 
       if (StTy->getElementType(0) == memberType) {
-        const UniqueKey *UK =
-            this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-                NULL, memberType, 0);
+        const UniqueKey *UK = this->getFunctionInformation()
+                                  ->getUniqueKeyManager()
+                                  ->getUniqueKey(NULL, memberType, 0);
         if (!UK)
           UK = this->getFunctionInformation()
-                   ->getUniqueKeyManager()
-                   ->addUniqueKey(NULL, memberType, 0);
+                                  ->getUniqueKeyManager()
+                                  ->addUniqueKey(NULL, memberType, 0);
         BList.add(UK);
       }
     }
   }
 
   if (comparedType) {
-    const UniqueKey *UK =
-        this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
-            NULL, comparedType, ROOT_INDEX);
+    const UniqueKey *UK = this->getFunctionInformation()
+                              ->getUniqueKeyManager()
+                              ->getUniqueKey(NULL, comparedType, ROOT_INDEX);
     if (!UK)
-      UK = this->getFunctionInformation()->getUniqueKeyManager()->addUniqueKey(
-          NULL, comparedType, ROOT_INDEX);
+      UK = this->getFunctionInformation()
+                              ->getUniqueKeyManager()
+                              ->addUniqueKey(NULL, comparedType, ROOT_INDEX);
     BList.add(UK);
   }
 
@@ -1753,10 +1740,6 @@ llvm::Type *BaseAnalyzer::getComparedType(llvm::Value *comVal,
         Ty = CastI->getDestTy();
     }
   }
-
-  if (auto LI = llvm::dyn_cast<llvm::LoadInst>(comVal)) {
-    Ty = LI->getPointerOperandType();
-  }
   return Ty;
 }
 
@@ -2060,12 +2043,6 @@ std::pair<llvm::BasicBlock *, int> BaseAnalyzer::getLastUseBlock(
   }
 
   return candidate;
-}
-
-void BaseAnalyzer::setFunctionManager(llvm::Module &M) {
-  for (llvm::Function &F : M) {
-    if (!(F.isDeclaration())) identifier.addElement(&F);
-  }
 }
 
 }  // namespace ST_free

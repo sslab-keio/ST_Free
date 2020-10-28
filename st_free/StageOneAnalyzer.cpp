@@ -13,7 +13,7 @@ void StageOneAnalyzer::analyzeAllocaInst(llvm::Instruction *I,
                                          llvm::BasicBlock &B) {
   llvm::AllocaInst *AI = llvm::cast<llvm::AllocaInst>(I);
 #ifdef LOCAL_VARIABLE_ANALYSIS
-  if (AI->isStaticAlloca() && AI->getAllocatedType()->isStructTy()) {
+  if (AI->getAllocatedType()->isStructTy()) {
     getFunctionInformation()->appendLocalVariable(AI);
     // llvm::BasicBlock *tgt = getLastUseBlock(AI).first;
     // STFREE_LOG_ON(tgt->getFirstNonPHI(), tgt->getName());

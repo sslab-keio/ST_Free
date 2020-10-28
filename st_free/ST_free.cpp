@@ -14,8 +14,6 @@ using namespace ST_free;
 namespace {
 struct st_free : public llvm::ModulePass {
   static char ID;
-  BaseAnalyzer* analyze;
-  std::vector<llvm::Function*> FMap;
 
   st_free() : ModulePass(ID) {}
 
@@ -24,30 +22,21 @@ struct st_free : public llvm::ModulePass {
     AU.addRequired<llvm::LoopInfoWrapperPass>();
   }
 
-  void runAnalyzer(int id) {
-    for (int i = id; i < FMap.size(); i += THREAD_NUM) {
-      llvm::Function& F = (llvm::Function &)(*FMap[i]);
-      if (!(F.isDeclaration())) analyze->analyze(F);
-    }
-  }
-
   /*** Main Modular ***/
   bool runOnModule(llvm::Module &M) override {
     /*** Collect Struct Information ***/
     StructManager *StManage = new StructManager(M.getIdentifiedStructTypes());
     LoopManager *lmanage = new LoopManager();
-    for (llvm::Function &F : M) {
-      FMap.push_back(&F);
-    }
 
     StManage->addGlobalVariableInitInfo(M);
 #if defined(STAGE_ONE) || defined(STAGE_PRIMITIVE)
-    analyze = new StageOneAnalyzer(StManage, &M.getDataLayout());
+    StageOneAnalyzer *analyze =
+        new StageOneAnalyzer(StManage, &M.getDataLayout());
 #elif defined(STAGE_TWO)
     // StageTwoAnalyzer* analyze = new StageTwoAnalyzer(StManage,
     // &M.getDataLayout());
 #else
-    analyze = new BaseAnalyzer(StManage, &M.getDataLayout());
+    BaseAnalyzer *analyze = new BaseAnalyzer(StManage, &M.getDataLayout());
 #endif
 
     /*** Generate LoopInformation ***/
@@ -57,9 +46,7 @@ struct st_free : public llvm::ModulePass {
             &F,
             std::move(getAnalysis<llvm::LoopInfoWrapperPass>(F).getLoopInfo()));
     }
-
     analyze->setLoopManager(lmanage);
-    analyze->setFunctionManager(M);
 
     /*** Additional analysis for Checking force casts ***/
     for (llvm::Function &F : M) {
@@ -67,18 +54,13 @@ struct st_free : public llvm::ModulePass {
     }
 
     /*** Main analysis module ***/
-    std::vector<std::thread> threads;
-    for (int id = 0; id < THREAD_NUM; id++) {
-      threads.push_back(std::thread(&st_free::runAnalyzer, this, id));
-    }
-
-    for (int id = 0; id < THREAD_NUM; id++) {
-      threads[id].join();
+    for (llvm::Function &F : M) {
+      if (!(F.isDeclaration())) analyze->analyze(F);
     }
 
     /*** Main Warning Generator ***/
     StManage->BuildCandidateCount();
-    // StManage->print();
+    StManage->print();
     StManage->checkCorrectness();
     return false;
   }

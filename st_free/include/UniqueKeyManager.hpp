@@ -53,7 +53,6 @@ class UniqueKeyManager {
  public:
   const UniqueKey *addUniqueKey(llvm::Value *val, llvm::Type *ty, long mem);
   const UniqueKey *getUniqueKey(llvm::Value *val, llvm::Type *ty, long mem);
-  const UniqueKey *checkAndAddUniqueKey(llvm::Value *val, llvm::Type *ty, long mem);
   const UniqueKey *getUniqueKeyFromField(llvm::Type *ty, long mem);
   // const UniqueKey* getUniqueKey(Type *ty);
   void print();

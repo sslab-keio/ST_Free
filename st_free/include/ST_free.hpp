@@ -36,8 +36,7 @@
 #include <stack>
 #include <string>
 #include <vector>
-#include <thread>
-#include <mutex>
+// #include <filesystem>
 
 #define NO_ALLOC 0
 #define ALLOCATED 1
@@ -48,9 +47,5 @@
 #define ROOT_INDEX INT_MIN
 
 #define NO_ERROR 0
-
-#ifndef THERAD_NUM
-#define THREAD_NUM 1
-#endif
 
 using ParentList = std::vector<std::pair<llvm::Type *, int>>;

@@ -54,10 +54,6 @@ target_compile_features(StructFreeMod PRIVATE cxx_range_for cxx_auto_type)
 set_target_properties(StructFreeMod PROPERTIES COMPILE_FLAGS "-fno-rtti")
 include_directories(./ include)
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-target_link_libraries(StructFreeMod PRIVATE Threads::Threads)
-
 # set(STAGE_ONE 0 CACHE BOOL "STAGE_ONE OPTION")
 # set(STAGE_TWO 0 CACHE BOOL "STAGE_TWO OPTION")
 # set(STAGE_PRIMITIVE 0 CACHE BOOL "STAGE_PRIMITIVE OPTION")

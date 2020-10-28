@@ -9,25 +9,17 @@ void UniqueKey::print() const {
   llvm::outs() << "=====================\n";
 }
 
-const UniqueKey *UniqueKeyManager::addUniqueKey(llvm::Value *val,
-                                                llvm::Type *ty, long mem) {
+const UniqueKey *UniqueKeyManager::addUniqueKey(llvm::Value *val, llvm::Type *ty,
+                                                long mem) {
   auto uk = ukmanage.insert(UniqueKey(val, ty, mem));
   return &(*(uk.first));
 }
 
-const UniqueKey *UniqueKeyManager::getUniqueKey(llvm::Value *val,
-                                                llvm::Type *ty, long mem) {
+const UniqueKey *UniqueKeyManager::getUniqueKey(llvm::Value *val, llvm::Type *ty,
+                                                long mem) {
   auto found = ukmanage.find(UniqueKey(val, ty, mem));
   if (found == ukmanage.end()) return NULL;
   return &(*found);
-}
-
-const UniqueKey *UniqueKeyManager::checkAndAddUniqueKey(llvm::Value *val,
-                                                        llvm::Type *ty,
-                                                        long mem) {
-  const UniqueKey *UK = getUniqueKey(val, ty, mem);
-  if (!UK) UK = addUniqueKey(val, ty, mem);
-  return UK;
 }
 
 // const UniqueKey* UniqueKeyManager::getUniqueKeyFromField(Type *ty, long mem){
