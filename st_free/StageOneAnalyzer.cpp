@@ -65,17 +65,21 @@ void StageOneAnalyzer::analyzeStoreInst(llvm::Instruction *I,
 
       if (addVal && info.indexes.size() > 0) {
         for (auto ele : info.indexes) {
-					if (ele.second == ROOT_INDEX) {
-						STFREE_LOG_ON(SI, "Trying to add to array member?");
-						return;
-					}
+          if (ele.second == ROOT_INDEX) {
+            STFREE_LOG_ON(SI, "Trying to add to array member?");
+            return;
+          }
         }
         if (llvm::isa<llvm::ConstantPointerNull>(SI->getValueOperand())) {
           STFREE_LOG_ON(SI, "Storing const pointer null");
           return;
         }
         STFREE_LOG_ON(SI, "Setting Alias");
-        getFunctionInformation()->setAlias(GEle, addVal);
+        if (!getFunctionInformation()->aliasExists(addVal)) {
+          getFunctionInformation()->setAlias(GEle, addVal);
+        } else {
+          checkDoubleAliasedValue(SI, GEle, addVal);
+        }
         if (auto StTy = llvm::dyn_cast<llvm::StructType>(
                 get_type(info.indexes.back().first))) {
           if (ROOT_INDEX < info.indexes.back().second &&
@@ -421,8 +425,8 @@ void StageOneAnalyzer::checkAvailability() {
       if (getFunctionInformation()->isAllocatedInBasicBlock(
               freedStruct->getFreedBlock(), NULL, t, ind)) {
         STFREE_LOG_ON(freedStruct->getInst(),
-                   "[INDEXED VERSION] Allocated(second) + ind :" +
-                       std::to_string(ind));
+                      "[INDEXED VERSION] Allocated(second) + ind :" +
+                          std::to_string(ind));
         getFunctionInformation()->setStructMemberAllocated(freedStruct, ind);
       }
 

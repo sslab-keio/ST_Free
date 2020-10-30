@@ -34,4 +34,12 @@ void UniqueKeyManager::print() {
     uk.print();
   }
 }
+
+const UniqueKey *UniqueKeyManager::checkAndAddUniqueKey(llvm::Value *val,
+                                                        llvm::Type *ty,
+                                                        long mem) {
+  const UniqueKey *UK = getUniqueKey(val, ty, mem);
+  if (!UK) UK = addUniqueKey(val, ty, mem);
+  return UK;
+}
 }  // namespace ST_free

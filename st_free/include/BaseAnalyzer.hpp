@@ -203,6 +203,9 @@ class BaseAnalyzer {
   std::vector<std::string> decodeDirectoryName(std::string str);
   void getStructParents(llvm::Instruction *I,
                         std::vector<std::pair<llvm::Type *, int>> &typeList);
+  void checkDoubleAliasedValue(llvm::StoreInst *SI,
+                               llvm::GetElementPtrInst *GEle,
+                               llvm::Value *addVal);
 
   /*** Determinator ***/
   long getMemberIndiceFromByte(llvm::StructType *STy, uint64_t byte);

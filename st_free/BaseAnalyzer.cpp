@@ -187,7 +187,7 @@ void BaseAnalyzer::analyzeReturnInst(llvm::Instruction *I,
     llvm::Value *V = RI->getReturnValue();
     this->checkErrorInstruction(V);
   } else {
-    STFREE_LOG(RI, "[RETURN]: No Error Code Analysis");
+    STFREE_LOG_ON(RI, "[RETURN]: No Error Code Analysis");
     getFunctionInformation()->addSuccessBlockInformation(&B);
   }
 #ifdef LOCAL_VARIABLE_ANALYSIS
@@ -409,8 +409,15 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
       if (auto I = llvm::dyn_cast<llvm::Instruction>(V)) {
         llvm::GetElementPtrInst *GEle = getFreeStructEleInfo(I);
         if (GEle != NULL) {
-          getFunctionInformation()->addFreeValue(
-              B, NULL, GEle->getPointerOperandType(), ROOT_INDEX, ParentList());
+          ValueInformation *optimized_value =
+              getFunctionInformation()->addFreeValue(
+                  B, NULL, GEle->getPointerOperandType(), ROOT_INDEX,
+                  ParentList());
+          if (getFunctionInformation()->isArgValue(info.freeValue)) {
+            STFREE_LOG_ON(CI, "Add Free Arg in Optimized");
+            optimized_value->setArgNumber(
+                getFunctionInformation()->getArgIndex(info.freeValue));
+          }
         }
       }
     }
@@ -532,9 +539,9 @@ void BaseAnalyzer::copyFreeStatus(llvm::Function &Func, llvm::CallInst *CI,
                           std::to_string(DF->getFreedInSuccess().size()));
     if (ValueInformation *vinfo = DF->getValueInfo(ele)) {
       if (vinfo->isArgValue()) {
-        STFREE_LOG(CI, "Copying value");
+        STFREE_LOG_ON(CI, "value is arg");
         if (vinfo->getArgNumber() < CI->getNumArgOperands()) {
-          STFREE_LOG_ON(CI, "Copying value");
+          STFREE_LOG_ON(CI, "Copying arg value");
           addFree(CI->getArgOperand(vinfo->getArgNumber()), CI, &B, false,
                   vinfo->getParents());
         }
@@ -687,6 +694,44 @@ void BaseAnalyzer::changeAuthority(llvm::StoreInst *SI, llvm::CastInst *CI,
   }
   return;
 }
+void BaseAnalyzer::checkDoubleAliasedValue(llvm::StoreInst *SI,
+                                           llvm::GetElementPtrInst *GEle,
+                                           llvm::Value *addVal) {
+  BaseAnalyzer::collectedInfo tgtInfo;
+  BaseAnalyzer::collectedInfo srcInfo;
+  ParentList PList;
+  llvm::Value *aliased_value = getFunctionInformation()->getAlias(addVal);
+  collectStructMemberFreeInfo(GEle, tgtInfo, PList);
+  if (auto aliased_gele =
+          llvm::dyn_cast<llvm::GetElementPtrInst>(aliased_value)) {
+    collectStructMemberFreeInfo(aliased_gele, srcInfo, PList);
+  }
+
+  if (tgtInfo.indexes.size() == srcInfo.indexes.size()) {
+    for (int i = 0; i < tgtInfo.indexes.size(); i++) {
+      if (tgtInfo.indexes[i].first == srcInfo.indexes[i].first &&
+          tgtInfo.indexes[i].second != srcInfo.indexes[i].second) {
+        STFREE_LOG(SI, "Alias is pointing to different values");
+
+        if (auto StTy = llvm::dyn_cast<llvm::StructType>(
+                get_type(tgtInfo.indexes[i].first))) {
+          if (tgtInfo.indexes[i].second >= 0 &&
+              getStructManager()->exists(StTy))
+            getStructManager()->get(StTy)->setMemberStatUnknown(
+                tgtInfo.indexes[i].second);
+        }
+
+        if (auto StTy = llvm::dyn_cast<llvm::StructType>(
+                get_type(srcInfo.indexes[i].first))) {
+          if (srcInfo.indexes[i].second >= 0 &&
+              getStructManager()->exists(StTy))
+            getStructManager()->get(StTy)->setMemberStatUnknown(
+                srcInfo.indexes[i].second);
+        }
+      }
+    }
+  }
+}
 
 bool BaseAnalyzer::isDirectStoreFromAlloc(llvm::StoreInst *SI) {
   if (auto CI = llvm::dyn_cast<llvm::CallInst>(SI->getValueOperand())) {
@@ -833,30 +878,7 @@ llvm::GetElementPtrInst *BaseAnalyzer::getAllocStructEleInfo(
 }
 
 bool BaseAnalyzer::isStructEleFree(llvm::Instruction *val) {
-  if (llvm::isa<llvm::GetElementPtrInst>(val)) return true;
-
-  llvm::LoadInst *l_inst = find_load(val);
-  if (l_inst && l_inst->getOperandList()) {
-    llvm::Value *V = l_inst->getPointerOperand();
-    if (auto bit_cast_inst = llvm::dyn_cast<llvm::BitCastInst>(V)) {
-      STFREE_LOG_ON(val, "found BitCast");
-      V = bit_cast_inst->getOperand(0);
-    }
-    // if (auto itoptr_inst = llvm::dyn_cast<llvm::IntToPtrInst>(V)) {
-    //   STFREE_LOG(val, "found IntToPtrInst");
-    //   V = itoptr_inst->getOperand(0);
-    // }
-    if (auto GEle = llvm::dyn_cast<llvm::GetElementPtrInst>(V)) {
-      return true;
-    }
-    // generateError(val , "Found load inst operandlist");
-    // for(Use &U : l_inst->operands()){
-    //     if(GetElementPtrInst * inst = dyn_cast<GetElementPtrInst>(U)){
-    //         return true;
-    //     }
-    // }
-  }
-  return false;
+  return getFreeStructEleInfo(val) != NULL;
 }
 
 llvm::GetElementPtrInst *BaseAnalyzer::getFreeStructEleInfo(
@@ -872,6 +894,14 @@ llvm::GetElementPtrInst *BaseAnalyzer::getFreeStructEleInfo(
     }
     if (auto GEle = llvm::dyn_cast<llvm::GetElementPtrInst>(V)) {
       return GEle;
+    }
+  } else if (auto CI = llvm::dyn_cast<llvm::CastInst>(val)) {
+    STFREE_LOG_ON(val, "found Cast");
+    if (get_type(CI->getDestTy())->isPointerTy()) {
+      if (auto GEle =
+              llvm::dyn_cast<llvm::GetElementPtrInst>(CI->getOperand(0))) {
+        return GEle;
+      }
     }
   }
   return NULL;
@@ -1348,6 +1378,12 @@ void BaseAnalyzer::analyzeNullCheck(llvm::BranchInst *BI, llvm::ICmpInst *ICI,
   BList.add(this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
       NULL, Ty, ROOT_INDEX));
 
+  if (get_type(Ty)->isPointerTy()) {
+    BList.add(this->getFunctionInformation()
+                  ->getUniqueKeyManager()
+                  ->checkAndAddUniqueKey(NULL, get_type(Ty), ROOT_INDEX));
+  }
+
   for (auto ele : BList.getList()) {
     STFREE_LOG(BI, "Adding Null value");
     this->getFunctionInformation()
@@ -1386,26 +1422,25 @@ void BaseAnalyzer::analyzeOptimizedNullCheck(llvm::BranchInst *BI,
       }
 
       if (StTy->getElementType(0) == memberType) {
-        const UniqueKey *UK = this->getFunctionInformation()
-                                  ->getUniqueKeyManager()
-                                  ->getUniqueKey(NULL, memberType, 0);
+        const UniqueKey *UK =
+            this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+                NULL, memberType, 0);
         if (!UK)
           UK = this->getFunctionInformation()
-                                  ->getUniqueKeyManager()
-                                  ->addUniqueKey(NULL, memberType, 0);
+                   ->getUniqueKeyManager()
+                   ->addUniqueKey(NULL, memberType, 0);
         BList.add(UK);
       }
     }
   }
 
   if (comparedType) {
-    const UniqueKey *UK = this->getFunctionInformation()
-                              ->getUniqueKeyManager()
-                              ->getUniqueKey(NULL, comparedType, ROOT_INDEX);
+    const UniqueKey *UK =
+        this->getFunctionInformation()->getUniqueKeyManager()->getUniqueKey(
+            NULL, comparedType, ROOT_INDEX);
     if (!UK)
-      UK = this->getFunctionInformation()
-                              ->getUniqueKeyManager()
-                              ->addUniqueKey(NULL, comparedType, ROOT_INDEX);
+      UK = this->getFunctionInformation()->getUniqueKeyManager()->addUniqueKey(
+          NULL, comparedType, ROOT_INDEX);
     BList.add(UK);
   }
 
@@ -1746,7 +1781,7 @@ llvm::Type *BaseAnalyzer::getComparedType(llvm::Value *comVal,
 int BaseAnalyzer::getErrorOperand(llvm::ICmpInst *ICI) {
   int operand = -1;
   if (auto ConstI = llvm::dyn_cast<llvm::ConstantInt>(ICI->getOperand(1))) {
-    if (ConstI->isZero()) {
+    if (ConstI->getSExtValue() >= 0) {
       // TODO: check for each case
       if (ICI->getPredicate() == llvm::CmpInst::ICMP_EQ ||
           ICI->getPredicate() == llvm::CmpInst::ICMP_SGE)
