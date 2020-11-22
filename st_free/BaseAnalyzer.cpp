@@ -390,8 +390,8 @@ void BaseAnalyzer::addFree(llvm::Value *V, llvm::CallInst *CI,
       //                                                     info.indexes);
       // }
     }
-    if (!isAlias && info.memType && get_type(info.memType)->isStructTy() &&
-        this->isAuthorityChained(info.indexes)) {
+    if (!isAlias && info.memType && get_type(info.memType)->isStructTy()
+        &&this->isAuthorityChained(info.indexes)) {
       STFREE_LOG_ON(CI, "Add Freed Struct");
       getFunctionInformation()->addFreedStruct(
           B, get_type(info.memType), info.freeValue, CI, info.parentType,
@@ -667,6 +667,25 @@ void BaseAnalyzer::checkAndChangeActualAuthority(llvm::StoreInst *SI) {
 
       for (auto CI : CastInsts) this->changeAuthority(SI, CI, GEle);
     }
+
+    // if (this->isStoreFromStructMember(SI)) {
+    //   ParentList indexes;
+    //   llvm::GetElementPtrInst *storee_gele = getStoredStructEle(SI);
+    //   if (storee_gele != NULL) {
+    //     this->getStructParents(storee_gele, indexes);
+
+    //     if (indexes.size() > 0 &&
+    //         this->isAuthorityChained(std::vector<std::pair<llvm::Type *, int>>(
+    //             indexes.end() - 1, indexes.end()))) {
+    //       if (llvm::StructType *StTy =
+    //               llvm::dyn_cast<llvm::StructType>(indexes.back().first)) {
+    //         STFREE_LOG(SI, "INCREMENT!");
+    //         getStructManager()->get(StTy)->incrementStoreTotal(
+    //             indexes.back().second);
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   // if (this->isStoreFromStructMember(SI)) {
@@ -694,6 +713,7 @@ void BaseAnalyzer::changeAuthority(llvm::StoreInst *SI, llvm::CastInst *CI,
   }
   return;
 }
+
 void BaseAnalyzer::checkDoubleAliasedValue(llvm::StoreInst *SI,
                                            llvm::GetElementPtrInst *GEle,
                                            llvm::Value *addVal) {
@@ -1217,6 +1237,10 @@ void BaseAnalyzer::addNestedFree(llvm::Value *V, llvm::CallInst *CI,
 
   for (auto ele = StTy->element_begin(); ele != StTy->element_end();
        ele++, memIndex++) {
+    // if ((*ele)->isPointerTy() && get_type(*ele)->isStructTy()) {
+    //   getFunctionInformation()->addFreedStruct(
+    //       B, get_type(get_type(*ele)), V, CI);
+    // }
     if ((*ele)->isStructTy() &&
         find_if(info.indexes.begin(), info.indexes.end(),
                 [ele](const std::pair<llvm::Type *, int> &index) {
